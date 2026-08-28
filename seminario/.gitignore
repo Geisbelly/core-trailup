@@ -1,0 +1,7 @@
+dados/EdNet-KT3
+dados/oulad
+dados/*.zip
+saida/
+__pycache__/
+*.pyc
+.venv/
