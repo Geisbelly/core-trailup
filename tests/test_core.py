@@ -505,3 +505,22 @@ def test_prioridade_e_alias_de_esquecimento():
 def test_esquecimento_cresce_com_o_tempo():
     v = [revisao.esquecimento(d, acertou_antes=False) for d in (1, 7, 60)]
     assert v == sorted(v)
+
+
+# ---------------- constantes com base medida ----------------
+def test_precisao_do_tempo_e_honesta_em_n_baixo():
+    """MIN_RESPOSTAS=5 classifica ritmo, não crava duração: erro ~20%."""
+    assert tempo.precisao(5) == pytest.approx(0.202, abs=0.01)
+    assert tempo.precisao(30) == pytest.approx(0.077, abs=0.01)
+
+def test_precisao_melhora_com_n():
+    v = [tempo.precisao(n) for n in (3, 5, 8, 15, 30, 50)]
+    assert v == sorted(v, reverse=True)
+
+def test_precisao_nos_extremos():
+    assert tempo.precisao(1) == tempo.precisao(3)
+    assert tempo.precisao(10000) == tempo.precisao(50)
+
+def test_fronteira_do_ritmo_e_o_corte_otimo():
+    """39,8 s é o ótimo por Otsu; o módulo usa 40,0."""
+    assert abs(ritmo.FRONTEIRA_SEG - 39.8) < 1.0

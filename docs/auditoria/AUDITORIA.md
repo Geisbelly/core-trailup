@@ -10,7 +10,7 @@ Base: EdNet KT3, 6.504.124 respostas, acerto global 0,6677, split por aluno 70/3
 
 ## Resultado das 7 partes
 
-**23 verificações. 10 defeitos encontrados**, todos da mesma família: uma saída afirmando uma escala que ninguém mediu. Nenhum apareceria olhando AUC.
+**25 verificações. 11 defeitos encontrados**, todos da mesma família: uma saída afirmando uma escala que ninguém mediu. Nenhum apareceria olhando AUC.
 
 | onde | o que afirmava | o que era |
 |---|---|---|
@@ -24,8 +24,9 @@ Base: EdNet KT3, 6.504.124 respostas, acerto global 0,6677, split por aluno 70/3
 | `precisa_reforco` | limiar 0,45 | mudou de 2,3% para 12,2% |
 | `duracao_prevista` | soma de medianas | subestima 13% |
 | `prioridade_revisao` | onde revisar rende mais | só mede esquecimento |
+| `tempo.MIN_RESPOSTAS` | 5 respostas é estável | erro típico de 20% |
 
-E três que **conferiram exatamente**: `perfil_chute` (p90 e p99), a tabela `REFERENCIA` do engajamento (diferença 0,000) e o limite de 3× do `demorando`.
+E quatro que **conferiram**: `perfil_chute` (p90 e p99), a tabela `REFERENCIA` do engajamento (diferença 0,000), o limite de 3× do `demorando`, e `ritmo.FRONTEIRA_SEG` — cujo 40 s é praticamente o corte ótimo por Otsu (39,8 s), com d de Cohen **maior** que o documentado (4,18 contra 3,30).
 
 ---
 
@@ -305,6 +306,42 @@ Testado olhando o encontro **seguinte** ao reencontro, entre os que erraram no r
 - **A transferência para o TrailUp.** Continua sem medida: o banco está vazio.
 - **A transferência para o TrailUp.** Continua sem medida: o banco está vazio. O que esta auditoria garante é que os números publicados descrevem o que o código faz **no corpus de referência** — não que se sustentem em dado brasileiro e escolar.
 - **Calibração dos que dependem de coorte.** `engajamento.ordenar` e `gate.risco` devolvem score para ordenar, não probabilidade; a auditoria confere a ordenação, não um nível absoluto que eles não afirmam ter.
+
+---
+
+## Parte 8: constantes estabelecidas sem base
+
+Inventariei toda constante dos módulos e separei as que tinham medida das que eram escolha não justificada.
+
+### `ritmo.FRONTEIRA_SEG = 40 s` — tem base, e melhor do que se dizia
+
+Maximizando a separação entre as duas nuvens no log da mediana (critério de Otsu) sobre 11.421 questões, **o corte ótimo é 39,8 s**. O módulo usa 40,0.
+
+| | |
+|---|---|
+| d de Cohen no corte de 40 s | **4,18** (o relatório dizia 3,30) |
+| questões classificadas "rápidas" | 65% |
+| distribuição das medianas | p25 18 s · **p50 22 s** · **p75 64 s** · p90 95 s |
+
+O salto de 22 s para 64 s entre o p50 e o p75 é a bimodalidade que justifica **categoria** aqui, em vez de intervalo. Constante confirmada, e o `d` documentado estava subestimado.
+
+### `tempo.MIN_RESPOSTAS = 5` — **não tem base**
+
+O comentário dizia *"abaixo disso a mediana ainda oscila demais"*, sugerindo que a partir de 5 ela não oscila. Medido em 11.421 questões, contra a mediana com 50+:
+
+| n | correlação | erro relativo típico |
+|---|---|---|
+| 3 | 0,854 | 25,9% |
+| **5** | **0,886** | **20,2%** |
+| 8 | 0,917 | 15,2% |
+| 15 | 0,942 | 11,5% |
+| 30 | 0,969 | 7,7% |
+
+**Com 5 respostas o erro típico é de 20%.** Isso não é "estável".
+
+A distinção que faltava: **5 serve para o ritmo e não serve para o tempo.** Classificar rápida/lenta acerta 97,3% com 5 respostas porque o corte de 40 s fica longe da mediana da maioria das questões — um erro de 20% raramente atravessa a fronteira. Mas `esperado()` devolve a mediana **como duração**, e aí os 20% entram direto no número.
+
+Entra `tempo.precisao(n)`, que devolve o erro típico daquela estimativa, e o comentário passa a dizer o que a curva mostra: para ±10%, exija ~15 respostas; para ±8%, ~30.
 
 ---
 

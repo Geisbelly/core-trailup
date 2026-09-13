@@ -33,7 +33,25 @@ from __future__ import annotations
 from dataclasses import dataclass
 from math import log1p, expm1
 
-MIN_RESPOSTAS = 5          # abaixo disso a mediana ainda oscila demais
+# Quao estavel e a mediana da questao, por numero de respostas (medido em
+# 11.421 questoes, contra a mediana calculada com 50+):
+#
+#    n     correlacao   erro relativo medio
+#    3       0,854            25,9%
+#    5       0,886            20,2%      <- MIN_RESPOSTAS
+#    8       0,917            15,2%
+#   15       0,942            11,5%
+#   30       0,969             7,7%
+#
+# ATENCAO - 5 NAO E "ESTAVEL". O comentario anterior dizia "abaixo disso a
+# mediana ainda oscila demais", sugerindo que a partir de 5 ela nao oscila.
+# Com 5 respostas o erro tipico e de 20%.
+#
+# O limite serve para o RITMO (classificar rapida/lenta acerta 97,3% com 5,
+# porque o corte de 40 s fica longe da mediana da maioria das questoes) e NAO
+# serve para cravar duracao. Para +-10% no tempo esperado, exija ~15; para
+# +-8%, ~30.
+MIN_RESPOSTAS = 5
 LIMITE_LENTO = 3.0         # x acima do esperado: 2,1% das respostas, acerto cai de 67% p/ 54%
 
 
@@ -48,7 +66,12 @@ class Esperado:
 
 
 def esperado(latencia_mediana: float, respostas: int) -> Esperado:
-    """`respostas` = quantos ALUNOS responderam a questao."""
+    """`respostas` = quantos ALUNOS responderam a questao.
+
+    `Esperado.confiavel` fica True a partir de MIN_RESPOSTAS, mas isso quer
+    dizer "serve para classificar ritmo", nao "o numero esta preciso". Use
+    `precisao()` para saber o erro tipico daquela estimativa.
+    """
     if latencia_mediana <= 0:
         raise ValueError('latencia mediana deve ser positiva')
     return Esperado(float(latencia_mediana), respostas, respostas >= MIN_RESPOSTAS)
@@ -73,6 +96,22 @@ def esperado_de_amostra(latencias, respostas: int | None = None) -> Esperado:
     media_log = sum(log1p(x) for x in v) / len(v)
     n = respostas if respostas is not None else len(v)
     return Esperado(expm1(media_log), n, n >= MIN_RESPOSTAS)
+
+
+def precisao(respostas: int) -> float:
+    """Erro relativo tipico da mediana da questao, com `respostas` observacoes.
+
+    Interpola a curva medida no EdNet. Devolve 0,20 para n=5 e 0,08 para n=30.
+    """
+    tab = [(3, .259), (5, .202), (8, .152), (15, .115), (30, .077), (50, .060)]
+    if respostas <= tab[0][0]:
+        return tab[0][1]
+    if respostas >= tab[-1][0]:
+        return tab[-1][1]
+    for (a, va), (b, vb) in zip(tab, tab[1:]):
+        if respostas <= b:
+            return va + (vb - va) * (respostas - a) / (b - a)
+    return tab[-1][1]
 
 
 def quao_lento(segundos: float, esp: Esperado) -> float:
