@@ -298,6 +298,33 @@ Entra `esperado_de_amostra()` com média do log, +0,004. É menos robusto a outl
 
 ---
 
+## A auditoria de 2026-09-13
+
+Depois de todas as melhorias, cada número dos cabeçalhos foi remedido **chamando as funções do módulo**. 23 verificações, **10 defeitos** — e o padrão é único:
+
+> **Toda vez, uma saída afirmando uma escala que ninguém mediu.**
+
+| onde | afirmava | era |
+|---|---|---|
+| `ritmo._CONF` | confiança 1,00 em n=21 | teto real 0,997 |
+| `ritmo.__str__` | exibia "100%" | arredondamento de 0,997 |
+| `engajamento.risco` | dispara na taxa pedida | estoura para 27,5% |
+| `evasao.sql` | probabilidade de evasão | **11× maior que a real** |
+| `evasao.sql` | sumir aumenta o risco | coeficiente invertido |
+| `dominio.p` | probabilidade | ECE 0,056, comprimida |
+| `dominio.confianca` | confiança cresce com n | o erro real é plano |
+| `precisa_reforco` | limiar 0,45 | passou de 2,3% a 12,2% |
+| `duracao_prevista` | soma de medianas | subestima 13% |
+| `prioridade_revisao` | onde revisar rende mais | só mede esquecimento |
+
+Três conferiram exatamente: `perfil_chute`, a tabela `REFERENCIA` do engajamento e o limite de 3× do `demorando`.
+
+**Nenhum desses aparece olhando AUC** — que era a única métrica que este estudo vinha reportando. Ordenação pode estar certa com a escala inteira errada, e foi o caso em 7 dos 10.
+
+Detalhes em [`auditoria/AUDITORIA.md`](auditoria/AUDITORIA.md).
+
+---
+
 ## Os erros, agrupados por tipo
 
 Sete afirmações publicadas estavam erradas. O padrão importa mais que a lista:
@@ -310,5 +337,8 @@ Sete afirmações publicadas estavam erradas. O padrão importa mais que a lista
 | **alvo errado** | desfecho verdadeiro para 100%; proxy do gate pior que a regra |
 | **contaminação de dado** | 21,7% do rótulo; vazamento por aspas de shell |
 | **controle ausente** | base pessoal sem teste intra-aluno; trajetória sem fixar o total |
+| **escala não medida** | os 10 da auditoria acima — confiança, probabilidade, soma, limiar |
 
 Quatro dos sete só apareceram porque **a segunda base derrubou o achado da primeira**, ou porque um **placebo** foi incluído. Nenhum apareceria com mais ajuste de modelo.
+
+E os dez da auditoria só apareceram porque alguém **chamou o código em vez de ler a documentação**. Há um verificador de consistência permanente em [`auditoria/scripts/70_consistencia.py`](auditoria/scripts/70_consistencia.py) que roda sem dataset e compara os números entre módulo e documentos — foi assim que três divergências restantes apareceram depois da auditoria.

@@ -17,9 +17,9 @@ Implementações em [`modulo/`](../README.md), sem dependência.
 | detecção de chute | traço, +0,922 | 50 respostas |
 | curva de esquecimento / revisão | 585 mil reencontros | nenhum |
 | discriminação (questão quebrada) | pronto; ver ressalva | 40 respostas |
-| risco de evasão (SQL) | lift 3,4× no top 10% | semanas |
+| risco de evasão (SQL) | AUC 0,783; lift 4,1× no top 10% | semanas |
 | engajamento (3 eixos) | AUC 0,805 para retenção em 30 dias | 30 respostas |
-| pré-avaliação rápida de resposta | Spearman 0,447 (teto ≈0,88) | nenhum |
+| pré-avaliação rápida de resposta | Spearman 0,483 (teto ≈0,88) | nenhum |
 
 ### Nível de engajamento → [`engajamento.py`](../trailup_core/engajamento.py)
 
@@ -61,7 +61,7 @@ Para "rápida", a versão sem dependência é a certa: roda no mesmo ciclo da re
 
 Ponto de operação medido: cortar em 10%/90% dispensa a LLM em 20% dos casos, errando 8% na ponta alta e 12% na baixa. E a triagem funciona melhor que a pontuação — as 10 respostas de menor previsão têm nota real média 2,33 contra 3,50 do geral.
 
-Enviada a versão **linear, sem dependência**: Spearman 0,447 contra 0,482 do boosting sobre as mesmas features. Perde pouco em ordenação, que é o uso; perde mais em nota absoluta (QWK 0,325 contra 0,397), que não é.
+Enviada a versão **linear, sem dependência**: Spearman 0,483 medido ponta a ponta (era 0,447 na versão de 8 features). Perde pouco em ordenação, que é o uso; perde mais em nota absoluta (QWK 0,325 contra 0,397), que não é.
 
 Dois cuidados embutidos no código:
 

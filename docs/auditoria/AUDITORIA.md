@@ -51,7 +51,7 @@ E três que **conferiram exatamente**: `perfil_chute` (p90 e p99), a tabela `REF
 
 ## Os três que derivaram
 
-**`ritmo`: 98% → 96,4%.** O relatório original afirmava 98% de acerto com 5 respostas. Chamando `ritmo.ritmo()` e comparando com a classificação feita sobre 50+ respostas, o valor é **96,4%**. Corrigido no cabeçalho do módulo. A conclusão de desenho não muda — 5 respostas continuam sendo suficientes.
+**`ritmo`: 98% → 97,3%.** O relatório original afirmava 98% de acerto com 5 respostas. A primeira remedição, comparando as **5 primeiras** respostas contra a classificação com 50+, deu 96,4%. A remedição definitiva — **5 sorteadas** ao acaso, três reamostragens, contra a classificação com 200+ respostas — dá **97,3%**, e é esse o valor no módulo. A conclusão de desenho não muda: 5 respostas continuam sendo suficientes.
 
 **`chute`: −7,6 pts → −6,1 pts.** A tabela do módulo diz que marcar com limiar 0,30 separa 7,6 pontos no acerto ao reencontrar. Chamando `chute.foi_chute()` sobre 128.431 casos, a diferença é **6,1 pontos**. A **forma** do achado se sustenta (encolhe monotonicamente conforme o limiar afrouxa); a magnitude varia de 6 a 8 pontos conforme o recorte. Anotado no módulo.
 
@@ -307,6 +307,22 @@ Testado olhando o encontro **seguinte** ao reencontro, entre os que erraram no r
 - **Calibração dos que dependem de coorte.** `engajamento.ordenar` e `gate.risco` devolvem score para ordenar, não probabilidade; a auditoria confere a ordenação, não um nível absoluto que eles não afirmam ter.
 
 ---
+
+## Verificação de consistência, sem dataset
+
+```bash
+python3 docs/auditoria/scripts/70_consistencia.py
+```
+
+Compara o mesmo número citado em arquivos diferentes e falha se divergirem. Não precisa de dataset — lê só o repositório. Rodando depois da auditoria, apareceram **três divergências** que nenhum teste pegaria:
+
+| | módulo dizia | documento dizia |
+|---|---|---|
+| `ritmo`, acerto com 5 | 97,3% | 96,4% (a primeira remedição, superada) |
+| `evasao`, AUC | 0,783 (refeito) | 0,748 (anterior ao conserto) |
+| `pre_avaliacao`, Spearman | 0,483 | 0,447 (versão de 8 features) |
+
+Todas corrigidas. O valor antigo da evasão fica anotado de propósito no relatório histórico, e o verificador o conhece como exceção.
 
 ## Como reexecutar
 
