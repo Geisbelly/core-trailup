@@ -1,8 +1,6 @@
 # Avaliador de resposta discursiva — quatro tentativas de fechar o gap
 
-**Data:** 2026-09-12, revisto em 2026-09-13 · **Base:** classEx · **Módulo:** [`pre_avaliacao.py`](../modulo/pre_avaliacao.py)
-
-> **Revisão de 2026-09-13.** Duas correções. A tabela de pré-filtro publicada antes reportava 5–8% de erro nas pontas; a reexecução do script dá **12–14%**, e a afirmação de que a ponta alta é mais confiável que a baixa **não se sustenta** — são equivalentes. E o "teto de 0,899" precisa de ressalva: ele é a concordância de **uma execução com a média das três**, que inclui a própria execução. A comparação honesta é entre execuções independentes: **0,871 a 0,897**.
+**Base:** classEx · **Módulo:** [`pre_avaliacao.py`](../../trailup_core/pre_avaliacao.py) · **Histórico de correções:** [apêndice](#apêndice--o-que-mudou-e-por-quê)
 
 ---
 
@@ -180,7 +178,7 @@ O gap não é de dado, nem de representação isolada, nem de estrutura. **É de
 
 ## 10. Posicionamento realista
 
-### Como pré-filtro de dois lados — mais fraco do que eu havia reportado
+### Como pré-filtro de dois lados
 
 Dispensar a LLM nas duas pontas e mandar o meio para ela. Erro = a decisão automática estava errada (ponta baixa marcada como "precisa de feedback" mas a nota era ≥3,5; ponta alta marcada como "adequada" mas era <3,5):
 
@@ -192,7 +190,7 @@ Dispensar a LLM nas duas pontas e mandar o meio para ela. Erro = a decisão auto
 | 20% / 80% | 60% | 25% | 12% |
 | 25% / 75% | 50% | 25% | 14% |
 
-**Correção:** a versão anterior reportava 5–8% de erro e afirmava que a ponta alta é mais confiável que a baixa. A reexecução mostra **12–14% nas duas**, e simetria entre elas. Um corte em 10%/90% economiza 20% das chamadas ao custo de errar uma em oito nas pontas — decisão de produto, não obviedade.
+O erro é de **12 a 14% nas duas pontas**, sem assimetria entre elas. Um corte em 10%/90% economiza 20% das chamadas ao custo de errar uma em oito nas pontas — decisão de produto, não obviedade.
 
 ### Como triagem — é aqui que funciona
 
@@ -227,3 +225,23 @@ O uso em que o corpus de domínio **poderia** ajudar é outro: treinar o *encode
 - **Alemão, economia, universitário, 8 tarefas.** As features são agnósticas de idioma (operações de conjunto sobre tokens), mas os **pesos ajustados não são** — é por isso que `pre_avaliacao.py` é para ordenar, não para dar nota, até haver ~100 respostas em português com nota humana.
 - **Leave-one-Task-out cai para 0,429** e varia de 0,267 a 0,639 entre tarefas. Em tarefa nova o desempenho é imprevisível.
 - **249 alunos, 1.167 respostas.** Os IC por aluno (§4) já refletem isso: Spearman 0,532 tem incerteza de ±0,05.
+
+---
+
+## Apêndice — o que mudou, e por quê
+
+**O teto de 0,899 estava inflado.** Ele era a concordância de **uma execução do GPT-4 com a média das três** — média que *contém* aquela execução, o que infla a correlação por construção. Entre execuções independentes o teto é **0,871 a 0,897** (§3). Não muda a conclusão (o modelo fica a ~60% do caminho), mas o alvo estava mais perto do que eu dizia.
+
+**A tabela de pré-filtro estava errada.** A versão anterior reportava 5–8% de erro nas pontas e afirmava que a ponta alta é mais confiável que a baixa. A reexecução do script dá **12–14% nas duas**, sem assimetria (§10). A afirmação sobre a assimetria não tinha suporte.
+
+**O Spearman do modelo combinado** aparecia como 0,545; a reexecução com o conjunto de 18 features dá **0,532**.
+
+### Números que mudaram entre versões
+
+| | antes | final |
+|---|---|---|
+| teto | 0,899 | **≈0,88** (execuções independentes) |
+| grafo + encoder | 0,545 | 0,532 |
+| erro no pré-filtro 5%/95% | 8% baixa / 5% alta | **14% / 12%** |
+
+O cabeçalho de [`pre_avaliacao.py`](../../trailup_core/pre_avaliacao.py) carregava o teto antigo e foi corrigido junto.

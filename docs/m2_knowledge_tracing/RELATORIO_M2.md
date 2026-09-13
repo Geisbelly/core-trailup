@@ -1,8 +1,6 @@
 # M2 — domínio por tópico: a regra em produção contra um modelo
 
-**Data:** 2026-09-12, refeito em 2026-09-13 · **Base:** EdNet KT3 · **Módulo:** [`dominio.py`](../modulo/dominio.py) · **Histórico:** [MELHORIAS.md](MELHORIAS.md)
-
-> **Este documento foi refeito sobre o rótulo corrigido.** A versão anterior media tudo sobre um rótulo com 21,7% de contaminação (§11). Todos os números abaixo vêm de uma reexecução completa em 2026-09-13; onde a magnitude mudou, está assinalado. A conclusão qualitativa não muda — mas duas magnitudes ficaram **piores** para a regra e uma ficou pior para o modelo.
+**Base:** EdNet KT3 · **Módulo:** [`dominio.py`](../../trailup_core/dominio.py) · **Histórico de correções:** [apêndice](#apêndice--o-que-mudou-e-por-quê) · **Registro da rodada de melhoria:** [MELHORIAS.md](MELHORIAS.md)
 
 ---
 
@@ -54,7 +52,7 @@ Nenhum ajuste de modelo teria compensado isso. Detalhes em [MELHORIAS §6](MELHO
 
 **Dificuldade da questão estimada só no treino**, com encolhimento para a média global (prior 20).
 
-> **Um vazamento, e a blindagem.** A primeira rodada v3 passou os argumentos errados por um problema de aspas no laço de shell, e features **posteriores à resposta** (latência e trocas da própria questão) entraram no modelo que prevê aquela resposta — AUC 0,764, contaminado. O script agora tem lista explícita de features posteriores (`POSTERIOR`) e `assert` nos argumentos.
+> **Blindagem contra vazamento.** Features **posteriores à resposta** (latência e trocas da própria questão) não podem entrar no modelo que prevê aquela resposta. O script tem lista explícita (`POSTERIOR`) e `assert` nos argumentos — ver o apêndice para o vazamento que motivou isso.
 
 ---
 
@@ -155,7 +153,7 @@ Note também que **"só dificuldade" é praticamente constante** (0,699 a 0,709)
 | só comportamento (sem nada da questão) | 14 | 0,641 | 0,605 |
 | só conteúdo (só a questão) | 5 | 0,706 | 0,573 |
 
-> **Mudança em relação à versão anterior.** Com o rótulo contaminado, "só comportamento" dava 0,683. Com o rótulo correto dá **0,641** — 4 pontos abaixo. A contaminação inflava o valor do comportamento, porque as tentativas intermediárias que ela contava *são* comportamento. Corrigido, **a questão sozinha (0,706) supera todo o histórico comportamental (0,641)**.
+**A questão sozinha (0,706) supera todo o histórico comportamental (0,641).**
 
 O ganho não está no histórico do aluno: está na **dificuldade da questão estimada sobre um corpus de respostas**. São complementares — juntos, 0,753 — mas quem carrega é o conteúdo.
 
@@ -175,11 +173,11 @@ O ganho não está no histórico do aluno: está na **dificuldade da questão es
 
 ## 7. O gate: treinar no alvo que ele decide
 
-### O erro de desenho que esta rodada encontrou
+### O alvo tem de ser o que o gate decide
 
-O gate não pergunta *"o aluno acerta a próxima?"*. Pergunta *"este aluno vai travar neste tópico?"*. Eu vinha usando `1 − p(acerta a próxima)` como sinal do gate — **e uma questão difícil derruba esse `p` sem que o aluno esteja travado**.
+O gate não pergunta *"o aluno acerta a próxima?"*. Pergunta *"este aluno vai travar neste tópico?"*. Usar `1 − p(acerta a próxima)` como proxy **não serve**: uma questão difícil derruba esse `p` sem que o aluno esteja travado.
 
-Testado: o proxy dava AUC 0,698 contra 0,761 da regra que ele ia substituir. **O proxy era pior que a regra.** Se tivesse ido a produção como desenhado, teria piorado o gate.
+Medido: o proxy dá AUC 0,698 contra 0,761 da regra que ele substituiria. **O proxy é pior que a regra.**
 
 ### O alvo direto
 
@@ -190,7 +188,7 @@ vai_travar = 1 se a taxa de acerto do aluno nas PRÓXIMAS 10 respostas
 
 577.878 amostras de teste, **taxa base 12,3%**.
 
-> A taxa base era 26,7% no dado contaminado e é 12,3% no corrigido — porque a contaminação inflava artificialmente os erros. **Só o *lift* compara entre as duas rodadas**, não a precisão absoluta.
+> A taxa base de 12,3% é baixa: use **lift** e **precisão no ponto de operação**, não acurácia.
 
 ### Resultado
 
@@ -215,7 +213,7 @@ vai_travar = 1 se a taxa de acerto do aluno nas PRÓXIMAS 10 respostas
 
 **Em 10% de disparo o modelo acerta 41,6% contra 35,5% da regra — 17% a mais de precisão, com cobertura maior.**
 
-A vantagem é real (+0,076 de AUC, +0,079 de AP) e **menor do que o dado contaminado sugeria**.
+A vantagem é real: **+0,076 de AUC, +0,079 de AP**.
 
 ### O gate também está calibrado
 
@@ -240,11 +238,11 @@ Cada disparo é uma passagem por `agente_conteudo` e, quando `gerar_materiais` a
 | `m2_model_v3` | o aluno acerta esta questão? | `dominio_estimado`, `confianca`, `tendencia` — o que o professor vê | 0,753 |
 | `m2_gate_v3` | o aluno vai travar neste tópico? | decide o nível do gate | 0,779 |
 
-**Usar um no papel do outro é o erro que esta rodada encontrou.**
+**Usar um no papel do outro degrada o gate** — ver o apêndice.
 
 ---
 
-## 9. O que rendeu pouco (três apostas de feature)
+## 9. O que rendeu pouco
 
 | aposta | ganho de AUC |
 |---|---|
@@ -256,7 +254,7 @@ A primeira era a hipótese forte — decompor por skill é o núcleo do knowledg
 
 Há também um teto conhecido: **0,76 é o patamar do DKT na literatura para EdNet**; o SAINT+ chega a 0,79 com transformer sobre a sequência inteira. O limite aqui não é de ajuste, é de arquitetura — e um modelo de sequência não se justifica numa API que hiberna, para ganhar 0,03.
 
-**Mais features renderam pouco; olhar para o dado rendeu as duas correções que importavam** — o alvo errado (§7) e o rótulo contaminado (§2).
+**Mais features renderam pouco. O que rendeu foi olhar para o dado** — o alvo do gate (§7) e a contaminação do rótulo (§2).
 
 ---
 
@@ -286,3 +284,47 @@ Há também um teto conhecido: **0,76 é o patamar do DKT na literatura para EdN
 - **A transferência fica sem medida até haver aluno real.** O banco está vazio, então não há replay possível. O que está demonstrado é que *a família de modelo* bate *a família de regra* em todos os cortes testados, inclusive nos mais pobres — **não o quanto ela bate no TrailUp**. A primeira turma real é o teste, e precisa ser instrumentada para servir de medição: o modelo grava `p` e o resultado, e compara-se depois.
 - **Não testado:** modelo sequencial (DKT/SAKT/SAINT). A literatura reporta 0,76–0,79 em EdNet; este tabular chegou a 0,753 com 25 features — a margem provavelmente não paga a complexidade.
 - **Os IC são estreitos porque o teste é grande** (661 mil respostas de 2.780 alunos). Eles medem incerteza amostral, **não** incerteza de transferência de domínio, que é muito maior e não está quantificada em lugar nenhum deste documento.
+
+---
+
+## Apêndice — o que mudou, e por quê
+
+Três correções, em ordem de impacto.
+
+### 1. O rótulo estava contaminado em 21,7%
+
+Descrito na §2, porque é propriedade do dado e não só histórico. Tudo que foi treinado antes da descoberta usou um rótulo que contava tentativas intermediárias como respostas finais, e a acurácia global medida era **0,577 quando a real é 0,668**.
+
+O efeito não foi uniforme: a contaminação **inflava o valor do comportamento**, porque as tentativas intermediárias *são* comportamento.
+
+| | rótulo contaminado | rótulo correto |
+|---|---|---|
+| só comportamento | 0,683 | **0,641** |
+| só a questão | 0,667 | **0,706** |
+| regra do TrailUp | 0,612 | **0,587** |
+| modelo completo | 0,755 | 0,753 |
+
+A leitura inverteu: antes o comportamento parecia empatar com a questão; corrigido, **a questão sozinha supera todo o histórico do aluno**.
+
+### 2. O gate estava sendo treinado no alvo errado
+
+A proposta original usava `1 − p(acerta a próxima)` como sinal do gate. Medido contra o alvo real ("vai travar no tópico"), esse proxy dá **AUC 0,698 contra 0,761 da regra que ele substituiria** — teria ido a produção piorando o gate.
+
+Daí os **dois modelos** da §8: um para o número que o professor vê, outro para a decisão do gate.
+
+### 3. Um vazamento por aspas de shell
+
+Uma rodada passou os argumentos errados por um problema de quoting no laço (`for a in "proxima base"` faz `ALVO="proxima base"`, então o guard `if ALVO == 'proxima'` nunca dispara). Features **posteriores à resposta** — latência e trocas da própria questão — entraram no modelo que prevê aquela resposta: **AUC 0,764, contaminado**.
+
+A blindagem: lista explícita `POSTERIOR` e `assert` nos argumentos.
+
+### Números que mudaram entre versões
+
+| | antes | final |
+|---|---|---|
+| corpus | 8,7 M respostas | **6,5 M** respostas finais |
+| taxa de acerto global | 0,577 | **0,668** |
+| regra do TrailUp | AUC 0,612, ECE 0,222 | **0,587**, ECE 0,201 |
+| regra, aluno novo | 0,478 | **0,486** (IC inteiro abaixo de 0,50) |
+| só comportamento | 0,683 | **0,641** |
+| gate | 0,806 (alvo contaminado) | **0,779** |

@@ -1,6 +1,6 @@
 # Dificuldade da questão por turma — a métrica do professor
 
-**Data:** 2026-09-12, revisto em 2026-09-13 · **Base:** OULAD (CC BY 4.0)
+**Base:** OULAD (CC BY 4.0) · **Histórico de correções:** [apêndice](#apêndice--o-que-mudou-e-por-quê)
 
 ---
 
@@ -84,9 +84,9 @@ Mas a cauda não é desprezível. Amplitude (turma com maior acerto menos turma 
 
 ## 4. A dificuldade da turma só existe depois que a turma responde
 
-O primeiro teste que fiz estava mal desenhado: testei numa **turma nova**, onde por definição não há dificuldade-de-turma para consultar. Todas as variantes caíam para o global (AUC idêntico) e o percentil virava constante (AUC 0,500). Não era resultado — era a pergunta errada.
+Testar numa **turma nova** não responde nada: por definição não há dificuldade-de-turma para consultar, todas as variantes caem para o global (AUC idêntico) e o percentil vira constante (AUC 0,500).
 
-O teste certo caminha **dentro da avaliação, ao longo dos alunos**: o aluno na posição *k* é previsto usando só os *k−1* anteriores **da mesma turma**.
+O teste que responde caminha **dentro da avaliação, ao longo dos alunos**: o aluno na posição *k* é previsto usando só os *k−1* anteriores **da mesma turma**.
 
 | alunos da turma que já responderam | global | turma (cru) | **hierárquico** |
 |---|---|---|---|
@@ -120,7 +120,7 @@ z = (taxa da turma − taxa global) / erro-padrão
 
 onde o **erro-padrão** é o da proporção, `√(p(1−p)/n)`, com *n* = alunos da turma naquela avaliação.
 
-> **Detalhe que muda o resultado:** a taxa global tem de ser calculada **excluindo a própria turma** (*leave-one-out*). Se a turma entra no seu próprio ponto de referência, o desvio encolhe artificialmente — e a regra deixa de disparar. Medi as duas versões: incluindo a turma, `|z| ≥ 2` dispara em 3% dos casos; excluindo, em 15%. **A versão correta é a que exclui.**
+> **Detalhe que muda o resultado:** a taxa global tem de ser calculada **excluindo a própria turma** (*leave-one-out*). Se a turma entra no seu próprio ponto de referência, o desvio encolhe artificialmente e a regra deixa de disparar — `|z| ≥ 2` cai de 15% para 3% dos casos. **A versão correta é a que exclui.**
 
 ### O teste
 
@@ -211,6 +211,14 @@ Exemplo real, turma `DDD-2013B`:
 - **OULAD são avaliações, não questões.** Nota 0–100, não acerto/erro por item. A estrutura (turma × item × aluno) é a mesma; a granularidade não. Uma prova inteira e uma questão não têm a mesma variância nem o mesmo *n*.
 - **Turmas universitárias a distância, com mediana de 1.204 alunos.** A simulação de turma pequena subamostra essas turmas — aproxima o **tamanho**, não a **dinâmica** de uma sala de aula presencial.
 - **O limiar `z ≥ 2` assume independência entre alunos.** Numa turma real há efeito de professor, de horário, de quem estudou junto. O erro-padrão verdadeiro é **maior** que o binomial, e o limiar deveria ser mais conservador, não menos.
-- **`y ≥ 80` é escolha minha** para ter classes equilibradas (§2).
-- **22 turmas.** A decomposição de variância da §3 tem pouco grau de liberdade no nível da turma; a razão de 10,3× tem incerteza que não estimei.
+- **`y ≥ 80` é escolha arbitrária**, feita para ter classes equilibradas (§2).
+- **22 turmas.** A decomposição de variância da §3 tem pouco grau de liberdade no nível da turma; a razão de 10,3× vem sem intervalo de confiança.
 - **Observacional.** "Esta turma foi pior nesta avaliação" não diz por quê — professor, horário, composição, ou acaso residual.
+
+---
+
+## Apêndice — o que mudou, e por quê
+
+**A referência global precisa ser *leave-one-out*.** Uma implementação que inclui a própria turma no cálculo da taxa global encolhe o desvio artificialmente: `|z| ≥ 2` dispara em **3%** dos pares em vez de **15%**, e a funcionalidade parece inútil numa turma de 30. A acurácia de direção é parecida nas duas versões (93–96%); o que muda é quantas vezes a régua diz alguma coisa.
+
+**A razão "a avaliação pesa 4× mais que a turma"** vinha de comparar diferenças medianas. A decomposição de variância da §3 dá **10,3×**. As duas medem coisas ligeiramente diferentes; a de variância é a que está no documento.

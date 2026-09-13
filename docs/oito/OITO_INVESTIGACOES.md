@@ -1,6 +1,6 @@
 # Oito investigações — o que sobreviveu
 
-**Data:** 2026-09-12, revisto em 2026-09-13 · **Bases:** EdNet KT3, OULAD, classEx, AI4EDU
+**Bases:** EdNet KT3, OULAD, classEx, AI4EDU · **Histórico de correções:** [apêndice](#apêndice--o-que-mudou-e-por-quê)
 
 Oito hipóteses testadas com o mesmo protocolo: **split que respeita a unidade de generalização**, **baseline explícito** e **um teste que poderia derrubar o resultado**. Este documento é o índice; cada item que virou módulo tem relatório próprio.
 
@@ -14,8 +14,6 @@ Oito hipóteses testadas com o mesmo protocolo: **split que respeita a unidade d
 | 6 | Avaliador de resposta aberta | Spearman 0,532 (teto ≈0,88) | parcial |
 | 7 | Roteador de intenção do chat | **38% contra 60% de chutar** | **não** |
 | 8 | Dificuldade pelo texto | r = −0,929 com n=8 | inconclusivo |
-
-> **Revisão de 2026-09-13.** Três correções de magnitude. O item 1 tem R² menor do que eu reportei, e a razão importa (§1). O item 2 se apoiava num **bug de contagem** — ver [TRACOS §2](../tracos/TRACOS_E_GRUPOS.md). O item 6 tem números refeitos em [AVALIADOR_DISCURSIVO](../discursiva/AVALIADOR_DISCURSIVO.md), com um teto mais baixo e um pré-filtro mais fraco.
 
 ---
 
@@ -34,7 +32,7 @@ Oito hipóteses testadas com o mesmo protocolo: **split que respeita a unidade d
 | mediana DO ALUNO | −0,037 | 47,4% |
 | questão × aluno | 0,561 | 27,0% |
 
-> **Por que o aluno dá exatamente o mesmo que o global.** Sob split por aluno, o aluno de teste **nunca apareceu no treino** — a mediana dele não existe. O valor cai para o global por construção. A versão anterior deste documento reportava R² 0,007 para o aluno, número que veio de um recorte em que o aluno era visto no treino. Em ambos os casos a conclusão é a mesma: **o aluno não prediz o próprio tempo**. Mas a razão é diferente, e a segunda versão é a honesta para o cenário do TrailUp, onde aluno novo chega toda semana.
+> **Por que o aluno dá exatamente o mesmo que o global.** Sob split por aluno, o aluno de teste **nunca apareceu no treino** — a mediana dele não existe, e o valor cai para o global por construção. É o cenário real do TrailUp, onde aluno novo chega toda semana. Num recorte em que o aluno é visto no treino, a mediana dele dá R² 0,007 — igualmente nada.
 
 **É o quinto experimento consecutivo a apontar para a questão.** É também por isso que [`tempo.py`](../modulo/tempo.py) usa a mediana da questão **sem ajuste por aluno** — ajustar piora.
 
@@ -53,7 +51,7 @@ Quem demora o triplo acerta **14,5 pontos menos**. É comparação com a distrib
 
 Detalhe completo em [TRACOS_E_GRUPOS §3](../tracos/TRACOS_E_GRUPOS.md).
 
-**Resumo, com a correção:** eu havia reportado "**zero** questões com discriminação negativa no EdNet". Era **bug de código** — a linha contava questões abaixo de −1 em vez de abaixo de 0. Os números reais: **2,96%** numa metade dos alunos, **0,53% confirmadas nas duas metades**.
+**Resumo:** **2,96%** das questões têm discriminação negativa numa metade dos alunos, e **0,53% confirmam nas duas metades**.
 
 O fenômeno existe, é raro, e marcar com precisão é difícil: das 315 marcadas numa metade, **17,8% confirmam** na outra (base 2,85%, lift 6,2×).
 
@@ -168,9 +166,9 @@ Lido de outro jeito: de cada 8 alertas, 1 é alguém que de fato evadiria. Se a 
 
 **Sem gap de cobertura** — o grupo com maior taxa de evasão é alertado na mesma proporção. A diferença de AUC (0,011) é pequena. Não testei outros atributos protegidos.
 
-### Minha primeira explicação para o resultado fraco estava errada
+### Prever "em algum momento" não é mais fácil
 
-Supus que prever **quando** fosse mais difícil que prever **se**. Testei o alvo "evade em algum momento do curso" (15,1% de positivos):
+A explicação intuitiva para o resultado abaixo da meta seria que prever **quando** é mais difícil que prever **se**. Não é o caso. Alvo "evade em algum momento do curso" (15,1% de positivos):
 
 | alvo | AUC | AP |
 |---|---|---|
@@ -179,7 +177,7 @@ Supus que prever **quando** fosse mais difícil que prever **se**. Testei o alvo
 
 **O alvo "em algum momento" ordena pior** (0,701 contra 0,748), e por semana a diferença é maior ainda (semana 4: 0,666 contra 0,746). A AP dele parece melhor só porque a taxa base é 4× maior — **AP não compara entre alvos com prevalências diferentes**, e essa é exatamente a armadilha.
 
-> **Nota:** o script `02_completo.py` ainda imprime, no fim, uma conclusão em sentido contrário ("prever SE evade é mais fácil"). É texto obsoleto, escrito antes de eu olhar os AUC, e contradito pela saída do próprio script. Fica registrado aqui porque alguém que rodar o script vai ler aquela linha.
+> **Nota para quem rodar o script:** `02_completo.py` imprime no fim uma conclusão em sentido contrário ("prever SE evade é mais fácil"). É texto obsoleto, contradito pela saída do próprio script.
 
 As causas prováveis do 0,75 são outras: **conjunto de features magro** (cliques agregados, sem quebra por tipo de recurso) e o **split por coorte**, mais severo que o da literatura.
 
@@ -241,7 +239,7 @@ O teste precisa de dezenas de tarefas. É barato refazer quando houver.
 
 As quatro têm a mesma forma: **medem uma quantidade acumulada e estável**, não um estado momentâneo. É a mesma divisa que separou o [M1](../m1_estado_de_estudo/RELATORIO_M1.md) (falhou, AUC 0,51) dos [traços de aluno](../tracos/TRACOS_E_GRUPOS.md) (0,70–0,98).
 
-**Dois negativos úteis:** o roteador de intenção (7) era circular e teria ido a produção parecendo excelente; a questão defeituosa (2) está pronta mas precisa de um corpus onde o fenômeno exista — que é justamente o TrailUp.
+**Dois negativos úteis:** o roteador de intenção (7) era circular e teria ido a produção parecendo excelente; a questão defeituosa (2) está pronta mas precisa de um corpus onde o fenômeno seja comum — que é justamente o TrailUp.
 
 **Um parcial:** o avaliador (6) bate a similaridade simples mas fica a 60% do caminho até o LLM. Serve como triagem, não como substituto.
 
@@ -255,3 +253,19 @@ As quatro têm a mesma forma: **medem uma quantidade acumulada e estável**, nã
 - **Tudo observacional.** Nenhuma das associações medidas autoriza inferência causal. "Quem chuta aprende menos" não diz que impedir o chute faria aprender mais.
 - **EdNet é CC BY-NC.** Os itens 1, 2, 3 e 4 saem dele.
 - **Os intervalos de confiança medem incerteza amostral**, que nos itens de EdNet é minúscula pelo tamanho. A incerteza que importa — de transferência de domínio — não está quantificada em lugar nenhum.
+
+---
+
+## Apêndice — o que mudou, e por quê
+
+**Item 1 (tempo esperado).** O R² reportado era 0,651 para o modelo completo e 0,571 só com a mediana da questão. A reexecução sob split por aluno dá **0,561** para a mediana da questão. E o "R² 0,007 do aluno" vinha de um recorte em que o aluno era visto no treino; sob split por aluno a mediana dele **não existe**, e o preditor cai para o global (R² −0,037). A conclusão é a mesma nos dois casos.
+
+**Item 2 (questão defeituosa).** A afirmação "**zero** questões com discriminação negativa" era bug de contagem — o script comparava contra −1 em vez de 0. Detalhes em [TRACOS — apêndice](../tracos/TRACOS_E_GRUPOS.md).
+
+**Item 5 (evasão).** Os números reproduzem (AUC 0,748, lift 3,4×). O que faltava era a **quebra por semana**: a semana 2 dá 0,638 — o alerta não funciona no início do curso, que é quando alguém gostaria de tê-lo. A versão anterior dava um número único e escondia isso.
+
+**Item 6 (avaliador discursivo).** Teto e pré-filtro corrigidos — ver [AVALIADOR_DISCURSIVO — apêndice](../discursiva/AVALIADOR_DISCURSIVO.md).
+
+### Uma armadilha de métrica, registrada
+
+Ao comparar os dois alvos de evasão, a **AP** do alvo "em algum momento" é 0,279 contra 0,106 do alvo "nesta janela" — parece muito melhor. Mas a taxa base é 15,1% contra 3,6%: **AP não compara entre alvos de prevalência diferente**. O AUC, que é invariante à taxa base, mostra o contrário (0,701 contra 0,748).

@@ -1,8 +1,6 @@
 # Traços medem, grupos não existem
 
-**Data:** 2026-09-12, revisto em 2026-09-13 · **Base:** EdNet KT3 · **Módulos:** [`chute.py`](../modulo/chute.py), [`discriminacao.py`](../modulo/discriminacao.py)
-
-> **Revisão de 2026-09-13.** A §2 corrige um erro de código meu: o script contava questões com discriminação negativa comparando contra **−1** em vez de **0** (`D.A < lim` com `lim = -1`). O relatório anterior afirmava "**zero** questões defeituosas no EdNet". O número correto é **2,96%** numa metade dos alunos e **0,53% confirmadas nas duas**. A conclusão de fundo não muda — o fenômeno é raro e difícil de marcar com precisão — mas "zero" era artefato de uma comparação errada.
+**Base:** EdNet KT3 · **Módulos:** [`chute.py`](../../trailup_core/chute.py), [`discriminacao.py`](../../trailup_core/discriminacao.py) · **Histórico de correções:** [apêndice](#apêndice--o-que-mudou-e-por-quê)
 
 ---
 
@@ -174,13 +172,13 @@ ARI (índice Rand ajustado) vale 1 quando as duas partições coincidem e 0 quan
 
 **Valores idênticos.** Os dois métodos estão bissectando uma nuvem contínua — é o que se obtém cortando uma gaussiana ao meio. Uma silhueta de 0,49 não prova estrutura; prova que o algoritmo cortou alguma coisa.
 
-> ### Como é fácil fabricar grupos falsos
+> ### Por que a transformação por quantis não é detalhe
 >
-> Ao reproduzir esta análise usei um atalho — `StandardScaler` em vez da transformação por quantis, e k-means em vez de HDBSCAN. O resultado foi **ARI +0,917 e silhueta 0,821**: grupos aparentemente sólidos e altamente replicáveis.
+> Trocando um passo do método — `StandardScaler` em vez de quantis, k-means em vez de HDBSCAN — o resultado vira **ARI +0,917 e silhueta 0,821**: grupos aparentemente sólidos e altamente replicáveis.
 >
-> Eram falsos. As features têm cauda pesada (constância de ritmo vai de 0,35 a 1,19 entre p10 e p90, com cauda muito além), e o k-means sobre escala bruta **separa a cauda de outliers do resto**. A separação entre os dois "grupos" era d = 3,17 em constância de ritmo e **d = 0,09 em trocar de alternativa** — um único eixo carregando tudo. E replica bem justamente porque ser outlier é traço estável.
+> São falsos. As features têm cauda pesada (constância de ritmo vai de 0,35 a 1,19 entre p10 e p90, com cauda muito além), e o k-means sobre escala bruta **separa a cauda de outliers do resto**. A separação entre os dois "grupos" é d = 3,17 em constância de ritmo e **d = 0,09 em trocar de alternativa** — um único eixo carregando tudo. E replica bem justamente porque ser outlier é traço estável.
 >
-> A transformação por quantis elimina esse artefato, e aí a estrutura desaparece. **Fica registrado porque é o erro mais fácil de cometer aqui**, e porque produz exatamente os números que alguém gostaria de ver.
+> A transformação por quantis elimina o artefato, e aí a estrutura desaparece. Vale registrar porque é o caminho que produz exatamente os números que alguém gostaria de ver.
 
 ### A conclusão
 
@@ -206,7 +204,7 @@ E o padrão se repete nos dois lados do dado:
 | questões | não (dificuldade unidimensional) | posição num contínuo |
 | alunos | não (ARI 0,18) | vetor de 8 traços estáveis |
 
-**Em nenhum dos dois casos as categorias existem.** O que existe são medidas contínuas confiáveis — e foi tentando impor categorias que eu errei duas vezes (o `k=4` das questões, os "2 grupos" de alunos).
+**Em nenhum dos dois casos as categorias existem.** O que existe são medidas contínuas confiáveis. As duas tentativas de impor categorias — o `k=4` das questões e os "2 grupos" de alunos — não sobreviveram ao teste de replicação.
 
 ---
 
@@ -227,3 +225,22 @@ Um vetor de traços medidos teria lastro empírico que o rótulo discreto não t
 - **A raridade de questões defeituosas é do corpus** — e o TrailUp deve ter mais. Mas a **precisão de marcação** medida aqui (18–27%) é o que se deve esperar em prevalência baixa; com prevalência maior ela sobe, e o quanto é questão empírica.
 - **`n_trocas` e a latência por questão não existem no TrailUp** hoje — dois dos oito traços exigiriam instrumentação (`answer_change` e tempo por questão).
 - **Tudo observacional.** "Quem chutou aprende menos" é associação medida no reencontro, não efeito causal do chute.
+
+---
+
+## Apêndice — o que mudou, e por quê
+
+**A afirmação "zero questões com discriminação negativa no EdNet" era bug de código.** A linha que contava era:
+
+```python
+for lim, lab in [(-1, 'NEGATIVA (aluno bom erra)'), (0.05, '...'), (0.15, '...')]:
+    m = D.A < lim if lim < 0 else D.A < lim      # os dois ramos são idênticos
+```
+
+Com `lim = -1`, ela contava questões com discriminação **abaixo de −1**, que não existem por definição. Daí o "zero".
+
+O número correto está na §3: **2,96%** numa metade dos alunos, **0,53% confirmadas nas duas**.
+
+A conclusão de fundo não muda — o fenômeno é raro no EdNet e a marcação tem precisão de 18 a 27% — mas o relatório anterior afirmava "zero" num parágrafo e, no seguinte, que 18% das marcadas confirmavam. Eram duas afirmações incompatíveis lado a lado.
+
+O cabeçalho de [`discriminacao.py`](../../trailup_core/discriminacao.py) carregava a mesma afirmação e foi corrigido junto.

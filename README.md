@@ -28,7 +28,9 @@ python3 -m pytest tests/ -q     # 20 testes de invariante
 | [`pre_avaliacao`](trailup_core/pre_avaliacao.py) | esta resposta aberta está boa? | Spearman 0,447 (teto ≈0,88) | nenhum |
 | [`sql/evasao.sql`](sql/evasao.sql) | quem está em risco de abandonar? | lift 3,4× no top 10% | semanas de uso |
 
-Cada arquivo traz **no cabeçalho** os números que o sustentam, o experimento que os produziu, e o que já se provou que **não** adianta tentar. Relatórios completos em [`docs/`](docs/).
+Cada arquivo traz **no cabeçalho** os números que o sustentam, o experimento que os produziu, e o que já se provou que **não** adianta tentar.
+
+Relatórios completos em [`docs/`](docs/) — cada um termina com um **apêndice de correções**, com o que mudou de uma versão para outra e por quê. A fila do que ainda não foi construído está em [`docs/CANDIDATOS.md`](docs/CANDIDATOS.md).
 
 ---
 

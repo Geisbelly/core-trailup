@@ -1,8 +1,6 @@
 # Dificuldade da questão como faixa de valores
 
-**Data:** 2026-09-12, revisto em 2026-09-13 · **Base:** EdNet KT3 · **Módulo:** [`dificuldade.py`](../modulo/dificuldade.py), [`ritmo.py`](../modulo/ritmo.py)
-
-> **Revisão de 2026-09-13.** A tabela de cobertura da versão anterior media o **intervalo preditivo** (a contagem de uma amostra futura), enquanto `estimar()` devolve o **intervalo posterior** sobre a taxa latente. São objetos diferentes com coberturas diferentes. A §7 refaz a medida sobre o objeto certo, e o resultado é menos favorável em *n* alto — o intervalo é honesto até ~50 respostas e **fica estreito demais depois disso**.
+**Base:** EdNet KT3 · **Módulos:** [`dificuldade.py`](../../trailup_core/dificuldade.py), [`ritmo.py`](../../trailup_core/ritmo.py) · **Histórico de correções:** [apêndice](#apêndice--o-que-mudou-e-por-quê)
 
 ---
 
@@ -76,9 +74,9 @@ taxa estimada = (acertos + a) / (respostas + a + b)
 
 onde `Beta(a, b)` é o **prior** — o que se sabe sobre uma questão antes de ela receber qualquer resposta.
 
-### O prior sai do dado, e o meu estava errado
+### O prior sai do dado
 
-Eu vinha usando **força 15, escolhida no olho**. `derivar_prior()` faz a conta certa: casa os momentos da distribuição real de dificuldade do corpus e **desconta o ruído binomial** (parte da variância observada entre questões é só amostragem, não diferença real de dificuldade).
+`derivar_prior()` faz a conta: casa os momentos da distribuição real de dificuldade do corpus e **desconta o ruído binomial** (parte da variância observada entre questões é só amostragem, não diferença real de dificuldade).
 
 Resultado no EdNet: **Beta(4,94 , 2,02) — força 7,0**, média 0,709.
 
@@ -89,7 +87,7 @@ O efeito de errar o prior, medido (cobertura nominal de 90%, n=30, contra a verd
 | 0 (sem encolhimento) | 74,6% | [73,0% – 76,2%] | 0,237 |
 | 3 | 73,6% | [72,0% – 75,1%] | 0,233 |
 | **7,2 (derivado)** | 72,2% | [70,6% – 73,8%] | 0,224 |
-| **15 ← o que eu usava** | 64,5% | [62,8% – 66,2%] | 0,211 |
+| 15 | 64,5% | [62,8% – 66,2%] | 0,211 |
 | 30 | 53,0% | [51,2% – 54,8%] | 0,187 |
 | 60 | 40,4% | [38,6% – 42,1%] | 0,155 |
 
@@ -146,9 +144,9 @@ A correção vale 1,5 a 2,4 pontos de cobertura ao custo de ~5% de largura. **Us
 
 ## 7. Cobertura: o intervalo é honesto até ~50 respostas
 
-**Correção em relação à versão anterior deste documento.** A tabela publicada antes media a cobertura de um intervalo **preditivo** — construído com `betabinom` para conter a *contagem* de uma amostra futura. Mas `estimar()` devolve um intervalo **posterior sobre a taxa latente**. São objetos distintos: o preditivo é mais largo, porque inclui o ruído de amostragem do futuro. Validar um e publicar o outro faz o documento afirmar mais do que o código entrega.
+`estimar()` devolve um intervalo **posterior sobre a taxa latente** — não um intervalo preditivo sobre a contagem de uma amostra futura. São objetos distintos, com coberturas distintas, e a medida abaixo é sobre o que o código de fato devolve.
 
-Medida refeita sobre o objeto certo, com respostas reais (as *n* primeiras de cada questão, na ordem em que chegaram), verdade nas ≥200 seguintes:
+Medido com respostas reais (as *n* primeiras de cada questão, na ordem em que chegaram), verdade nas ≥200 seguintes:
 
 | n | questões | **cobertura posterior (nominal 90%)** | IC 95% | largura | erro absoluto | *(cobertura preditiva)* |
 |---|---|---|---|---|---|---|
@@ -166,7 +164,7 @@ Medida refeita sobre o objeto certo, com respostas reais (as *n* primeiras de ca
 
 **Consequência prática:** o regime do TrailUp (turma de 30, talvez 60) está exatamente na faixa em que o intervalo é honesto. Quem for usar isto com milhares de respostas por questão precisa de um modelo hierárquico, não deste.
 
-*(As colunas em itálico mostram o preditivo, para comparação com a versão anterior. Ele se mantém próximo do nominal por mais tempo — mas não é o que o código devolve.)*
+*(A coluna em itálico mostra a cobertura preditiva, para comparação. Ela se mantém próxima do nominal por mais tempo — mas não é o que o código devolve.)*
 
 ### Sem dependência
 
@@ -254,9 +252,9 @@ Só o HDBSCAN é estável, e dá a melhor silhueta: **0,470**, contra 0,446 do k
 
 E o "ruído" (14,3%) não é um terceiro grupo: é a **cauda** — desvio de acerto 0,22 contra 0,15 dos grupos, latência mediana de 80 s.
 
-**Conclusão que corrige a versão anterior:** o eixo do **tempo** tem estrutura discreta real (d = 3,30 é separação enorme); o eixo do **acerto** é contínuo (d = 0,50). Meu `k=4` impôs uma grade 2×2 e batizou os quadrantes (`armadilha`, `travamento`) com nomes que sugeriam entidades que o dado não separa.
+**Conclusão:** o eixo do **tempo** tem estrutura discreta real (d = 3,30 é separação enorme); o eixo do **acerto** é contínuo (d = 0,50). Um `k=4` impõe uma grade 2×2 e batiza os quadrantes (`armadilha`, `travamento`) com nomes que sugerem entidades que o dado não separa.
 
-Isso explica um resultado que eu tinha reportado sem entender: o classificador acertava **99% no eixo do tempo e 83% no eixo do acerto**. Não era um eixo mais fácil — era estrutura real contra grade imposta.
+Isso explica um resultado que antes parecia arbitrário: o classificador acertava **99% no eixo do tempo e 83% no eixo do acerto**. Não era um eixo mais fácil — era estrutura real contra grade imposta.
 
 ### A fronteira, e quão barata ela é
 
@@ -403,3 +401,26 @@ Com **uma turma passando uma vez** pela atividade você já tem: o ritmo de toda
 - **Questão personalizada não grava em `questao_aluno`** (`QuestionActivity.tsx:1281`) — sem corrigir isso, a maior parte das questões do fluxo adaptativo nunca acumula resposta e fica indeterminada para sempre.
 - **A fronteira de 40 s é do EdNet**, onde a latência é do `enter` do bundle até responder. O TrailUp tem `time_metrics.activities[].active_sec`, que já desconta ociosidade acima de 15 s — mais limpo, mas a fronteira teria de ser reencontrada.
 - **A taxa de troca de alternativa não existe no TrailUp** (exigiria emitir `answer_change`). Ela entrou no agrupamento, mas não é o que separa — sua ausência não invalida a estrutura.
+
+---
+
+## Apêndice — o que mudou, e por quê
+
+**A tabela de cobertura validava o objeto errado.** A versão anterior media a cobertura de um intervalo **preditivo** — construído com `betabinom` para conter a *contagem* de uma amostra futura. Mas `estimar()` devolve um intervalo **posterior sobre a taxa latente**. O preditivo é mais largo, porque inclui o ruído de amostragem do futuro; validar um e publicar o outro faz o documento afirmar mais do que o código entrega.
+
+Refeita sobre o objeto certo (§7), a cobertura é **nominal até n≈30** e cai depois: 84,1% em n=100 e 77,6% em n=200. O intervalo é estreito demais com muita evidência, porque o modelo binomial assume taxa fixa e a dificuldade de uma questão não é constante entre coortes.
+
+**Não morde no regime do TrailUp** (turma de 30 a 60), mas estava afirmado errado.
+
+**O prior de força 15 vinha de escolha no olho**, não do corpus. `derivar_prior()` dá **força 7,0** no EdNet, e o efeito de errar isso está medido na §4: com força 15 o intervalo de 90% cobre 64,5%.
+
+**O `k=4` das questões era grade imposta.** A versão anterior nomeava quadrantes (`armadilha`, `travamento`) de uma grade 2×2. Os métodos que descobrem a quantidade de grupos encontram **2**, separados pelo tempo — e o eixo do acerto é contínuo (§10).
+
+### Números que mudaram entre versões
+
+| | antes | final |
+|---|---|---|
+| cobertura em n=30 | "89,4%" (preditiva) | **89,3%** (posterior) |
+| cobertura em n=200 | "87,9%" (preditiva) | **77,6%** (posterior) |
+| prior | força 15, no olho | **força 7,0**, derivada do corpus |
+| grupos de questões | 4, nomeados | **2**, separados pelo tempo |

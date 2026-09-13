@@ -1,8 +1,6 @@
 # M1 — estado de estudo: resultado negativo, e o que funciona no lugar
 
-**Data:** 2026-09-12, revisto em 2026-09-13 · **Base:** ARES / OSF 8y3zp · **Modelo:** `m1_model.pkl` (2 KB)
-
-> **Revisão de 2026-09-13.** A §6 é nova e muda a leitura do resultado positivo: a "base pessoal do aluno", que dava AUC 0,784, **não distingue nada dentro de um mesmo aluno** (AUC intra-aluno 0,379). Ela mede estilo de resposta, não estado. O único sinal que funciona por dentro é a dificuldade do texto.
+**Base:** ARES / OSF 8y3zp · **Modelo:** `m1_model.pkl` (2 KB) · **Histórico de correções:** [apêndice](#apêndice--o-que-mudou-e-por-quê)
 
 ---
 
@@ -142,7 +140,7 @@ Nenhuma família, nenhum conjunto de features, nenhum alvo passa de 0,53.
 
 ## 7. O teste que faltava: a base pessoal é estilo, não estado
 
-O resultado "base pessoal AUC 0,784" parecia o achado positivo do estudo. Ele exige um teste que eu não tinha feito.
+O resultado "base pessoal AUC 0,784" parece o achado positivo do estudo. Não é, e o teste que separa as duas coisas é simples.
 
 A suspeita: a base pessoal é a média das declarações anteriores daquele aluno. Se existe aluno que **marca 4 em tudo** e aluno que **marca 2 em tudo**, ela acerta muito só separando os dois tipos de pessoa — sem nunca dizer *qual leitura* foi difícil para um aluno específico. E é exatamente isso que o produto precisa saber.
 
@@ -215,3 +213,23 @@ Com zero check-ins o intervalo inclui 0,50 — na primeira leitura o modelo não
 - **Não testado:** sequência dentro da leitura (padrão temporal em vez de agregado). O estudo previa HMM sobre a sequência de verbos; com o agregado tão perto do acaso o retorno esperado é baixo, mas não está descartado.
 
 - **Sem grupo de controle.** Observacional. Nada aqui autoriza inferência causal.
+
+---
+
+## Apêndice — o que mudou, e por quê
+
+**A "base pessoal do aluno" foi publicada como achado positivo, e não é.** A primeira versão deste relatório reportava AUC 0,784 para ela e a apresentava como o que salvava o slot M1 — a conclusão era "o comportamento não prediz, mas a linha de base do aluno sim".
+
+Faltava um teste: o **AUC intra-aluno** (§7). Ele dá **0,379**, abaixo de 0,50. Toda a capacidade preditiva dela é diferença *entre pessoas* — separa quem reclama de quem não reclama — e ela não distingue qual leitura foi difícil para um aluno específico, que é o que o produto precisa saber.
+
+O que sobrevive ao teste por dentro é a **dificuldade do texto** (0,654), medida na turma.
+
+**Consequência:** o desenho do M1 não muda (o comportamento continua sendo acaso), mas a leitura do que resta muda bastante. A base pessoal serve para **calibrar a escala** do check-in de cada aluno, não para afirmar estado.
+
+### Números que mudaram entre versões
+
+| | antes | final |
+|---|---|---|
+| comportamento | "AUC ~0,53" | 0,505, IC [0,474 – 0,535] |
+| base pessoal | 0,784 — o achado positivo | 0,784 geral, **0,379 intra-aluno** — é estilo |
+| dificuldade do texto | 0,589, coadjuvante | 0,581 geral, **0,654 intra-aluno** — é o sinal real |
