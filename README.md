@@ -8,7 +8,7 @@ O TrailUp hoje dispara de 8 a 14 chamadas ao Gemini por lote de telemetria de 60
 
 ```bash
 python3 exemplos/exemplo.py     # os módulos trabalhando juntos
-python3 -m pytest tests/ -q     # 135 testes de invariante
+python3 -m pytest tests/ -q     # 136 testes de invariante
 
 python3 docs/auditoria/scripts/70_consistencia.py   # números divergentes entre arquivos
 python3 docs/auditoria/scripts/79_cobertura.py      # símbolo público sem teste
@@ -124,6 +124,14 @@ No OULAD, com limiar 0,5, o modelo **alerta ninguém e acerta 92,9%** — a mesm
 Por isso `risco()` recebe **taxa de alerta**, não limiar: alertar os 10% de maior risco dá precisão de 95,1% no EdNet e 39,7% no OULAD, com a mesma régua de ordenação.
 
 ---
+
+## Como isto foi verificado
+
+O pacote passou por uma auditoria de **13 rodadas**: cada número dos cabeçalhos remedido chamando o próprio código, depois fuzzing com entrada hostil, monotonicidade ao longo do domínio inteiro, cobertura símbolo a símbolo da API e consistência entre documentos.
+
+**97 verificações, 49 defeitos** — e nenhum deles apareceria olhando AUC. O padrão: **as saídas que só ordenam passaram sem defeito; as que têm unidade prometiam mais do que alguém tinha medido.**
+
+Cinco verificadores rodam **sem dataset** e falham se o contrato quebrar — ver [`docs/auditoria/`](docs/auditoria/AUDITORIA.md) e o [histórico completo](docs/TRAJETORIA.md).
 
 ## O que **não** está aqui, e por quê
 

@@ -2,6 +2,8 @@
 
 Estado em 2026-09-13. Tudo medido sobre os datasets de referência; o banco do TrailUp está vazio.
 
+Os módulos construídos passaram depois por uma [auditoria de 13 rodadas](auditoria/AUDITORIA.md) — 97 verificações, 49 defeitos corrigidos. Os números abaixo são os **pós-auditoria**.
+
 ---
 
 ## Construídos e no módulo
@@ -11,12 +13,13 @@ Implementações em [`modulo/`](../README.md), sem dependência.
 | Modelo | Medida | Custo |
 |---|---|---|
 | dificuldade da questão (intervalo) | cobertura nominal; ±11 pts com 30 respostas | 30 alunos |
-| ritmo da questão | 98% de acerto | 5 alunos |
-| tempo esperado de resposta | R² 0,571 | 5 alunos |
-| domínio no tópico | AUC 0,721 (regra atual 0,586) | histórico |
+| ritmo da questão | 97,3% de acerto | 5 alunos |
+| tempo esperado de resposta | R² 0,578 | 5 alunos |
+| domínio no tópico | AUC 0,727 / ECE 0,008 (regra atual 0,587) | histórico |
 | detecção de chute | traço, +0,922 | 50 respostas |
-| curva de esquecimento / revisão | 585 mil reencontros | nenhum |
-| discriminação (questão quebrada) | pronto; ver ressalva | 40 respostas |
+| curva de esquecimento / revisão | AUC 0,669 / ECE 0,015 | nenhum |
+| discriminação (questão quebrada) | 25% de precisão (lift 7,1×) com `confirmar()` | 40 respostas |
+| gate (quando abrir a LLM) | AUC 0,732 (regra atual 0,687) | 5 respostas |
 | risco de evasão (SQL) | AUC 0,783; lift 4,1× no top 10% | semanas |
 | engajamento (3 eixos) | AUC 0,805 para retenção em 30 dias | 30 respostas |
 | pré-avaliação rápida de resposta | Spearman 0,483 (teto ≈0,88) | nenhum |

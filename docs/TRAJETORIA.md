@@ -2,7 +2,9 @@
 
 Um documento por modelo existe em `docs/`. Este aqui é o caminho: o que foi tentado, o que caiu, e por quê. Serve para não repetir tentativa já refutada, e para auditar de onde vem cada número.
 
-**Estado em 2026-09-13:** 9 módulos em uso, 7 hipóteses descartadas, 1 na fila.
+**Estado em 2026-09-13:** 10 módulos em uso, 7 hipóteses descartadas, 1 na fila, 136 testes, 5 verificadores automáticos.
+
+Este documento tem duas partes: **como cada modelo chegou ao estado atual** (§1 a §10) e **a auditoria que veio depois** — 97 verificações, 49 defeitos, todos corrigidos.
 
 ---
 
@@ -313,32 +315,72 @@ Entra `esperado_de_amostra()` com média do log, +0,004. É menos robusto a outl
 
 ## A auditoria de 2026-09-13
 
-Depois de todas as melhorias, cada número dos cabeçalhos foi remedido **chamando as funções do módulo**. 23 verificações, **10 defeitos** — e o padrão é único:
+Depois das melhorias, veio uma auditoria em **13 rodadas**. Cada número dos cabeçalhos foi remedido **chamando as funções do módulo**; depois vieram fuzzing, monotonicidade, cobertura de API e consistência entre documentos.
 
-> **Toda vez, uma saída afirmando uma escala que ninguém mediu.**
+**97 verificações. 49 defeitos.** Nenhum deles apareceria olhando AUC.
 
-E o corte é limpo: **as saídas que só ordenam passaram sem defeito** (`discriminacao`, `trajetoria`, `perfil_chute`, `cobertura`, `conceitos_faltando`). Os 14 defeitos estão todos em saídas com **unidade** — confiança, probabilidade, prazo em dias, soma em segundos, taxa de disparo, porcentagem. Unidade é promessa, e cada promessa precisava de medida própria.
+### As rodadas, e o que cada uma atacou
+
+| rodada | ataque | defeitos |
+|---|---|---|
+| 1–3 | os números dos cabeçalhos, remedidos chamando o código | 3 |
+| 4 | `dominio`: probabilidade e confiança nunca calibradas | 2 |
+| 5 | limiares que dependem da escala recalibrada | 1 |
+| 6 | somas e agregações (`duracao_prevista`) | 1 |
+| 7 | promessas implícitas nos nomes (`prioridade_revisao`) | 1 |
+| 8 | constantes estabelecidas sem base | 2 |
+| 9 | **as minhas próprias afirmações da auditoria** | 4 |
+| 10 | interações entre módulos e bordas | 5 |
+| 11 | fuzzing com entrada hostil | 21 |
+| 12 | faixas do SQL e monotonicidade no domínio inteiro | 3 |
+| 13 | convenção de sinal do pacote | 2 |
+
+### Os quatro padrões
+
+**1. Unidade é promessa.** As saídas que só **ordenam** passaram sem defeito — `discriminacao`, `trajetoria`, `perfil_chute`, `cobertura`. Os defeitos estão todos em saídas com **unidade**: confiança, probabilidade, prazo em dias, soma em segundos, taxa de disparo, porcentagem. Um score que ordena não pode mentir sobre magnitude; um número com unidade mente por omissão se ninguém mediu a magnitude.
 
 | onde | afirmava | era |
 |---|---|---|
 | `ritmo._CONF` | confiança 1,00 em n=21 | teto real 0,997 |
-| `ritmo.__str__` | exibia "100%" | arredondamento de 0,997 |
-| `engajamento.risco` | dispara na taxa pedida | estoura para 27,5% |
 | `evasao.sql` | probabilidade de evasão | **11× maior que a real** |
-| `evasao.sql` | sumir aumenta o risco | coeficiente invertido |
 | `dominio.p` | probabilidade | ECE 0,056, comprimida |
-| `dominio.confianca` | confiança cresce com n | o erro real é plano |
-| `precisa_reforco` | limiar 0,45 | passou de 2,3% a 12,2% |
+| `dominio.confianca` | cresce com n | o erro real é plano |
 | `duracao_prevista` | soma de medianas | subestima 13% |
-| `prioridade_revisao` | onde revisar rende mais | só mede esquecimento |
+| `dias_ate_revisar` | retém X% no dia N | entrega X−4 pontos |
+| `pre_avaliacao.divagacao` | % de divagação | mediana é 0,72 |
 
-Três conferiram exatamente: `perfil_chute`, a tabela `REFERENCIA` do engajamento e o limite de 3× do `demorando`.
+**2. Consertar uma escala deixa órfão quem corta nela.** Aconteceu **três vezes**: `precisa_reforco` (2,3% → 12,2% de disparo), o limiar de `tendencia` (passaria a disparar com metade da evidência) e as faixas do `evasao.sql` (que ficaram pegando **0,27%** dos casos — precisão alta, cobertura nula).
 
-**Nenhum desses aparece olhando AUC** — que era a única métrica que este estudo vinha reportando. Ordenação pode estar certa com a escala inteira errada, e foi o caso em 7 dos 10.
+**3. Corrigir um sintoma sem varrer os vizinhos.** O parâmetro com nome invertido apareceu no `gate`; eu corrigi e **não olhei o `dominio`**, que tinha o mesmo defeito no parâmetro principal. Passar 0,9 como "questão difícil" devolvia `p = 0,890`. A raiz era uma convenção do pacote inteiro — dificuldade é sempre **taxa de acerto** — agora declarada no `__init__.py`.
+
+**4. Afirmar cobertura sem enumerar.** Disse três vezes que "está tudo auditado". Nas três, escrever um script que checasse me desmentiu: o mapa de cobertura achou **16 símbolos sem teste**, incluindo `chute.foi_chute`, a função principal daquele módulo.
+
+### Os defeitos que só o fuzzing acharia
+
+**21 propagações de NaN e infinito.** A pior: `discriminacao` devolve NaN como sentinela de "não deu para medir" — inclusive quando **todo mundo acertou**, que é comum em dado real. E `NaN < limiar` é `False`, então `confirmar()` classificava a questão não-mensurável como **"não suspeita"**, em silêncio.
+
+### O que a auditoria confirmou
+
+Oito medidas passaram sem ajuste: `perfil_chute` (p90 0,0196 contra 0,020 declarado), a tabela `REFERENCIA` do engajamento (diferença 0,000), o limite de 3× do `demorando`, `gate.MIN_RESPOSTAS = 5` (é o cotovelo exato), a aproximação normal do `dificuldade` (cobertura 75,3% contra 74,8% do Beta), `cobertura` e `conceitos_faltando` do `pre_avaliacao`, e `ritmo.FRONTEIRA_SEG = 40 s` — que é praticamente o corte ótimo por Otsu (**39,8 s**), com d de Cohen **maior** que o documentado (4,18 contra 3,30).
+
+### Uma melhoria que teria piorado o sistema
+
+`JANELA_RECENTE = 10` parecia sub-ótimo: o eixo isolado vai de 0,810 para **0,824** com 14 dias. Recomputei tudo para trocar — e o **modelo compartilhado desabou** de 0,856 para 0,812, com o peso da frequência ficando **negativo**. Otimizar a parte degradava o todo em 0,044. Mantido em 10, agora com base medida.
+
+### Os cinco verificadores permanentes
+
+Rodam **sem dataset** e falham se alguém quebrar o contrato:
+
+| script | pega |
+|---|---|
+| `70_consistencia.py` | o mesmo número citado com valores diferentes (10 métricas) |
+| `79_cobertura.py` | símbolo público sem teste |
+| `80_fuzz.py` | NaN ou infinito vazando |
+| `82_monotonia.py` | direção quebrada ao longo do domínio |
+| `pytest` | 136 invariantes |
 
 Detalhes em [`auditoria/AUDITORIA.md`](auditoria/AUDITORIA.md).
 
----
 
 ## Os erros, agrupados por tipo
 
@@ -352,8 +394,11 @@ Sete afirmações publicadas estavam erradas. O padrão importa mais que a lista
 | **alvo errado** | desfecho verdadeiro para 100%; proxy do gate pior que a regra |
 | **contaminação de dado** | 21,7% do rótulo; vazamento por aspas de shell |
 | **controle ausente** | base pessoal sem teste intra-aluno; trajetória sem fixar o total |
-| **escala não medida** | os 10 da auditoria acima — confiança, probabilidade, soma, limiar |
+| **escala não medida** | confiança, probabilidade, prazo, soma, taxa, porcentagem — 7 casos |
+| **escala consertada, limiar órfão** | `precisa_reforco`, `tendencia`, faixas do `evasao.sql` — 3 casos |
+| **nome que inverte o sentido** | `gate.risco` e `dominio.dominio` recebendo facilidade como "dificuldade" |
+| **entrada hostil** | 21 propagações de NaN e infinito |
 
 Quatro dos sete só apareceram porque **a segunda base derrubou o achado da primeira**, ou porque um **placebo** foi incluído. Nenhum apareceria com mais ajuste de modelo.
 
-E os dez da auditoria só apareceram porque alguém **chamou o código em vez de ler a documentação**. Há um verificador de consistência permanente em [`auditoria/scripts/70_consistencia.py`](auditoria/scripts/70_consistencia.py) que roda sem dataset e compara os números entre módulo e documentos — foi assim que três divergências restantes apareceram depois da auditoria.
+E os 49 da auditoria só apareceram porque alguém **chamou o código em vez de ler a documentação**, e depois o atacou com entrada hostil, varreu o domínio inteiro e enumerou a API símbolo por símbolo. Há um verificador de consistência permanente em [`auditoria/scripts/70_consistencia.py`](auditoria/scripts/70_consistencia.py) que roda sem dataset e compara os números entre módulo e documentos — foi assim que três divergências restantes apareceram depois da auditoria.
