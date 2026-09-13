@@ -128,6 +128,35 @@ from dataclasses import dataclass, field
 from math import log
 
 JANELA_DIAS = 30        # janela de observacao
+# JANELA_RECENTE = 10 foi escolhido sem medida. Varrido em 2026-09-13, e a
+# conclusao e um aviso: OTIMIZAR O EIXO SOZINHO PIORA O SISTEMA.
+#
+# O eixo isolado (AUC contra retencao, IC95 por bootstrap):
+#
+#     janela    EdNet                OULAD
+#        5      0,767 [0,760-0,773]  0,834 [0,825-0,842]
+#        7      0,789 [0,782-0,795]  0,857 [0,847-0,864]
+#       10      0,810 [0,805-0,818]  0,863 [0,854-0,870]   <- padrao
+#       14      0,824 [0,818-0,830]  0,862 [0,853-0,870]
+#       20      0,827 [0,821-0,833]  0,847 [0,837-0,856]
+#       30      0,799 [0,791-0,806]  0,811 [0,800-0,820]
+#
+# Por ai, 14 parece melhor: ganha 0,014 no EdNet e empata no OULAD. MAS o que
+# o modulo entrega e `ordenar()`, o modelo compartilhado pelas duas bases - e
+# com janela 14 ele DESABA:
+#
+#     janela    modelo unico          so aquela base
+#       10      EdNet 0,856           0,854
+#       14      EdNet 0,812           0,853
+#       14      OULAD 0,855           0,855
+#
+# Com 14 dias a recencia ocupa metade da janela de 30 e fica colinear com a
+# frequencia - o peso da frequencia chega a ficar NEGATIVO (-0,025), sinal de
+# que o ajuste conjunto perdeu o pe. As duas bases divergem mais, e os pesos
+# compartilhados servem pior as duas.
+#
+# 30 e pior que tudo de 5 para cima nas duas bases: a janela cheia dilui, que
+# e o que sustenta a recencia existir como eixo separado da frequencia.
 JANELA_RECENTE = 10     # ultimos dias da janela que formam a recencia
 GAP_SESSAO_SEG = 1800   # inatividade que separa duas sessoes
 MIN_EVENTOS = 30        # abaixo disso os eixos sao ruido

@@ -524,3 +524,14 @@ def test_precisao_nos_extremos():
 def test_fronteira_do_ritmo_e_o_corte_otimo():
     """39,8 s é o ótimo por Otsu; o módulo usa 40,0."""
     assert abs(ritmo.FRONTEIRA_SEG - 39.8) < 1.0
+
+
+def test_janela_recente_menor_que_a_janela_total():
+    """A recência só existe como eixo separado se for parte da janela."""
+    assert 0 < engajamento.JANELA_RECENTE < engajamento.JANELA_DIAS
+
+def test_peso_da_recencia_domina():
+    """Medido: com janela 10 a recência pesa ~6x a frequência. Se a janela
+    crescer a ponto de colinearizar, o peso da frequência degenera."""
+    assert engajamento.PESOS['recencia'] > 4 * abs(engajamento.PESOS['frequencia'])
+    assert engajamento.PESOS['frequencia'] > 0, 'peso negativo = ajuste degenerado'

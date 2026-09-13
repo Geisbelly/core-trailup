@@ -10,7 +10,7 @@ Base: EdNet KT3, 6.504.124 respostas, acerto global 0,6677, split por aluno 70/3
 
 ## Resultado das 7 partes
 
-**25 verificações. 11 defeitos encontrados**, todos da mesma família: uma saída afirmando uma escala que ninguém mediu. Nenhum apareceria olhando AUC.
+**27 verificações. 11 defeitos encontrados**, todos da mesma família: uma saída afirmando uma escala que ninguém mediu. Nenhum apareceria olhando AUC.
 
 | onde | o que afirmava | o que era |
 |---|---|---|
@@ -342,6 +342,35 @@ O comentário dizia *"abaixo disso a mediana ainda oscila demais"*, sugerindo qu
 A distinção que faltava: **5 serve para o ritmo e não serve para o tempo.** Classificar rápida/lenta acerta 97,3% com 5 respostas porque o corte de 40 s fica longe da mediana da maioria das questões — um erro de 20% raramente atravessa a fronteira. Mas `esperado()` devolve a mediana **como duração**, e aí os 20% entram direto no número.
 
 Entra `tempo.precisao(n)`, que devolve o erro típico daquela estimativa, e o comentário passa a dizer o que a curva mostra: para ±10%, exija ~15 respostas; para ±8%, ~30.
+
+### A que eu ia "melhorar" e teria piorado o sistema
+
+`engajamento.JANELA_RECENTE = 10` foi escolhido sem medida, e é o eixo mais forte do módulo. Varrido nas duas bases:
+
+| janela | EdNet | OULAD |
+|---|---|---|
+| 5 | 0,767 | 0,834 |
+| 7 | 0,789 | 0,857 |
+| **10 (padrão)** | 0,810 | **0,863** |
+| **14** | **0,824** | 0,862 |
+| 20 | **0,827** | 0,847 |
+| 30 | 0,799 | 0,811 |
+
+Lido assim, **14 é melhor**: ganha 0,014 no EdNet com intervalos que mal se tocam, e empata no OULAD. Recomputei tudo que dependia de 10 — tabela `REFERENCIA`, pesos do ordenador, cortes — para trocar.
+
+**E o modelo compartilhado desabou:**
+
+| janela | modelo único | só aquela base |
+|---|---|---|
+| 10 | EdNet **0,856** | 0,854 |
+| **14** | EdNet **0,812** | 0,853 |
+| 14 | OULAD 0,855 | 0,855 |
+
+Com 14 dias a recência ocupa metade da janela de 30 e fica **colinear com a frequência** — o peso da frequência chega a ficar **negativo** (−0,025), sinal de ajuste degenerado. As duas bases divergem mais e os pesos compartilhados servem pior a ambas.
+
+> **Otimizar o eixo isolado piorava o sistema em 0,044.** É a segunda vez nesta sessão que afinar uma parte degrada o todo — a primeira foi a logística linear ganhando AUC e perdendo calibração. Um teste novo trava o sintoma: peso de frequência negativo é ajuste degenerado, e falha.
+
+E o **30 é pior que tudo de 5 para cima nas duas bases** — a janela cheia dilui. É isso que sustenta a recência existir como eixo separado da frequência.
 
 ### As que são arbitrárias e **não importam**
 
