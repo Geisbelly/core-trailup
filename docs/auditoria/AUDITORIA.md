@@ -10,7 +10,7 @@ Base: EdNet KT3, 6.504.124 respostas, acerto global 0,6677, split por aluno 70/3
 
 ## Resultado das 7 partes
 
-**97 verificações. 49 defeitos encontrados**, todos da mesma família: uma saída afirmando uma escala que ninguém mediu. Nenhum apareceria olhando AUC.
+**102 verificações. 49 defeitos encontrados**, todos da mesma família: uma saída afirmando uma escala que ninguém mediu. Nenhum apareceria olhando AUC.
 
 | onde | o que afirmava | o que era |
 |---|---|---|
@@ -703,6 +703,33 @@ Parâmetro renomeado para `acerto_na_questao`, com teste que verifica a coerênc
 ### E o verificador de consistência ganhou sete métricas
 
 Cobria três. Agora cobre dez, incluindo o **número de testes citado no README** — que já estava desatualizado (133 contra 135 reais) na primeira execução.
+
+---
+
+## Parte 14: os números dependem da semente?
+
+Todo número do módulo veio de **uma** partição (`random_state=7`). Se o resultado mudasse com a semente, a auditoria inteira estaria medindo ruído.
+
+`dominio` com os três termos, cinco sementes independentes de split por aluno:
+
+| semente | AUC (3 termos) | só a questão | taxa base do teste |
+|---|---|---|---|
+| 7 | 0,7284 | 0,7042 | 0,6690 |
+| 11 | 0,7276 | 0,7028 | 0,6697 |
+| 23 | 0,7284 | 0,7044 | 0,6724 |
+| 42 | 0,7270 | 0,7037 | 0,6698 |
+| 101 | 0,7245 | 0,6993 | 0,6709 |
+
+| | média | desvio | amplitude |
+|---|---|---|---|
+| 3 termos | **0,7272** | 0,0016 | 0,0039 |
+| só a questão | 0,7029 | 0,0021 | 0,0051 |
+
+**Afirmado no módulo: 0,727.** A média medida fica a 0,1 erro-padrão disso.
+
+**Confirma.** A amplitude entre sementes é de 4 milésimos — menor que qualquer diferença que o módulo afirma (o ganho do terceiro termo foi +0,005, e mesmo esse fica no limite). É o tipo de checagem que deveria vir antes de reportar qualquer melhoria de terceira casa decimal, e eu só fiz agora.
+
+> **Ressalva honesta:** isso valida a **estabilidade amostral dentro do EdNet**, não a transferência para outro corpus. São coisas diferentes, e só a segunda importa para o TrailUp.
 
 ---
 

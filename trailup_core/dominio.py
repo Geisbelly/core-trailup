@@ -13,6 +13,10 @@ Formula medida (EdNet, split por aluno):
     0,60 questao + 0,15 topico + 0,25 GLOBAL      AUC 0,727   <- esta
     modelo de boosting com 25 features            AUC 0,754
 
+ESTABILIDADE: o 0,727 nao depende da particao. Medido em 5 sementes
+independentes de split por aluno: 0,7284 / 0,7276 / 0,7284 / 0,7270 / 0,7245 -
+media 0,7272, desvio 0,0016, amplitude 0,0039. O numero e propriedade do dado.
+
 CALIBRACAO (auditoria de 2026-09-13): o `p` devolvido E probabilidade, com
 ECE 0,0083 apos a recalibracao. Antes dela o ECE era 0,0564 e o erro por decil
 chegava a 14 pontos - o numero afirmava ser probabilidade sem ser.
