@@ -73,6 +73,22 @@ Testadas 14 combinações. O global sozinho não ajuda; junto com o tópico, sim
 
 O módulo mantém **dois conjuntos de pesos**, porque os ótimos diferem: sem histórico global, 0,70/0,30; com ele, 0,60/0,15/0,25.
 
+**Lacuna fechada em 2026-09-13: o gate não estava no módulo.** Era o modelo mais relevante para o produto — a decisão de quando abrir a LLM — e só existia como boosting. Medido em 1.721.188 pontos de decisão (taxa base 12,2%):
+
+| critério | AUC | prec@5% | prec@10% | lift@10% |
+|---|---|---|---|---|
+| regra do TrailUp | 0,687 | **40,8%** | 32,9% | 2,7× |
+| acerto acumulado no tópico | 0,720 | 36,3% | 31,0% | 2,5× |
+| forma fechada (3 termos) | 0,725 | 37,0% | 33,0% | 2,7× |
+| **fechada + regra** | **0,732** | 40,0% | **33,9%** | **2,8×** |
+| boosting com 30 features | 0,779 | — | 41,7% | 3,4× |
+
+**A forma fechada sozinha tem AUC melhor que a regra e perde para ela no ponto de 5%** (37,0% contra 40,8%) — melhoria de ordenação global que não se traduz onde a decisão é tomada.
+
+A razão está na saturação. A regra prende 27,7% das estimativas no teto, o que a torna péssima como estimativa. Mas no extremo inferior a saturação **vira informação**: os 0,9% de alunos presos no piso têm **57,3%** de taxa de alvo contra 12,2% da base. A forma suave não marca esses casos.
+
+Daí o módulo combinar as duas, meio a meio. E daí a ressalva honesta: o boosting continua 0,047 de AUC acima, e 8 pontos de precisão acima no ponto de 10%.
+
 ---
 
 ## 3. Dificuldade da questão

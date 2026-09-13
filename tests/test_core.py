@@ -307,3 +307,28 @@ def test_retencao_rejeita_proporcao_invalida():
 def test_retencao_cai_com_o_tempo_para_quem_errou():
     v = [revisao.retencao(d, acertou_antes=False) for d in (1, 3, 7, 21, 60)]
     assert v == sorted(v, reverse=True)
+
+
+# ---------------- gate ----------------
+def test_gate_saturacao_preservada():
+    """A saturação é defeito na estimativa e informação no extremo. Manter."""
+    from trailup_core import gate
+    assert gate.sequencial([False] * 50) == gate.PISO
+    assert gate.sequencial([True] * 50) == gate.TETO
+
+def test_gate_risco_sobe_com_erro():
+    from trailup_core import gate
+    bom = gate.risco([True] * 10, acerto_global=0.8, dificuldade_media_topico=0.7)
+    ruim = gate.risco([False] * 10, acerto_global=0.3, dificuldade_media_topico=0.5)
+    assert ruim.score > bom.score
+
+def test_gate_nao_opina_com_pouca_evidencia():
+    from trailup_core import gate
+    r = gate.risco([False, False], acerto_global=0.3, dificuldade_media_topico=0.5)
+    assert not r.confiavel
+    assert gate.deve_disparar(r, limiar_da_coorte=0.0) is False
+
+def test_gate_pesos_somam_um():
+    from trailup_core import gate
+    assert gate.PESO_ACUMULADO + gate.PESO_SEQUENCIAL == pytest.approx(1.0)
+    assert gate.PESO_TOPICO + gate.PESO_GLOBAL + gate.PESO_DIF == pytest.approx(1.0)

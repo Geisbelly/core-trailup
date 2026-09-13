@@ -24,6 +24,7 @@ python3 -m pytest tests/ -q     # 20 testes de invariante
 | [`chute`](trailup_core/chute.py) | não sabe, ou não tentou? | traço com +0,922 de confiabilidade | 50 respostas na questão |
 | [`revisao`](trailup_core/revisao.py) | quando trazer de volta? | AUC 0,669 / ECE 0,015 em 752 mil reencontros | nenhum |
 | [`discriminacao`](trailup_core/discriminacao.py) | esta questão está quebrada? | 25% de precisão (lift 7,1×) com `confirmar()` | 40 respostas |
+| [`gate`](trailup_core/gate.py) | vale abrir a LLM agora? | AUC 0,732 (regra atual: 0,687) | 5 respostas no tópico |
 | [`engajamento`](trailup_core/engajamento.py) | o aluno vai continuar? | AUC 0,856 / 0,862 — **um modelo, duas bases** | 30 eventos |
 | [`pre_avaliacao`](trailup_core/pre_avaliacao.py) | esta resposta aberta está boa? | Spearman 0,463 (teto ≈0,88) | nenhum |
 | [`sql/evasao.sql`](sql/evasao.sql) | quem está em risco de abandonar? | lift 3,4× no top 10% | semanas de uso |
