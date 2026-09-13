@@ -258,3 +258,30 @@ def test_dominio_global_puxa_na_direcao_certa():
 def test_dominio_rejeita_global_impossivel():
     with pytest.raises(ValueError):
         dominio.dominio(0.45, 3, 8, acertos_totais=200, respostas_totais=150)
+
+
+# ---------------- discriminacao: confirmacao por metades ----------------
+def test_confirmar_exige_as_duas_metades():
+    assert discriminacao.confirmar(-0.10, -0.05) is True
+    assert discriminacao.confirmar(-0.30, +0.40) is False, 'uma metade só não basta'
+    assert discriminacao.confirmar(+0.20, +0.10) is False
+
+def test_confirmar_limiar_mais_exigente():
+    assert discriminacao.confirmar(-0.04, -0.04) is True
+    assert discriminacao.confirmar(-0.04, -0.04, limiar=-0.05) is False
+
+
+# ---------------- pre_avaliacao: conjunto de 10 features ----------------
+def test_pre_avaliacao_usa_dez_features():
+    assert len(pre_avaliacao._PESOS) == 10
+    assert 'n_nos' in pre_avaliacao._PESOS and 'n_arestas' in pre_avaliacao._PESOS
+
+def test_triar_poe_a_mais_fraca_primeiro():
+    gab = ('Inflacao e o aumento generalizado e continuo dos precos numa economia. '
+           'O banco central controla a inflacao elevando os juros.')
+    ref = pre_avaliacao.preparar(gab)
+    respostas = ['nao sei',
+                 'Inflacao e o aumento generalizado dos precos numa economia e o '
+                 'banco central controla elevando os juros']
+    ordem = [i for i, _ in pre_avaliacao.triar(respostas, ref)]
+    assert ordem[0] == 0, 'a resposta vazia tem de vir primeiro'

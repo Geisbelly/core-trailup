@@ -5,8 +5,9 @@ ordena respostas para o professor revisar.
 
 Medido no classEx (1.167 respostas, validacao agrupada por aluno):
 
-    esta versao (linear, sem dependencia)     Spearman 0,447 | QWK 0,325
-    boosting sobre as mesmas features         Spearman 0,482 | QWK 0,397
+    versao anterior (8 features)              Spearman 0,451 | QWK 0,318
+    esta versao (10 features, sem dependencia) Spearman 0,463 | QWK 0,350
+    boosting sobre as mesmas features         Spearman 0,429 | QWK 0,398
     + encoder multilingue (torch, ~900 MB)    Spearman 0,532 | QWK 0,433
     TETO: execucoes INDEPENDENTES do LLM      Spearman 0,871-0,897
 
@@ -27,6 +28,9 @@ O que ficou provado que NAO adianta, para nao ser tentado de novo:
   - enriquecer a referencia com conteudo do dominio: PIORA (0,486 -> 0,396)
   - mais dados de treino: curva plana (dobrar rendeu +0,030)
   - encoder pre-treinado: +0,057, e nao dispensa estas features
+  - CAMADA SEMANTICA (LSA sobre o corpus): nao acrescenta NADA. As 13 features
+    sem ela dao 0,459; as 15 com ela, 0,458. Todo o ganho do conjunto ampliado
+    vem de n_nos e n_arestas, que sao contagem pura (+0,014 e +0,015)
 
 ATENCAO AOS COEFICIENTES: foram ajustados em texto ALEMAO, de uma disciplina
 (macroeconomia). As FEATURES sao agnosticas de idioma - sao operacoes de
@@ -48,17 +52,25 @@ MIN_DOCS = 10         # abaixo disso nao da para estimar stopword por frequencia
 DF_STOPWORD = 0.5     # aparece em mais da metade dos documentos -> stopword
 
 # Ajustados por regressao ridge no classEx. Ver aviso no cabecalho.
+# Ridge sobre 10 features, validacao cruzada agrupada POR ALUNO (classEx).
+# Spearman 0,463 e QWK 0,350, contra 0,451 / 0,318 do conjunto de 8.
+#
+# NAO INTERPRETAR OS SINAIS ISOLADAMENTE. As features sao colineares e o ridge
+# distribui peso entre elas: 'divagacao' aparece positiva aqui e negativa na
+# versao de 8, sem que o construto tenha mudado. So a soma tem sentido.
 _PESOS = {
-    'no_peso':                +2.477797,   # cobertura ponderada dos conceitos do gabarito
-    'no_cobertura':           -0.565270,
-    'cob_conceitos_centrais': +0.776091,   # cobre os conceitos mais conectados?
-    'divagacao':              -0.110932,   # fala do que nao esta no gabarito nem no enunciado
-    'razao_tam':              +0.221495,
-    'aresta_cobertura':       -0.755983,
-    'aresta_peso':            -0.537722,
-    'log_len':                +0.317064,
+    'no_peso':                +1.986397,   # cobertura ponderada dos conceitos do gabarito
+    'no_cobertura':           +0.368581,
+    'cob_conceitos_centrais': +0.882276,   # cobre os conceitos mais conectados?
+    'divagacao':              +0.132323,
+    'razao_tam':              +0.250126,
+    'aresta_cobertura':       +0.658591,
+    'aresta_peso':            -2.120108,
+    'log_len':                +0.812077,
+    'n_nos':                  -0.013081,   # tamanho do grafo da resposta
+    'n_arestas':              -0.002815,
 }
-_INTERCEPTO = 1.251880
+_INTERCEPTO = -1.364109
 
 
 def _tokens(texto: str) -> list[str]:
@@ -157,6 +169,8 @@ def avaliar(resposta: str, ref: Referencia) -> PreAvaliacao:
         'aresta_cobertura': len(ei) / max(len(eg), 1),
         'aresta_peso': sum(min(ar[e], ref.arestas[e]) for e in ei) / tot_a,
         'log_len': math.log1p(len(str(resposta))),
+        'n_nos': float(len(sr)),
+        'n_arestas': float(len(er)),
     }
     nota = _INTERCEPTO + sum(_PESOS[k] * v for k, v in f.items())
     return PreAvaliacao(max(1.0, min(5.0, nota)), f['no_cobertura'], f['divagacao'],
@@ -166,8 +180,16 @@ def avaliar(resposta: str, ref: Referencia) -> PreAvaliacao:
 def triar(respostas: list[str], ref: Referencia) -> list[tuple[int, PreAvaliacao]]:
     """Ordena da mais fraca para a mais forte - o uso mais defensavel.
 
-    Medido: as 10 de menor previsao tem nota real media 2,33 contra 3,50 do
-    geral. Ordenar exige bem menos precisao que pontuar.
+    Medido (validacao agrupada por aluno, 1.167 respostas):
+
+        quantas piores   8 features   10 features   geral
+              5             2,20          1,80       3,50
+             10             2,10          2,10       3,50
+             20             2,37          2,03       3,50
+
+    Ordenar exige bem menos precisao que pontuar. A cauda ALTA fica um pouco
+    pior com 10 features (as 10 melhores: 4,37 -> 4,13) - o conjunto novo foi
+    escolhido pela cauda baixa, que e o uso declarado.
     """
     av = [(i, avaliar(r, ref)) for i, r in enumerate(respostas)]
     return sorted(av, key=lambda x: x[1].nota)

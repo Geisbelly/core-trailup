@@ -25,9 +25,23 @@ e GERADAS POR IA. Item com gabarito errado ou distrator ambiguo e esperado, nao
 excepcional - e este e um dos poucos metodos que deve valer MAIS no produto do
 que valeu no corpus de referencia.
 
-Por isso o limiar de exibicao e conservador: com precisao de 18-27% medida num
-corpus de prevalencia baixa, so vale sinalizar o que for extremo. A precisao
-sobe com a prevalencia - quanto, e questao empirica a medir no TrailUp.
+COMO MARCAR, MEDIDO (2026-09-13, 9.877 questoes, TRES particoes de alunos:
+duas para marcar e uma, nunca vista, para conferir). Alvo: ser negativa na
+terceira particao (prevalencia 3,53%).
+
+    regra (usa duas particoes)      marca   precisao          lift
+    negativa numa particao            239     13,8%           3,9x
+    negativa em p0 OU p1              549     12,2%           3,5x
+    media das duas < 0                132     25,0%           7,1x   <- use esta
+    negativa nas DUAS                  39     28,2%           8,0x
+    media das duas < -0,05             27     29,6%           8,4x
+
+Dividir os alunos em duas metades e exigir que a MEDIA seja negativa quase
+DOBRA a precisao (13,8% -> 25,0%) marcando metade das questoes. E o que
+`confirmar()` faz.
+
+A correlacao da discriminacao entre particoes independentes e de apenas 0,33 -
+por isso uma medida so erra tanto, e por isso a confirmacao ajuda tanto.
 
 Sem dependencia externa.
 """
@@ -70,3 +84,22 @@ def discriminacao(respostas: list[tuple[bool, float]],
     elif r < 0.05: v = 'fraca'       # nao separa ninguem
     else:          v = 'ok'
     return Discriminacao(round(r, 3), n, v)
+
+
+def confirmar(disc_metade_a: float, disc_metade_b: float,
+              limiar: float = 0.0) -> bool:
+    """Marca a questao como suspeita so quando as duas metades concordam.
+
+    Divida os alunos que responderam a questao em duas metades aleatorias,
+    calcule a discriminacao em cada uma, e passe as duas aqui.
+
+    Medido no EdNet contra uma terceira particao nunca vista: precisao 25,0%
+    (lift 7,1x) contra 13,8% de marcar por uma medida so. Com limiar -0,05 a
+    precisao vai a 29,6%, marcando um quinto das questoes.
+
+    A confirmacao importa porque a discriminacao de uma questao correlaciona
+    apenas 0,33 entre particoes independentes de alunos - uma medida isolada
+    e, em boa parte, ruido amostral.
+    """
+    media = (float(disc_metade_a) + float(disc_metade_b)) / 2.0
+    return media < limiar

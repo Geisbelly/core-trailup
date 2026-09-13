@@ -23,9 +23,9 @@ python3 -m pytest tests/ -q     # 20 testes de invariante
 | [`dominio`](trailup_core/dominio.py) | o aluno acerta a próxima? | AUC 0,727 (regra atual: 0,587) | histórico do aluno |
 | [`chute`](trailup_core/chute.py) | não sabe, ou não tentou? | traço com +0,922 de confiabilidade | 50 respostas na questão |
 | [`revisao`](trailup_core/revisao.py) | quando trazer de volta? | AUC 0,665 / ECE 0,021 em 223 mil reencontros | nenhum |
-| [`discriminacao`](trailup_core/discriminacao.py) | esta questão está quebrada? | marca com 18–27% de precisão | 40 respostas |
+| [`discriminacao`](trailup_core/discriminacao.py) | esta questão está quebrada? | 25% de precisão (lift 7,1×) com `confirmar()` | 40 respostas |
 | [`engajamento`](trailup_core/engajamento.py) | o aluno vai continuar? | AUC 0,856 / 0,862 — **um modelo, duas bases** | 30 eventos |
-| [`pre_avaliacao`](trailup_core/pre_avaliacao.py) | esta resposta aberta está boa? | Spearman 0,447 (teto ≈0,88) | nenhum |
+| [`pre_avaliacao`](trailup_core/pre_avaliacao.py) | esta resposta aberta está boa? | Spearman 0,463 (teto ≈0,88) | nenhum |
 | [`sql/evasao.sql`](sql/evasao.sql) | quem está em risco de abandonar? | lift 3,4× no top 10% | semanas de uso |
 
 Cada arquivo traz **no cabeçalho** os números que o sustentam, o experimento que os produziu, e o que já se provou que **não** adianta tentar.

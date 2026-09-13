@@ -156,7 +156,15 @@ A trajetória era o desenho certo — cada aluno é seu próprio controle, elimi
 
 **Teto corrigido.** O "0,899" era a concordância de uma execução do LLM com a **média das três, que a contém**. Entre execuções independentes: **≈0,88**.
 
-**Onde parou.** Linear sem dependência, Spearman 0,447 (boosting 0,482, encoder 0,532). **Só para ordenar**, nunca para nota — os pesos foram ajustados em alemão. Como triagem funciona: as 10 piores previstas têm nota real média 1,87 contra 3,50 do geral.
+**Melhoria de 2026-09-13.** Ampliando de 8 para 10 features: Spearman 0,451 → **0,463**, QWK 0,318 → **0,350**.
+
+Todo o ganho vem de `n_nos` e `n_arestas` — **contagem pura** do tamanho do grafo da resposta (+0,014 e +0,015 cada). E a **camada semântica não acrescenta nada**: 13 features sem LSA dão 0,459; as 15 com ela, 0,458.
+
+Escolhido pela **cauda baixa**, que é o uso declarado: as 20 piores previstas passam de nota real 2,37 para 2,03. A cauda alta piora um pouco (as 10 melhores, 4,37 → 4,13).
+
+> **Um vazamento evitado.** A primeira versão do teste pegou todas as colunas numéricas do arquivo — o que incluía `Run1_AI Evaluation`, `Run2_…` e `Style_Mean`, que são a avaliação do próprio LLM. Seria vazamento direto do alvo. O script agora tem lista explícita de features e um `assert` contra as colunas proibidas.
+
+**Onde parou.** Linear sem dependência, Spearman 0,463 (boosting 0,429 no mesmo conjunto, encoder 0,532). **Só para ordenar**, nunca para nota — os pesos foram ajustados em alemão. Como triagem funciona: as 10 piores previstas têm nota real média 1,87 contra 3,50 do geral.
 
 **Bug que quase passou:** `stopwords()` pegava as 60 palavras mais frequentes de dois textos curtos, o que zerava o grafo de referência e fazia a resposta puramente divagante tirar 5,0. Corrigido para frequência de documento com guarda de 10 textos.
 
@@ -169,6 +177,20 @@ A trajetória era o desenho certo — cada aluno é seu próprio controle, elimi
 **Como é fácil fabricar grupos falsos.** Trocando a transformação por quantis por `StandardScaler`, o resultado vira ARI 0,917 e silhueta 0,821 — grupos "sólidos". São a cauda de outliers separada do resto: d = 3,17 num eixo e **0,09 em outro**.
 
 **Bug corrigido.** "Zero questões com discriminação negativa" era comparação contra −1 em vez de 0. Real: 2,96% numa metade dos alunos, **0,53% confirmadas nas duas**.
+
+**Melhoria de 2026-09-13 — como marcar.** Com três partições de alunos (duas para marcar, uma nunca vista para conferir):
+
+| regra | marca | precisão | lift |
+|---|---|---|---|
+| negativa numa partição | 239 | 13,8% | 3,9× |
+| negativa em p0 **ou** p1 | 549 | 12,2% | 3,5× |
+| **média das duas < 0** | 132 | **25,0%** | **7,1×** |
+| negativa nas **duas** | 39 | 28,2% | 8,0× |
+| média das duas < −0,05 | 27 | 29,6% | 8,4× |
+
+Dividir os alunos em duas metades e exigir que a **média** seja negativa quase **dobra a precisão** marcando metade das questões. Entra `confirmar()`.
+
+A razão de funcionar: a discriminação correlaciona apenas **0,33** entre partições independentes. Uma medida isolada é, em boa parte, ruído amostral.
 
 ---
 
