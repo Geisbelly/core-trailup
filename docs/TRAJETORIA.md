@@ -317,6 +317,8 @@ Depois de todas as melhorias, cada número dos cabeçalhos foi remedido **chaman
 
 > **Toda vez, uma saída afirmando uma escala que ninguém mediu.**
 
+E o corte é limpo: **as saídas que só ordenam passaram sem defeito** (`discriminacao`, `trajetoria`, `perfil_chute`, `cobertura`, `conceitos_faltando`). Os 14 defeitos estão todos em saídas com **unidade** — confiança, probabilidade, prazo em dias, soma em segundos, taxa de disparo, porcentagem. Unidade é promessa, e cada promessa precisava de medida própria.
+
 | onde | afirmava | era |
 |---|---|---|
 | `ritmo._CONF` | confiança 1,00 em n=21 | teto real 0,997 |

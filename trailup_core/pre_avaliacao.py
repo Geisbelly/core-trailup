@@ -21,6 +21,23 @@ LIMITE DA ESCALA: as previsoes ficam entre 2,29 e 5,00. O modulo nao consegue
 dizer "muito ruim" - o piso efetivo e 2,3 numa escala de 1 a 5. Para triagem
 isso nao atrapalha (as 10 piores tem nota real 2,20 contra 3,50 do geral),
 mas nao use o valor absoluto como nota.
+
+OS TRES CAMPOS AUXILIARES, VALIDADOS SEPARADAMENTE (Spearman com a nota humana):
+
+    cobertura            +0,462   forte - quase o da nota inteira (+0,483)
+    conceitos_faltando   -0,410   forte
+    divagacao            -0,114   FRACO, e a escala engana
+
+DIVAGACAO NAO E O QUE O NOME SUGERE. E a fracao dos tokens da resposta que nao
+aparecem no gabarito nem no enunciado - e em prosa a maioria das palavras nao
+aparece mesmo (conectivos, exemplos, reformulacao). A distribuicao real:
+
+    p10 0,57 | mediana 0,72 | p90 0,83
+
+Ou seja: divagar 72% E O NORMAL. Exibir "divaga 72%" para um professor sobre
+uma resposta de nota 4 diz o oposto do que ele vai entender. Use apenas
+COMPARADO a mediana da propria turma, nunca em absoluto - e prefira
+`cobertura` e `conceitos_faltando`, que sao fortes e diretos.
     + encoder multilingue (torch, ~900 MB)    Spearman 0,532 | QWK 0,433
     TETO: execucoes INDEPENDENTES do LLM      Spearman 0,871-0,897
 
@@ -168,12 +185,12 @@ def preparar(gabarito: str, enunciado: str = '', stop: set[str] | None = None,
 class PreAvaliacao:
     nota: float                 # 1 a 5
     cobertura: float            # 0 a 1 - quanto do gabarito a resposta toca
-    divagacao: float            # 0 a 1 - quanto fala de fora
+    divagacao: float            # 0 a 1; mediana ~0,72 - NAO leia como % de divagacao
     conceitos_faltando: list[str]
     def __str__(self):
         falta = (', '.join(self.conceitos_faltando[:4]) or 'nenhum dos centrais')
         return (f'~{self.nota:.1f}/5 | cobre {self.cobertura:.0%} do gabarito, '
-                f'divaga {self.divagacao:.0%} | falta: {falta}')
+                f'fora do gabarito {self.divagacao:.0%} (tipico ~72%) | falta: {falta}')
 
 
 def avaliar(resposta: str, ref: Referencia) -> PreAvaliacao:
@@ -190,6 +207,8 @@ def avaliar(resposta: str, ref: Referencia) -> PreAvaliacao:
         'no_cobertura': len(ni) / max(len(sg), 1),
         'cob_conceitos_centrais': (sum(w in sr for w in ref.centrais) / len(ref.centrais)
                                    if ref.centrais else 0.0),
+            # fracao dos tokens fora do gabarito e do enunciado. Mediana ~0,72:
+        # NAO e "quanto o aluno divagou" - ver o cabecalho.
         'divagacao': len(sr - sg - ref.tokens_enunciado) / max(len(sr), 1),
         'razao_tam': len(sr) / max(len(sg), 1),
         'aresta_cobertura': len(ei) / max(len(eg), 1),

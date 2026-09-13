@@ -558,3 +558,22 @@ def test_margem_e_o_padrao():
 def test_alvo_alto_nao_estoura():
     """alvo + margem não pode passar de 1,0."""
     assert revisao.dias_ate_revisar(False, retencao_alvo=0.99) >= 0.0
+
+
+def test_divagacao_tipica_e_alta():
+    """Mediana medida ~0,72: em prosa a maioria das palavras não está no
+    gabarito. Uma resposta boa tem divagação alta, e isso é normal."""
+    gab = ('Inflacao e o aumento generalizado e continuo dos precos numa economia. '
+           'O banco central controla a inflacao elevando os juros.')
+    ref = pre_avaliacao.preparar(gab)
+    boa = pre_avaliacao.avaliar(
+        'A inflacao e quando os precos sobem de forma generalizada na economia, '
+        'e o banco central responde elevando a taxa de juros para conter isso', ref)
+    assert boa.divagacao > 0.3, 'resposta boa também tem divagação alta'
+
+def test_str_nao_chama_divagacao_de_divagacao():
+    """O rótulo antigo fazia 72% parecer alarme. Agora diz o que mede."""
+    gab = 'Inflacao e o aumento generalizado dos precos.'
+    ref = pre_avaliacao.preparar(gab)
+    texto = str(pre_avaliacao.avaliar('os precos sobem muito', ref))
+    assert 'fora do gabarito' in texto

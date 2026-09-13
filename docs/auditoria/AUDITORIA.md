@@ -10,7 +10,7 @@ Base: EdNet KT3, 6.504.124 respostas, acerto global 0,6677, split por aluno 70/3
 
 ## Resultado das 7 partes
 
-**31 verificações. 13 defeitos encontrados**, todos da mesma família: uma saída afirmando uma escala que ninguém mediu. Nenhum apareceria olhando AUC.
+**34 verificações. 14 defeitos encontrados**, todos da mesma família: uma saída afirmando uma escala que ninguém mediu. Nenhum apareceria olhando AUC.
 
 | onde | o que afirmava | o que era |
 |---|---|---|
@@ -27,8 +27,9 @@ Base: EdNet KT3, 6.504.124 respostas, acerto global 0,6677, split por aluno 70/3
 | `tempo.MIN_RESPOSTAS` | 5 respostas é estável | erro típico de 20% |
 | `engajamento.MIN_EVENTOS` | 30 eventos e os eixos funcionam | AUC 0,644, não 0,810 |
 | `dias_ate_revisar` | revise em N dias e retém X% | entrega X−4 pontos |
+| `pre_avaliacao.divagacao` | % de divagação | mediana é 0,72 — 72% é o normal |
 
-E seis que **conferiram**: `gate.MIN_RESPOSTAS = 5` (é o cotovelo exato: 0,534 abaixo dele, 0,660 nele), a aproximação normal do `dificuldade` (cobertura 75,3% contra 74,8% do Beta), `perfil_chute` (p90 e p99), a tabela `REFERENCIA` do engajamento (diferença 0,000), o limite de 3× do `demorando`, e `ritmo.FRONTEIRA_SEG` — cujo 40 s é praticamente o corte ótimo por Otsu (39,8 s), com d de Cohen **maior** que o documentado (4,18 contra 3,30).
+E oito que **conferiram**: `cobertura` (+0,462) e `conceitos_faltando` (−0,410) do `pre_avaliacao`, `gate.MIN_RESPOSTAS = 5` (é o cotovelo exato: 0,534 abaixo dele, 0,660 nele), a aproximação normal do `dificuldade` (cobertura 75,3% contra 74,8% do Beta), `perfil_chute` (p90 e p99), a tabela `REFERENCIA` do engajamento (diferença 0,000), o limite de 3× do `demorando`, e `ritmo.FRONTEIRA_SEG` — cujo 40 s é praticamente o corte ótimo por Otsu (39,8 s), com d de Cohen **maior** que o documentado (4,18 contra 3,30).
 
 ---
 
@@ -431,6 +432,28 @@ Entra `MARGEM_ALVO = 0,04`: o prazo passa a ser calculado para `alvo + margem`, 
 | 50+ | 3.801.801 | 0,738 |
 
 Abaixo de 5 o sinal é quase acaso. O corte está no lugar certo — e não era escolha justificada até esta medida.
+
+### `pre_avaliacao.divagacao` — o último, e confirma o padrão
+
+O módulo devolve três campos auxiliares como porcentagem, e só a nota tinha sido validada. Spearman com a nota humana:
+
+| campo | Spearman | |
+|---|---|---|
+| `cobertura` | **+0,462** | forte — quase o da nota inteira (+0,483) |
+| `conceitos_faltando` | **−0,410** | forte |
+| `divagacao` | **−0,114** | **fraco, e a escala engana** |
+
+`cobertura` é monotônica e interpretável (nota real 2,76 → 3,45 → 3,76 → 3,96 por faixa). `conceitos_faltando` também (3,94 → 3,15).
+
+**`divagacao` não é o que o nome diz.** É a fração dos tokens fora do gabarito e do enunciado — e em prosa a maioria das palavras está fora mesmo. A distribuição real:
+
+| p10 | mediana | p90 |
+|---|---|---|
+| 0,57 | **0,72** | 0,83 |
+
+**Divagar 72% é o normal.** O exemplo do módulo exibia *"divaga 22%"* como se fosse um valor comum; na prática 22% é excepcionalmente baixo. Um professor lendo "divaga 72%" sobre uma resposta de nota 4 entenderia o oposto.
+
+Corrigido: o rótulo passa a ser `fora do gabarito 45% (típico ~72%)`, o campo está marcado no dataclass, e dois testes travam — que uma resposta boa também tem divagação alta, e que a string não chama mais isso de divagação.
 
 ### As que são arbitrárias e **não importam**
 
