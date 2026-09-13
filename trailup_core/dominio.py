@@ -55,6 +55,12 @@ PRIOR_GLOBAL = 8           # encolhimento do acerto global
 # Correcao de Platt em dois parametros, ajustada no treino e medida no teste:
 #   ECE 0,0564 -> 0,0083   |   AUC inalterado (0,725)   |   faixa 0,21-0,95 -> 0,04-1,00
 # b ~ 2 diz o tamanho da compressao: a media linear encolhe o logito pela metade.
+#
+# PONTO FIXO = 0,6412, resolvendo a/(1-b) no logito. NAO e a taxa base do
+# corpus (0,6677) - uma correcao de Platt nao preserva a media. A expansao
+# acontece em torno de 0,6412: acima dele as previsoes SOBEM, abaixo DESCEM.
+# Como a taxa base (0,6677) fica acima do ponto fixo, a previsao media sobe um
+# pouco - o oposto de "a recalibracao centra na media do corpus".
 RECAL_A = -0.578273
 RECAL_B = +1.995671
 
@@ -70,7 +76,7 @@ class Dominio:
                 f'| {self.tendencia} (n={self.respostas_topico})')
 
 
-def incerteza(respostas: int, acertos: int = 0) -> float:
+def incerteza(respostas: int, acertos: int = 0, media_global: float = 0.67) -> float:
     """Desvio-padrao posterior da taxa do aluno no topico. E o que ENCOLHE com n.
 
     Medido no EdNet, por faixa de n no topico:
@@ -92,20 +98,20 @@ def incerteza(respostas: int, acertos: int = 0) -> float:
     Usa o posterior Beta para nao devolver zero quando o aluno acertou tudo ou
     errou tudo (com n=2 e taxa 0 ou 1, o desvio binomial daria 0).
     """
-    a = acertos + PRIOR_ALUNO * 0.67
-    b = (respostas - acertos) + PRIOR_ALUNO * 0.33
+    a = acertos + PRIOR_ALUNO * media_global
+    b = (respostas - acertos) + PRIOR_ALUNO * (1 - media_global)
     if b < 0:
         raise ValueError(f'acertos={acertos} incompativel com respostas={respostas}')
     return sqrt(a * b / ((a + b) ** 2 * (a + b + 1)))
 
 
-def confianca(respostas: int, acertos: int = 0) -> float:
+def confianca(respostas: int, acertos: int = 0, media_global: float = 0.67) -> float:
     """1 menos duas vezes a incerteza da taxa do aluno, limitado a [0, 0,95].
 
     Nunca chega a 1: com 201+ respostas a incerteza ainda e 0,022, e o teto
     honesto fica em 0,95.
     """
-    return round(min(0.95, max(0.0, 1 - 2 * incerteza(respostas, acertos))), 3)
+    return round(min(0.95, max(0.0, 1 - 2 * incerteza(respostas, acertos, media_global))), 3)
 
 
 def _recalibrar(p: float) -> float:
@@ -142,7 +148,7 @@ def dominio(dificuldade_questao: float, acertos_no_topico: int, respostas_no_top
     if p_anteriores and len(p_anteriores) >= 3:
         d = p - p_anteriores[-3]
         tend = 'subindo' if d > 0.03 else ('caindo' if d < -0.03 else 'estavel')
-    return Dominio(round(p, 3), confianca(n, acertos_no_topico), tend, n)
+    return Dominio(round(p, 3), confianca(n, acertos_no_topico, media_global), tend, n)
 
 
 def precisa_reforco(d: Dominio, limiar: float = 0.45, conf_minima: float = 0.70) -> bool:

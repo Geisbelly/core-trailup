@@ -144,7 +144,14 @@ def prever_turma(acertos: int, respostas: int, alunos_na_turma: int,
         raise ValueError('alunos_na_turma tem de ser >= 1')
     base = estimar(acertos, respostas, prior, nivel, alunos)
     z = Z[nivel]
-    var_post = ((base.maximo - base.minimo) / (2 * z)) ** 2
+    # variancia do POSTERIOR, recalculada. Derivar do intervalo seria errado:
+    # `estimar` clampa os limites em [0, 1], entao numa questao extrema (30/30)
+    # o intervalo sai truncado e a variancia inferida ficaria pequena demais -
+    # justo onde a incerteza e maior.
+    peso = 1.0 if alunos is None or respostas == 0 else alunos / respostas
+    pa = acertos * peso + prior.a
+    pb = (respostas - acertos) * peso + prior.b
+    var_post = pa * pb / ((pa + pb) ** 2 * (pa + pb + 1))
     mu = base.taxa
     var = var_post + mu * (1 - mu) / alunos_na_turma + SIGMA_COORTE ** 2
     desvio = sqrt(var)

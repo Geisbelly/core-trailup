@@ -10,7 +10,7 @@ Base: EdNet KT3, 6.504.124 respostas, acerto global 0,6677, split por aluno 70/3
 
 ## Resultado das 7 partes
 
-**34 verificações. 14 defeitos encontrados**, todos da mesma família: uma saída afirmando uma escala que ninguém mediu. Nenhum apareceria olhando AUC.
+**38 verificações. 18 defeitos encontrados**, todos da mesma família: uma saída afirmando uma escala que ninguém mediu. Nenhum apareceria olhando AUC.
 
 | onde | o que afirmava | o que era |
 |---|---|---|
@@ -28,6 +28,10 @@ Base: EdNet KT3, 6.504.124 respostas, acerto global 0,6677, split por aluno 70/3
 | `engajamento.MIN_EVENTOS` | 30 eventos e os eixos funcionam | AUC 0,644, não 0,810 |
 | `dias_ate_revisar` | revise em N dias e retém X% | entrega X−4 pontos |
 | `pre_avaliacao.divagacao` | % de divagação | mediana é 0,72 — 72% é o normal |
+| `dominio` ponto fixo | é a taxa base | é 0,6412, e a direção estava invertida |
+| `prever_turma` | variância do posterior | vinha do intervalo clipado |
+| `gate.risco` | parâmetro "dificuldade" | recebia facilidade — invertia o termo |
+| `dominio.incerteza` | usa a média global dada | fixava 0,67 e ignorava |
 
 E oito que **conferiram**: `cobertura` (+0,462) e `conceitos_faltando` (−0,410) do `pre_avaliacao`, `gate.MIN_RESPOSTAS = 5` (é o cotovelo exato: 0,534 abaixo dele, 0,660 nele), a aproximação normal do `dificuldade` (cobertura 75,3% contra 74,8% do Beta), `perfil_chute` (p90 e p99), a tabela `REFERENCIA` do engajamento (diferença 0,000), o limite de 3× do `demorando`, e `ritmo.FRONTEIRA_SEG` — cujo 40 s é praticamente o corte ótimo por Otsu (39,8 s), com d de Cohen **maior** que o documentado (4,18 contra 3,30).
 
@@ -194,7 +198,9 @@ Mesma família dos defeitos do SQL. `dominio.dominio` devolve `p` como *"probabi
 
 Sete vezes melhor, AUC intacto. O `b ≈ 2` mede a compressão: a média linear encolhia o logito pela metade.
 
-> **O ponto fixo é 0,646, não 0,5** — o corpus acerta 67%, e é em torno da taxa base que a expansão acontece. Um teste fixa isso, porque a intuição errada (expandir em torno de 0,5) passou primeiro.
+> **O ponto fixo é 0,6412** — resolvendo `a/(1−b)` no logito. **Não é 0,5 e não é a taxa base (0,6677).** Eu escrevi as duas coisas erradas: primeiro que era 0,5, depois que era a taxa base. Uma correção de Platt não preserva a média.
+>
+> A consequência tem sinal: acima de 0,6412 as previsões **sobem**, abaixo **descem**. Como a taxa base está acima do ponto fixo, a previsão média **sobe** — o oposto de "a recalibração centra na média do corpus". O teste antigo (`abs=0,01` contra 0,646) passava por folga.
 
 ### E `confianca` não media nada
 
@@ -486,6 +492,49 @@ Corrigido: o rótulo passa a ser `fora do gabarito 45% (típico ~72%)`, o campo 
 
 ---
 
+## Parte 9: varredura adversarial — quatro defeitos meus
+
+Atacando as afirmações mais frágeis que eu mesmo tinha escrito, em vez de repetir as checagens que já passavam.
+
+### 1. "O ponto fixo é a taxa base" — falso
+
+| | |
+|---|---|
+| ponto fixo analítico `a/(1−b)` | **0,6412** |
+| taxa base do corpus | 0,6677 |
+| o que eu afirmei (docstring, relatório, teste) | "é a taxa base" |
+
+Errei duas vezes seguidas no mesmo ponto: primeiro disse 0,5, depois disse a taxa base. E o teste que escrevi para "travar" isso usava `abs=0,01` contra 0,646 — **passava por folga sobre o valor errado**.
+
+Pior: a direção também estava errada no meu texto de correção. Acima do ponto fixo as previsões **sobem**; escrevi que desciam.
+
+### 2. `prever_turma` derivava a variância do intervalo **clipado**
+
+```python
+var_post = ((base.maximo - base.minimo) / (2 * z)) ** 2   # errado
+```
+
+`estimar()` clampa os limites em [0, 1]. Numa questão de **30/30** o posterior sai truncado em 1,0, a largura aparente encolhe, e a variância inferida fica **pequena demais — justo onde a incerteza é maior**.
+
+Corrigido para calcular a variância do posterior Beta diretamente, com teste que verifica que não há salto artificial de 29/30 para 30/30.
+
+### 3. `gate.risco` tinha um parâmetro cujo nome invertia o sentido
+
+O parâmetro se chamava `dificuldade_media_topico` e recebia **taxa de acerto** (facilidade). Medido:
+
+| valor passado | risco devolvido |
+|---|---|
+| 0,9 (lido como "muito difícil") | **0,837** |
+| 0,2 (lido como "muito fácil") | **0,890** |
+
+Quem lesse só a assinatura passaria a dificuldade e **inverteria o termo**. Renomeado para `acerto_medio_topico`, com teste que fixa a direção.
+
+### 4. `dominio.incerteza` ignorava `media_global`
+
+Fixava `0,67`/`0,33` no prior mesmo quando o chamador declarava outra média global — a confiança devolvida era idêntica com `media_global=0,20` e `0,90`. Corrigido e propagado até `dominio()`.
+
+---
+
 ## Mapa de cobertura da API, sem dataset
 
 ```bash
@@ -495,6 +544,8 @@ python3 docs/auditoria/scripts/79_cobertura.py
 Enumera **toda função pública e todo campo de dataclass** do pacote e checa se existe teste. Roda sem dataset, e falha se sobrar símbolo descoberto.
 
 **Foi escrito porque eu afirmei duas vezes que "está tudo auditado" sem conferir.** Na primeira execução apontou **16 símbolos sem teste**, incluindo `chute.foi_chute` — a função principal daquele módulo, usada em toda a auditoria e nunca testada diretamente.
+
+Fechado: **0 símbolos descobertos**. O script sai com código 1 se algum voltar.
 
 E o teste que escrevi para fechar a lacuna encontrou outra coisa: `ritmo.descrever(faixa, r)` recebe uma `dificuldade.Faixa` no primeiro parâmetro, não o rótulo do ritmo — e o parâmetro estava **sem anotação de tipo**, o que escondia isso de quem lesse a assinatura.
 

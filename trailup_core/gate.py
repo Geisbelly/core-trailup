@@ -97,14 +97,18 @@ def sequencial(acertos_em_ordem, inicial: float = 0.5) -> float:
     return v
 
 
-def risco(acertos_em_ordem, acerto_global: float, dificuldade_media_topico: float,
+def risco(acertos_em_ordem, acerto_global: float, acerto_medio_topico: float,
           media_global: float = 0.67) -> Risco:
     """Risco de o aluno travar neste topico nas proximas respostas.
 
     acertos_em_ordem         - lista de bool das respostas do aluno NESTE topico,
                                em ordem cronologica
     acerto_global            - taxa de acerto do aluno em TODOS os topicos
-    dificuldade_media_topico - taxa media de acerto das questoes ja vistas aqui
+    acerto_medio_topico      - taxa media de ACERTO das questoes ja vistas aqui
+                               (facilidade: 0,9 = topico facil). O nome anterior
+                               era `dificuldade_media_topico`, que invertia o
+                               sentido para quem lesse so a assinatura: passar
+                               0,9 como "muito dificil" REDUZIA o risco.
 
     O score nao e probabilidade calibrada: use-o para ORDENAR e corte no
     percentil da sua coorte, como em `engajamento.risco`.
@@ -113,7 +117,7 @@ def risco(acertos_em_ordem, acerto_global: float, dificuldade_media_topico: floa
     n = len(seq)
     ac_top = sum(seq) / n if n else media_global
     acumulado = (PESO_TOPICO * ac_top + PESO_GLOBAL * acerto_global
-                 + PESO_DIF * dificuldade_media_topico)
+                 + PESO_DIF * acerto_medio_topico)
     s = sequencial(seq)
     # os dois componentes medem ACERTO; o risco e o complemento
     score = PESO_ACUMULADO * (1 - acumulado) + PESO_SEQUENCIAL * (1 - s)

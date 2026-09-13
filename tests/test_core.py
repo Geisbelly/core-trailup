@@ -5,7 +5,7 @@ import sys, os, math
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 import pytest
 from trailup_core import dificuldade, ritmo, tempo, dominio, chute, revisao
-from trailup_core import discriminacao, engajamento, pre_avaliacao
+from trailup_core import discriminacao, engajamento, pre_avaliacao, gate
 
 
 # ---------------- dificuldade ----------------
@@ -261,16 +261,28 @@ def test_dominio_sem_global_usa_a_formula_de_dois_termos():
         (3 + 0.67 * dominio.PRIOR_ALUNO) / (8 + dominio.PRIOR_ALUNO))
     assert d.p == pytest.approx(round(esperado, 3))
 
-def test_recalibracao_expande_em_torno_da_taxa_base():
-    """A média linear comprime; a recalibração desfaz — mas o ponto fixo é a
-    taxa base (~0,65), não 0,5. O corpus acerta 67%, não metade."""
-    fixo = 0.646
+def test_recalibracao_expande_em_torno_do_ponto_fixo():
+    """A média linear comprime; a recalibração desfaz — em torno de 0,641,
+    que é o ponto fixo analítico, e não de 0,5 nem da taxa base."""
+    fixo = 0.6412
     for p in (0.25, 0.40, 0.80, 0.90):
         rec = dominio._recalibrar(p)
         assert abs(rec - fixo) > abs(p - fixo), f'p={p} não foi afastado da base'
 
-def test_recalibracao_tem_ponto_fixo_na_taxa_base():
-    assert dominio._recalibrar(0.646) == pytest.approx(0.646, abs=0.01)
+def test_ponto_fixo_da_recalibracao_nao_e_a_taxa_base():
+    """Eu afirmei que o ponto fixo era a taxa base. É falso: 0,641 contra
+    0,668. Platt não preserva a média, e o teste anterior passava por folga."""
+    import math
+    fixo = 1 / (1 + math.exp(-(dominio.RECAL_A / (1 - dominio.RECAL_B))))
+    assert fixo == pytest.approx(0.6412, abs=0.001)
+    assert abs(fixo - 0.6677) > 0.02, 'não confundir ponto fixo com taxa base'
+
+def test_recalibracao_expande_a_partir_do_ponto_fixo():
+    """Acima de 0,641 sobe, abaixo desce. A taxa base (0,668) está ACIMA do
+    ponto fixo, então a previsão média sobe — não é centrada no corpus."""
+    assert dominio._recalibrar(0.66) > 0.66, 'acima do ponto fixo, sobe'
+    assert dominio._recalibrar(0.60) < 0.60, 'abaixo do ponto fixo, desce'
+    assert dominio._recalibrar(0.6412) == pytest.approx(0.6412, abs=0.002)
 
 def test_recalibracao_preserva_a_ordem():
     crus = [dominio.dominio(q, 5, 10, recalibrar=False).p for q in (0.2, 0.4, 0.6, 0.8)]
@@ -345,13 +357,13 @@ def test_gate_saturacao_preservada():
 
 def test_gate_risco_sobe_com_erro():
     from trailup_core import gate
-    bom = gate.risco([True] * 10, acerto_global=0.8, dificuldade_media_topico=0.7)
-    ruim = gate.risco([False] * 10, acerto_global=0.3, dificuldade_media_topico=0.5)
+    bom = gate.risco([True] * 10, acerto_global=0.8, acerto_medio_topico=0.7)
+    ruim = gate.risco([False] * 10, acerto_global=0.3, acerto_medio_topico=0.5)
     assert ruim.score > bom.score
 
 def test_gate_nao_opina_com_pouca_evidencia():
     from trailup_core import gate
-    r = gate.risco([False, False], acerto_global=0.3, dificuldade_media_topico=0.5)
+    r = gate.risco([False, False], acerto_global=0.3, acerto_medio_topico=0.5)
     assert not r.confiavel
     assert gate.deve_disparar(r, limiar_da_coorte=0.0) is False
 
@@ -636,3 +648,67 @@ def test_conceitos_faltando_aponta_o_que_falta():
     vazia = pre_avaliacao.avaliar('nao sei', ref)
     cheia = pre_avaliacao.avaliar(gab, ref)
     assert len(vazia.conceitos_faltando) > len(cheia.conceitos_faltando)
+
+
+# ---------------- varredura adversarial: quatro defeitos meus ----------------
+def test_prever_turma_nao_encolhe_no_extremo():
+    """var_post vinha do intervalo JÁ CLIPADO: em 30/30 o posterior trunca em
+    1,0 e a variância inferida saía pequena demais, justo no caso mais incerto."""
+    largura_meio = dificuldade.prever_turma(15, 30, 30).largura
+    largura_extremo = dificuldade.prever_turma(30, 30, 30).largura
+    ref = dificuldade.prever_turma(29, 30, 30).largura
+    assert largura_extremo < largura_meio, 'evidência unânime é mais concentrada'
+    assert largura_extremo > 0.05, 'mas não pode colapsar'
+    assert abs(largura_extremo - ref) < 0.10, 'sem salto artificial de 29/30 para 30/30'
+
+def test_incerteza_respeita_media_global():
+    """Fixava 0,67 e ignorava o que o chamador declarou."""
+    a = dominio.incerteza(4, 2, media_global=0.20)
+    b = dominio.incerteza(4, 2, media_global=0.90)
+    assert a != b
+
+def test_confianca_propaga_media_global():
+    a = dominio.dominio(0.45, 2, 4, media_global=0.20).confianca
+    b = dominio.dominio(0.45, 2, 4, media_global=0.90).confianca
+    assert a != b
+
+def test_gate_parametro_e_acerto_nao_dificuldade():
+    """O nome antigo invertia o sentido: passar 0,9 como 'muito difícil'
+    REDUZIA o risco. Agora o nome diz que é taxa de acerto."""
+    import inspect
+    assert 'acerto_medio_topico' in inspect.signature(gate.risco).parameters
+    facil = gate.risco([False] * 10, 0.4, acerto_medio_topico=0.9)
+    dificil = gate.risco([False] * 10, 0.4, acerto_medio_topico=0.2)
+    assert dificil.score > facil.score, 'tópico com acerto baixo = mais risco'
+
+
+# ---------------- fecha o mapa de cobertura ----------------
+def test_faixa_limites_ordenados_e_dentro_de_zero_um():
+    for k, n in [(0, 5), (3, 10), (30, 30), (700, 1000)]:
+        f = dificuldade.estimar(k, n)
+        assert 0.0 <= f.minimo <= f.taxa <= f.maximo <= 1.0
+
+def test_faixa_limites_encolhem_com_evidencia():
+    a = dificuldade.estimar(7, 10)
+    b = dificuldade.estimar(700, 1000)
+    assert (b.maximo - b.minimo) < (a.maximo - a.minimo)
+
+def test_referencia_guarda_o_grafo_do_gabarito():
+    gab = 'Inflacao e o aumento generalizado dos precos numa economia.'
+    ref = pre_avaliacao.preparar(gab, enunciado='O que e inflacao?')
+    assert len(ref.nos) > 0, 'gabarito não vazio gera nós'
+    assert len(ref.arestas) > 0, 'e arestas entre eles'
+    assert len(ref.centrais) > 0
+    assert 'inflacao' in ref.tokens_enunciado
+    assert isinstance(ref.stop, (set, frozenset))
+
+def test_referencia_de_gabarito_vazio_nao_quebra():
+    ref = pre_avaliacao.preparar('')
+    assert len(ref.nos) == 0
+    a = pre_avaliacao.avaliar('qualquer coisa', ref)
+    assert 0.0 <= a.cobertura <= 1.0
+
+def test_ritmo_guarda_a_latencia_recebida():
+    r = ritmo.ritmo(52.0, respostas=30)
+    assert r.latencia == pytest.approx(52.0)
+    assert str(int(r.latencia)) in str(r)
