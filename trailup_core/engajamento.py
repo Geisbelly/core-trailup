@@ -315,6 +315,12 @@ def calibrar(coorte, janela_dias: int = JANELA_DIAS,
     linhas = [dict(c) for c in coorte]
     if not linhas:
         raise ValueError('coorte vazia')
+    faltando = {'dias_recentes', 'dias_ativos'} - set(linhas[0])
+    if faltando:
+        raise ValueError(f'cada aluno da coorte precisa de {sorted(faltando)}; '
+                         f'recebi {sorted(linhas[0])}')
+    if any(l['dias_recentes'] != l['dias_recentes'] for l in linhas):
+        raise ValueError('dias_recentes com NaN na coorte')
     cortes = {}
     for nome, chave, transf in (('frequencia', 'dias_ativos', lambda v: v / janela_dias),
                                 ('profundidade', 'profundidade_seg', lambda v: log(1 + max(v, 0.0)))):

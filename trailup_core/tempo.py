@@ -72,6 +72,8 @@ def esperado(latencia_mediana: float, respostas: int) -> Esperado:
     dizer "serve para classificar ritmo", nao "o numero esta preciso". Use
     `precisao()` para saber o erro tipico daquela estimativa.
     """
+    if not (latencia_mediana == latencia_mediana and abs(latencia_mediana) != float('inf')):
+        raise ValueError('latencia mediana tem de ser um numero finito')
     if latencia_mediana <= 0:
         raise ValueError('latencia mediana deve ser positiva')
     return Esperado(float(latencia_mediana), respostas, respostas >= MIN_RESPOSTAS)
@@ -89,9 +91,11 @@ def esperado_de_amostra(latencias, respostas: int | None = None) -> Esperado:
     mediana e mais segura. O ganho medido vale no agregado, com o corte de
     600 s que a extracao aplica - aplique um corte parecido antes de chamar.
     """
-    v = [float(x) for x in latencias if x is not None and float(x) > 0]
+    v = [float(x) for x in latencias
+         if x is not None and float(x) == float(x)
+         and abs(float(x)) != float('inf') and float(x) > 0]
     if not v:
-        raise ValueError('nenhuma latencia positiva na amostra')
+        raise ValueError('nenhuma latencia positiva e finita na amostra')
     from math import log, expm1, log1p
     media_log = sum(log1p(x) for x in v) / len(v)
     n = respostas if respostas is not None else len(v)
@@ -116,6 +120,8 @@ def precisao(respostas: int) -> float:
 
 def quao_lento(segundos: float, esp: Esperado) -> float:
     """Razao entre o observado e o esperado. 1,0 = no ritmo da questao."""
+    if segundos != segundos or abs(segundos) == float('inf'):
+        raise ValueError('segundos tem de ser um numero finito')
     return segundos / esp.segundos if esp.segundos > 0 else 1.0
 
 
@@ -174,4 +180,9 @@ def duracao_prevista(latencias_medianas: list[float],
     (243 s contra 239 s reais), mas tem erro absoluto pior (26%). Por isso a
     escolha foi mediana + fator.
     """
-    return float(sum(latencias_medianas)) * correcao
+    v = [float(x) for x in latencias_medianas]
+    if any(x != x or abs(x) == float('inf') for x in v):
+        raise ValueError('latencia NaN ou infinita na lista')
+    if any(x < 0 for x in v):
+        raise ValueError('latencia negativa na lista')
+    return float(sum(v)) * correcao

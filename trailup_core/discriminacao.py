@@ -101,5 +101,12 @@ def confirmar(disc_metade_a: float, disc_metade_b: float,
     apenas 0,33 entre particoes independentes de alunos - uma medida isolada
     e, em boa parte, ruido amostral.
     """
-    media = (float(disc_metade_a) + float(disc_metade_b)) / 2.0
-    return media < limiar
+    a, b = float(disc_metade_a), float(disc_metade_b)
+    # `discriminacao` devolve NaN quando nao da para medir (n baixo, ou todo
+    # mundo acertou / errou). Sem esta guarda, NaN < limiar e False e a questao
+    # nao-mensuravel seria silenciosamente tratada como "nao suspeita".
+    if a != a or b != b:
+        raise ValueError('discriminacao indeterminada (NaN) numa das metades: '
+                         'nao da para confirmar. Trate como "sem evidencia", '
+                         'nao como "questao ok".')
+    return (a + b) / 2.0 < limiar

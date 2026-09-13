@@ -8,10 +8,11 @@ O TrailUp hoje dispara de 8 a 14 chamadas ao Gemini por lote de telemetria de 60
 
 ```bash
 python3 exemplos/exemplo.py     # os módulos trabalhando juntos
-python3 -m pytest tests/ -q     # 119 testes de invariante
+python3 -m pytest tests/ -q     # 126 testes de invariante
 
 python3 docs/auditoria/scripts/70_consistencia.py   # números divergentes entre arquivos
 python3 docs/auditoria/scripts/79_cobertura.py      # símbolo público sem teste
+python3 docs/auditoria/scripts/80_fuzz.py           # NaN/infinito vazando
 ```
 
 ---

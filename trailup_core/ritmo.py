@@ -71,6 +71,8 @@ def ritmo(latencia_mediana: float, respostas: int) -> Ritmo:
     """
     if respostas < 5:
         raise ValueError(f'{respostas} respostas e pouco: o ritmo precisa de >=5')
+    if not (latencia_mediana == latencia_mediana and abs(latencia_mediana) != float('inf')):
+        raise ValueError('latencia mediana tem de ser um numero finito')
     if latencia_mediana <= 0:
         raise ValueError('latencia mediana deve ser positiva')
     c = _CONF[-1][1]

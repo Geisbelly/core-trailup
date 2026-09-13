@@ -756,3 +756,56 @@ def test_derivar_prior_recusa_forca_degenerada():
 def test_derivar_prior_aceita_corpus_plausivel():
     p = dificuldade.derivar_prior([.4, .5, .6, .7, .8, .9, .55, .65, .75, .85], [200] * 10)
     assert dificuldade.FORCA_MIN <= p.forca <= dificuldade.FORCA_MAX
+
+
+# ---------------- entrada hostil: o fuzz achou 21 propagações ----------------
+def test_nan_e_infinito_sao_recusados():
+    nan, inf = float('nan'), float('inf')
+    with pytest.raises(ValueError):
+        dificuldade.estimar(nan, 10)
+    with pytest.raises(ValueError):
+        dificuldade.estimar(inf, inf)
+    with pytest.raises(ValueError):
+        ritmo.ritmo(nan, 10)
+    with pytest.raises(ValueError):
+        tempo.esperado(inf, 10)
+    with pytest.raises(ValueError):
+        tempo.quao_lento(nan, tempo.esperado(20.0, 50))
+    with pytest.raises(ValueError):
+        tempo.duracao_prevista([nan, 10.0])
+    with pytest.raises(ValueError):
+        revisao.retencao(nan, True)
+    with pytest.raises(ValueError):
+        dominio.incerteza(nan, 0)
+
+def test_duracao_recusa_latencia_negativa():
+    with pytest.raises(ValueError):
+        tempo.duracao_prevista([-10.0, 20.0])
+
+def test_dias_ate_revisar_recusa_alvo_fora_de_zero_um():
+    for alvo in (0.0, 1.0, -0.5, 2.0):
+        with pytest.raises(ValueError):
+            revisao.dias_ate_revisar(True, retencao_alvo=alvo)
+
+def test_confirmar_recusa_discriminacao_indeterminada():
+    """NaN < limiar é False: sem guarda, questão não-mensurável passaria por
+    'não suspeita' em silêncio."""
+    nan = float('nan')
+    with pytest.raises(ValueError, match='indeterminada'):
+        discriminacao.confirmar(nan, 0.1)
+
+def test_discriminacao_de_questao_que_todos_acertam():
+    """Variância zero acontece em dado real. Tem de sair 'indeterminado'."""
+    d = discriminacao.discriminacao([(True, 0.5)] * 50)
+    assert d.veredito == 'indeterminado'
+    assert d.valor != d.valor, 'sentinela é NaN, e confirmar() a barra'
+
+def test_calibrar_diz_qual_campo_falta():
+    with pytest.raises(ValueError, match='dias_ativos'):
+        engajamento.calibrar([{'voltou': 1}])
+
+def test_esperado_de_amostra_filtra_nao_finitos():
+    inf = float('inf')
+    e = tempo.esperado_de_amostra([inf, 10.0, 20.0])
+    assert e.segundos == pytest.approx(
+        tempo.esperado_de_amostra([10.0, 20.0]).segundos)

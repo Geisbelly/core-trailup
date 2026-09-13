@@ -59,6 +59,8 @@ _ERROU   = [(0.04, .836), (1, .793), (3, .715), (7, .661), (21, .614), (60, .581
 
 
 def _na_tabela(t, dias: float) -> float:
+    if dias != dias or abs(dias) == float('inf'):
+        raise ValueError('dias tem de ser um numero finito')
     if dias <= t[0][0]: return t[0][1]
     if dias >= t[-1][0]: return t[-1][1]
     i = bisect_right([x[0] for x in t], dias) - 1
@@ -127,6 +129,9 @@ def dias_ate_revisar(acertou_antes: bool, retencao_alvo: float = 0.75,
     e calculado para `retencao_alvo + margem`, que e o que entrega o alvo
     pedido na pratica. Passe margem=0 para o prazo cru da curva.
     """
+    if retencao_alvo != retencao_alvo or not 0.0 < retencao_alvo < 1.0:
+        raise ValueError(f'retencao_alvo={retencao_alvo} tem de estar entre 0 e 1 '
+                         '(exclusivos): 0 e 1 nao sao alvos alcancaveis')
     retencao_alvo = min(0.999, retencao_alvo + margem)
     t = _ACERTOU if acertou_antes else _ERROU
     if t[0][1] < retencao_alvo:

@@ -102,6 +102,8 @@ def incerteza(respostas: int, acertos: int = 0, media_global: float = 0.67) -> f
     Usa o posterior Beta para nao devolver zero quando o aluno acertou tudo ou
     errou tudo (com n=2 e taxa 0 ou 1, o desvio binomial daria 0).
     """
+    if respostas != respostas or acertos != acertos or media_global != media_global:
+        raise ValueError('respostas/acertos/media_global nao podem ser NaN')
     a = acertos + PRIOR_ALUNO * media_global
     b = (respostas - acertos) + PRIOR_ALUNO * (1 - media_global)
     if b < 0:

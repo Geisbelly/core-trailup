@@ -121,6 +121,10 @@ def estimar(acertos: int, respostas: int, prior: Prior = Prior(), nivel: float =
     Funciona com qualquer n, inclusive zero - com zero devolve o proprio prior,
     que e a resposta honesta para questao que ninguem respondeu.
     """
+    if acertos != acertos or respostas != respostas:
+        raise ValueError('acertos/respostas nao podem ser NaN')
+    if acertos in (float('inf'), float('-inf')) or respostas in (float('inf'), float('-inf')):
+        raise ValueError('acertos/respostas nao podem ser infinitos')
     if not 0 <= acertos <= respostas:
         raise ValueError(f'acertos={acertos} incompativel com respostas={respostas}')
     if nivel not in Z:

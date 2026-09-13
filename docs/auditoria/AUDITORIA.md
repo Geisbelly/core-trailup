@@ -10,7 +10,7 @@ Base: EdNet KT3, 6.504.124 respostas, acerto global 0,6677, split por aluno 70/3
 
 ## Resultado das 7 partes
 
-**43 verificações. 23 defeitos encontrados**, todos da mesma família: uma saída afirmando uma escala que ninguém mediu. Nenhum apareceria olhando AUC.
+**64 verificações. 44 defeitos encontrados**, todos da mesma família: uma saída afirmando uma escala que ninguém mediu. Nenhum apareceria olhando AUC.
 
 | onde | o que afirmava | o que era |
 |---|---|---|
@@ -37,6 +37,8 @@ Base: EdNet KT3, 6.504.124 respostas, acerto global 0,6677, split por aluno 70/3
 | `engajamento.trajetoria` | limiar fixo | muda com o nº de janelas |
 | `derivar_prior` | prior do corpus | força 210.000 sem avisar |
 | `tempo.demorando` | limiar de 3× | inverte na margem de erro da mediana |
+| `discriminacao.confirmar` | marca suspeita | dizia "ok" para o não-mensurável |
+| 20 entradas hostis | erro claro ou valor são | NaN e infinito vazando |
 
 E oito que **conferiram**: `cobertura` (+0,462) e `conceitos_faltando` (−0,410) do `pre_avaliacao`, `gate.MIN_RESPOSTAS = 5` (é o cotovelo exato: 0,534 abaixo dele, 0,660 nele), a aproximação normal do `dificuldade` (cobertura 75,3% contra 74,8% do Beta), `perfil_chute` (p90 e p99), a tabela `REFERENCIA` do engajamento (diferença 0,000), o limite de 3× do `demorando`, e `ritmo.FRONTEIRA_SEG` — cujo 40 s é praticamente o corte ótimo por Otsu (39,8 s), com d de Cohen **maior** que o documentado (4,18 contra 3,30).
 
@@ -596,6 +598,39 @@ Com `respostas=5` a mediana tem 20% de erro. Para **55 s**, o mesmo aluno:
 | 24 s (+20%) | **False** |
 
 A decisão inverte dentro da margem de erro do próprio estimador. Já estava documentado que 5 não é preciso; aqui está a consequência concreta.
+
+---
+
+## Parte 11: fuzzing — 21 propagações de NaN e infinito
+
+Classe que nenhuma rodada anterior tocou: **entrada hostil**. Toda função pública chamada com negativo, zero, NaN, infinito, vazio e valores absurdos. O contrato: ou levanta erro claro, ou devolve valor são — nunca NaN, nunca infinito.
+
+**Primeira execução: 21 problemas.** Agora **3**, todos a sentinela intencional.
+
+### O pior: `confirmar()` dizia "não suspeita" para questão não-mensurável
+
+`discriminacao` devolve **NaN** como sentinela de `indeterminado` — quando n é baixo, ou quando **todo mundo acertou** (variância zero, que acontece em dado real).
+
+O problema é que `NaN < limiar` é **False**. Então:
+
+```python
+confirmar(float('nan'), 0.1)  # -> False, "não suspeita"
+```
+
+Uma questão que **não deu para medir** era silenciosamente classificada como boa. Agora levanta com a mensagem: *"trate como 'sem evidência', não como 'questão ok'"*.
+
+### As outras 20
+
+| tipo | funções atingidas |
+|---|---|
+| NaN/infinito propagando até a saída | `estimar`, `prever_turma`, `ritmo`, `esperado`, `esperado_de_amostra`, `duracao_prevista`, `quao_lento`, `incerteza` |
+| exceção obscura em vez de erro claro | `retencao(NaN)` → `IndexError`, `calibrar` sem campos → `KeyError` |
+| valor sem sentido aceito | `dias_ate_revisar` com alvo 0 ou negativo devolvia infinito |
+| lista com valores negativos | `duracao_prevista([-10, 20])` somava normalmente |
+
+Todas passam a validar na entrada. `calibrar` agora **diz qual campo falta**, em vez de `KeyError: 'dias_recentes'`.
+
+O fuzzer virou script permanente: [`80_fuzz.py`](scripts/80_fuzz.py). Roda sem dataset e falha se passar de 3 problemas.
 
 ---
 
