@@ -34,7 +34,7 @@ Oito hipóteses testadas com o mesmo protocolo: **split que respeita a unidade d
 
 > **Por que o aluno dá exatamente o mesmo que o global.** Sob split por aluno, o aluno de teste **nunca apareceu no treino** — a mediana dele não existe, e o valor cai para o global por construção. É o cenário real do TrailUp, onde aluno novo chega toda semana. Num recorte em que o aluno é visto no treino, a mediana dele dá R² 0,007 — igualmente nada.
 
-**É o quinto experimento consecutivo a apontar para a questão.** É também por isso que [`tempo.py`](../modulo/tempo.py) usa a mediana da questão **sem ajuste por aluno** — ajustar piora.
+**É o quinto experimento consecutivo a apontar para a questão.** É também por isso que [`tempo.py`](../../trailup_core/tempo.py) usa a mediana da questão **sem ajuste por aluno** — ajustar piora.
 
 **O uso secundário:** detectar quem está muito acima do esperado *naquela questão*.
 
@@ -113,7 +113,7 @@ A objeção óbvia: talvez as questões reencontradas depois de meses sejam simp
 
 As questões de intervalo longo são **mais fáceis**, não mais difíceis. A composição joga **contra** o efeito observado — o esquecimento real é pelo menos tão forte quanto a tabela mostra.
 
-**Uso:** regra de revisão espaçada que sai direto do dado ([`revisao.py`](../modulo/revisao.py)). Errou → revisar em dias; acertou → em semanas. É decisão de trilha, não de estado.
+**Uso:** regra de revisão espaçada que sai direto do dado ([`revisao.py`](../../trailup_core/revisao.py)). Errou → revisar em dias; acertou → em semanas. É decisão de trilha, não de estado.
 
 ---
 
@@ -181,7 +181,7 @@ A explicação intuitiva para o resultado abaixo da meta seria que prever **quan
 
 As causas prováveis do 0,75 são outras: **conjunto de features magro** (cliques agregados, sem quebra por tipo de recurso) e o **split por coorte**, mais severo que o da literatura.
 
-Implementado como [`evasao.sql`](../modulo/evasao.sql) — logística em SQL puro, para rodar via `pg_cron`, porque a API hiberna e isto precisa de relógio. A função devolve **faixa de risco**, não score, para o professor.
+Implementado como [`evasao.sql`](../../sql/evasao.sql) — logística em SQL puro, para rodar via `pg_cron`, porque a API hiberna e isto precisa de relógio. A função devolve **faixa de risco**, não score, para o professor.
 
 ## 6. Avaliador de resposta aberta — parcial
 

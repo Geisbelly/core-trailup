@@ -21,7 +21,7 @@ Implementações em [`modulo/`](../README.md), sem dependência.
 | engajamento (3 eixos) | AUC 0,805 para retenção em 30 dias | 30 respostas |
 | pré-avaliação rápida de resposta | Spearman 0,447 (teto ≈0,88) | nenhum |
 
-### Nível de engajamento → [`modulo/engajamento.py`](../trailup_core/engajamento.py)
+### Nível de engajamento → [`engajamento.py`](../trailup_core/engajamento.py)
 
 **Pergunta:** este aluno ainda vai estar estudando daqui a um mês? (Não: "vai aprender mais" — ver o limite abaixo.)
 
@@ -47,7 +47,7 @@ AUC = chance de ordenar corretamente um par voltou/não-voltou; 0,50 é cara ou 
 
 Corrige duas falhas da rodada anterior: `persistencia` era circular (dividida pelo próprio volume, r=0,94 por construção algébrica) e o desfecho "voltou depois da metade do próprio período" dava positivo para **100%** dos alunos. Relatório: [`engajamento/RELATORIO_ENGAJAMENTO.md`](engajamento/RELATORIO_ENGAJAMENTO.md).
 
-### Pré-avaliação rápida de resposta → [`modulo/pre_avaliacao.py`](../trailup_core/pre_avaliacao.py)
+### Pré-avaliação rápida de resposta → [`pre_avaliacao.py`](../trailup_core/pre_avaliacao.py)
 
 Medido em [AVALIADOR_DISCURSIVO.md](discursiva/AVALIADOR_DISCURSIVO.md):
 
