@@ -8,7 +8,7 @@ from sklearn.ensemble import HistGradientBoostingClassifier
 from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import roc_auc_score, average_precision_score
-O='/Users/user/Downloads/Inicio/open+university+learning+analytics+dataset'
+O='/caminho/para/os/datasets/open+university+learning+analytics+dataset'
 HERE=os.path.dirname(os.path.abspath(__file__))
 si=pd.read_csv(f'{O}/studentInfo.csv'); sr=pd.read_csv(f'{O}/studentRegistration.csv')
 sa=pd.read_csv(f'{O}/studentAssessment.csv'); asm=pd.read_csv(f'{O}/assessments.csv')

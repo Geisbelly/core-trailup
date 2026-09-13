@@ -7,7 +7,7 @@ de verdade.
 """
 import numpy as np, pandas as pd
 from scipy.stats import beta as B, betabinom
-M2='/private/tmp/claude-502/-Users-user-Downloads-Inicio/64768691-f3b8-40d6-8ff0-374843d9d6c4/scratchpad/m2'
+M2='/caminho/para/os/intermediarios'
 df=pd.read_parquet(f'{M2}/responses_v3.parquet',columns=['user','qidx','correct','ts'])
 df=df.sort_values('ts')
 A0,B0=5.07,2.08

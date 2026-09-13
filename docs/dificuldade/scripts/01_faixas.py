@@ -8,7 +8,7 @@ Verdade = taxa de acerto medida numa metade das respostas; estimativa = a outra
 metade. Sem isso a avaliacao e circular.
 """
 import os, numpy as np, pandas as pd
-M2='/private/tmp/claude-502/-Users-user-Downloads-Inicio/64768691-f3b8-40d6-8ff0-374843d9d6c4/scratchpad/m2'
+M2='/caminho/para/os/intermediarios'
 HERE=os.path.dirname(os.path.abspath(__file__))
 df=pd.read_parquet(f'{M2}/responses_v3.parquet',columns=['user','qidx','correct'])
 print(f'{len(df):,} respostas finais | {df.qidx.nunique():,} questoes')

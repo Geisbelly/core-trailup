@@ -10,7 +10,7 @@ import os, numpy as np, pandas as pd
 from sklearn.cluster import HDBSCAN
 from sklearn.preprocessing import StandardScaler, QuantileTransformer
 from sklearn.metrics import silhouette_score
-M2='/private/tmp/claude-502/-Users-user-Downloads-Inicio/64768691-f3b8-40d6-8ff0-374843d9d6c4/scratchpad/m2'
+M2='/caminho/para/os/intermediarios'
 HERE=os.path.dirname(os.path.abspath(__file__))
 df=pd.read_parquet(f'{M2}/responses_v3.parquet')
 q=df.groupby('qidx').agg(qlat=('lat_final','median'),qac=('correct','mean'),qn=('correct','size'))

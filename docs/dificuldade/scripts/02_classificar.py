@@ -6,7 +6,7 @@ centroide mais proximo. Mesmo protocolo dos experimentos anteriores.
 """
 import os, pickle, numpy as np, pandas as pd
 from sklearn.metrics import confusion_matrix, accuracy_score
-M2='/private/tmp/claude-502/-Users-user-Downloads-Inicio/64768691-f3b8-40d6-8ff0-374843d9d6c4/scratchpad/m2'
+M2='/caminho/para/os/intermediarios'
 HERE=os.path.dirname(os.path.abspath(__file__))
 K=pickle.load(open(f'{HERE}/kmeans.pkl','rb'))
 km,sc,F=K['kmeans'],K['scaler'],K['feats']

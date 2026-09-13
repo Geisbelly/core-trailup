@@ -13,7 +13,7 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.decomposition import TruncatedSVD
 from sklearn.preprocessing import normalize
 HERE=os.path.dirname(os.path.abspath(__file__))
-d=pd.read_excel('/Users/user/Downloads/Inicio/19467052/GPT4FeedbackIncreasesStudentActivation.xlsx',sheet_name='Data')
+d=pd.read_excel('/caminho/para/os/datasets/19467052/GPT4FeedbackIncreasesStudentActivation.xlsx',sheet_name='Data')
 d=d.rename(columns={'Sample Solution':'gab','Student Answer':'resp','Question':'q',
                     'Content_Mean_Run1_2_3':'nota','Text Length':'len'})
 d['aluno']=d['Color (Pseudonym)'].astype(str)+'_'+d['Animal (Pseudonym)'].astype(str)

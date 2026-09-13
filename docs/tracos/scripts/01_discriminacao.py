@@ -7,7 +7,7 @@ Teste que importa: a baixa discriminacao REPLICA numa metade independente de
 alunos? Se nao replicar, e ruido - e ruido exibido ao professor vira retrabalho.
 """
 import os, numpy as np, pandas as pd
-M2='/private/tmp/claude-502/-Users-user-Downloads-Inicio/64768691-f3b8-40d6-8ff0-374843d9d6c4/scratchpad/m2'
+M2='/caminho/para/os/intermediarios'
 HERE=os.path.dirname(os.path.abspath(__file__))
 df=pd.read_parquet(f'{M2}/responses_v3.parquet',columns=['user','qidx','correct','lat_final'])
 df=df.drop_duplicates(['user','qidx'],keep='first')

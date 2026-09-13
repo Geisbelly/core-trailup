@@ -5,7 +5,7 @@ repetindo varias vezes para nao depender de um sorteio.
 """
 import os, numpy as np, pandas as pd
 from scipy import stats
-O='/Users/user/Downloads/Inicio/open+university+learning+analytics+dataset'
+O='/caminho/para/os/datasets/open+university+learning+analytics+dataset'
 a=pd.read_csv(f'{O}/assessments.csv'); sa=pd.read_csv(f'{O}/studentAssessment.csv')
 sa['score']=pd.to_numeric(sa.score,errors='coerce'); sa=sa.dropna(subset=['score'])
 a=a.sort_values(['code_module','code_presentation','date'])

@@ -8,7 +8,7 @@ from sklearn.ensemble import HistGradientBoostingClassifier
 from sklearn.model_selection import cross_val_predict, GroupKFold
 from sklearn.metrics import accuracy_score, confusion_matrix
 HERE=os.path.dirname(os.path.abspath(__file__))
-BASE='/Users/user/Downloads/Inicio'
+BASE='/caminho/para/os/datasets'
 q=pd.read_parquet(f'{HERE}/questoes.parquet').reset_index()
 meta=pd.read_csv(f'{BASE}/EdNet-Contents/contents/questions.csv')
 meta['qidx']=meta.question_id.str[1:].astype(np.int32)

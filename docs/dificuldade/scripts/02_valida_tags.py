@@ -8,7 +8,7 @@ from sklearn.cluster import HDBSCAN, SpectralClustering
 from sklearn.metrics import adjusted_mutual_info_score
 HERE=os.path.dirname(os.path.abspath(__file__))
 C=np.load(f'{HERE}/C.npy'); qs=np.load(f'{HERE}/qids.npy')
-meta=pd.read_csv('/Users/user/Downloads/Inicio/EdNet-Contents/contents/questions.csv')
+meta=pd.read_csv('/caminho/para/os/datasets/EdNet-Contents/contents/questions.csv')
 meta['qidx']=meta.question_id.str[1:].astype(np.int32)
 meta=meta.set_index('qidx').loc[qs]
 part=meta.part.values

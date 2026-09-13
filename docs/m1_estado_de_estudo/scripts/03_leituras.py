@@ -4,7 +4,7 @@ O corte anterior quebrava o episodio a cada modal de explicacao de palavra,
 gerando janelas de 25s que nao sao leitura nenhuma.
 """
 import os, json, numpy as np, pandas as pd
-A='/Users/user/Downloads/Inicio/8y3zp-osfstorage-archive'
+A='/caminho/para/os/datasets/8y3zp-osfstorage-archive'
 OUT=os.path.dirname(os.path.abspath(__file__))
 GAP=1800
 

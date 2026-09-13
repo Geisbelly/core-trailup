@@ -6,7 +6,7 @@ esperado NAQUELA questao - sem inferir estado emocional.
 import os, numpy as np, pandas as pd
 from sklearn.ensemble import HistGradientBoostingRegressor
 from sklearn.metrics import mean_absolute_error, r2_score
-M2='/private/tmp/claude-502/-Users-user-Downloads-Inicio/64768691-f3b8-40d6-8ff0-374843d9d6c4/scratchpad/m2'
+M2='/caminho/para/os/intermediarios'
 d=pd.read_parquet(f'{M2}/features_v3.parquet')
 rng=np.random.RandomState(20260912)
 u=d.user.unique(); rng.shuffle(u); n=len(u)

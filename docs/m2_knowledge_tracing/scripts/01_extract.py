@@ -7,7 +7,7 @@ import glob, os, random, sys
 from concurrent.futures import ProcessPoolExecutor
 import numpy as np, pandas as pd
 
-BASE = '/Users/user/Downloads/Inicio'
+BASE = '/caminho/para/os/datasets'
 OUT = os.path.dirname(os.path.abspath(__file__))
 N_USERS = int(sys.argv[1]) if len(sys.argv) > 1 else 120_000
 MIN_RESPONDS = 20

@@ -8,7 +8,7 @@ deve ir pior do que quem errou trabalhando. E o teste que separa o conceito
 de uma definicao arbitraria.
 """
 import os, numpy as np, pandas as pd
-M2='/private/tmp/claude-502/-Users-user-Downloads-Inicio/64768691-f3b8-40d6-8ff0-374843d9d6c4/scratchpad/m2'
+M2='/caminho/para/os/intermediarios'
 df=pd.read_parquet(f'{M2}/responses_v3.parquet',columns=['user','qidx','correct','lat_final','n_trocas','ts'])
 df=df.sort_values('ts')
 print(f'{len(df):,} respostas')

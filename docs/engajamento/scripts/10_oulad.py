@@ -10,7 +10,7 @@ desmatricula formal (mais forte, so existe aqui).
 import os,sys,numpy as np,pandas as pd
 HERE=os.path.dirname(os.path.abspath(__file__)); sys.path.insert(0,HERE)
 from _shim import roc_auc_score, spearman
-O='/Users/user/Downloads/Inicio/open+university+learning+analytics+dataset'
+O='/caminho/para/os/datasets/open+university+learning+analytics+dataset'
 W1,W2=30,60
 
 vle=pd.read_csv(f'{O}/vle.csv',usecols=['id_site','code_module','code_presentation','activity_type'])

@@ -8,7 +8,7 @@ import os, numpy as np, pandas as pd
 from sklearn.cluster import HDBSCAN
 from sklearn.preprocessing import QuantileTransformer
 from sklearn.metrics import adjusted_rand_score, silhouette_score
-M2='/private/tmp/claude-502/-Users-user-Downloads-Inicio/64768691-f3b8-40d6-8ff0-374843d9d6c4/scratchpad/m2'
+M2='/caminho/para/os/intermediarios'
 df=pd.read_parquet(f'{M2}/responses_v3.parquet')
 q=df.groupby('qidx').agg(qlat=('lat_final','median'),qac=('correct','mean'),qn=('correct','size'))
 q=q[q.qn>=50]; df=df[df.qidx.isin(q.index)]

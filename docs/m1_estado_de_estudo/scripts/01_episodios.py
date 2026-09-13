@@ -6,7 +6,7 @@ sobre um conteudo, fechada por saida de tela.
 """
 import os, json, re, numpy as np, pandas as pd
 
-A='/Users/user/Downloads/Inicio/8y3zp-osfstorage-archive'
+A='/caminho/para/os/datasets/8y3zp-osfstorage-archive'
 OUT=os.path.dirname(os.path.abspath(__file__))
 GAP_SESSAO=1800     # s; acima disso e outra sessao
 JANELA_RATING=900   # s; rating aceito ate 15 min depois do fim do episodio

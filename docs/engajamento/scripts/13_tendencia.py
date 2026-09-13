@@ -3,7 +3,7 @@ import os,sys,numpy as np,pandas as pd
 HERE=os.path.dirname(os.path.abspath(__file__)); sys.path.insert(0,HERE)
 from _shim import roc_auc_score, logistic_fit, logistic_pred
 M2=HERE.replace('/engaj','/m2'); DIA=86400*1000.0
-O_DIR='/Users/user/Downloads/Inicio/open+university+learning+analytics+dataset'
+O_DIR='/caminho/para/os/datasets/open+university+learning+analytics+dataset'
 W1=30
 
 # ---------- EdNet ----------

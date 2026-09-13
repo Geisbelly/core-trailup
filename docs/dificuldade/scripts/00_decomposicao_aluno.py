@@ -13,7 +13,7 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.ensemble import HistGradientBoostingClassifier
 from sklearn.metrics import roc_auc_score, log_loss, brier_score_loss
 HERE=os.path.dirname(os.path.abspath(__file__))
-M2='/private/tmp/claude-502/-Users-user-Downloads-Inicio/64768691-f3b8-40d6-8ff0-374843d9d6c4/scratchpad/m2'
+M2='/caminho/para/os/intermediarios'
 rng=np.random.RandomState(20260912)
 df=pd.read_parquet(f'{M2}/features_v3.parquet')
 u=df.user.unique(); rng.shuffle(u); n=len(u)

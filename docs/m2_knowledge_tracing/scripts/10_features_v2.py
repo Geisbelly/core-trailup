@@ -11,7 +11,7 @@ import os, numpy as np, pandas as pd
 from collections import defaultdict, deque
 
 HERE=os.path.dirname(os.path.abspath(__file__))
-BASE='/Users/user/Downloads/Inicio'
+BASE='/caminho/para/os/datasets'
 ALPHA=0.3; DT_CLIP=600.0; GAP_SESSAO=1800.0
 
 q=pd.read_csv(f'{BASE}/EdNet-Contents/contents/questions.csv')

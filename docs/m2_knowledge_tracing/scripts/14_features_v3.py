@@ -3,7 +3,7 @@ import os, numpy as np, pandas as pd
 from collections import defaultdict, deque
 HERE=os.path.dirname(os.path.abspath(__file__))
 A=0.3; CLIP=600.0; GS=1800.0
-BASE='/Users/user/Downloads/Inicio'
+BASE='/caminho/para/os/datasets'
 q=pd.read_csv(f'{BASE}/EdNet-Contents/contents/questions.csv')
 q['qidx']=q.question_id.str[1:].astype(np.int32)
 BUN={r.qidx:r.bundle_id for r in q.itertuples()}

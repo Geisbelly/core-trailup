@@ -10,7 +10,7 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.pipeline import make_pipeline
 from sklearn.model_selection import cross_val_predict, GroupKFold
 from sklearn.metrics import accuracy_score, confusion_matrix
-B='/Users/user/Downloads/Inicio/19232684'
+B='/caminho/para/os/datasets/19232684'
 L=[]
 for f in sorted(glob.glob(f'{B}/SB_LogData_*.xlsx')):
     d=pd.read_excel(f)

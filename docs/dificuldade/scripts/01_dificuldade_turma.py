@@ -5,7 +5,7 @@ E o cenario real - turma nova comeca sem historico proprio.
 """
 import os, numpy as np, pandas as pd
 from sklearn.metrics import roc_auc_score, brier_score_loss, log_loss
-O='/Users/user/Downloads/Inicio/open+university+learning+analytics+dataset'
+O='/caminho/para/os/datasets/open+university+learning+analytics+dataset'
 a=pd.read_csv(f'{O}/assessments.csv'); sa=pd.read_csv(f'{O}/studentAssessment.csv')
 sa['score']=pd.to_numeric(sa.score,errors='coerce'); sa=sa.dropna(subset=['score'])
 a=a.sort_values(['code_module','code_presentation','date'])

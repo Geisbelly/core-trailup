@@ -11,7 +11,7 @@ import os, numpy as np, pandas as pd
 from scipy.stats import beta as B
 HERE=os.path.dirname(os.path.abspath(__file__))
 q=pd.read_parquet(f'{HERE}/questoes.parquet').reset_index()
-M2='/private/tmp/claude-502/-Users-user-Downloads-Inicio/64768691-f3b8-40d6-8ff0-374843d9d6c4/scratchpad/m2'
+M2='/caminho/para/os/intermediarios'
 G=0.668
 print(f'{len(q):,} questoes | verdade = taxa numa metade das respostas (>=30)')
 rng=np.random.RandomState(20260912)

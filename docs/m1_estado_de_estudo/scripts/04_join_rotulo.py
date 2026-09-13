@@ -3,7 +3,7 @@ text.html sem assignmentId, entao vale o assignment corrente na sessao.
 Arrastar a estrela emite varios eventos - vale o ULTIMO valor.
 """
 import os, json, numpy as np, pandas as pd
-A='/Users/user/Downloads/Inicio/8y3zp-osfstorage-archive'
+A='/caminho/para/os/datasets/8y3zp-osfstorage-archive'
 HERE=os.path.dirname(os.path.abspath(__file__))
 x=pd.read_excel(f'{A}/data/preprocessed/xapi_statement_student.xlsx').drop_duplicates()
 x=x[x.actor.astype(str).str.fullmatch(r'[A-Za-z0-9]{4}')]
