@@ -132,11 +132,16 @@ def _recalibrar(p: float) -> float:
     return 1.0 / (1.0 + exp(-max(-30.0, min(30.0, z))))
 
 
-def dominio(dificuldade_questao: float, acertos_no_topico: int, respostas_no_topico: int,
+def dominio(acerto_na_questao: float, acertos_no_topico: int, respostas_no_topico: int,
             media_global: float = 0.67, p_anteriores: list[float] | None = None,
             acertos_totais: int | None = None, respostas_totais: int | None = None,
             recalibrar: bool = True) -> Dominio:
-    """`dificuldade_questao` = taxa de acerto da questao (use dificuldade.estimar).
+    """`acerto_na_questao` = TAXA DE ACERTO da questao, 0 a 1 (use
+    `dificuldade.estimar(...).taxa`). Quanto MAIOR, mais facil.
+
+    O nome anterior era `dificuldade_questao` e invertia o sentido para quem
+    lesse so a assinatura: passar 0,9 como "questao muito dificil" devolvia
+    p = 0,890, o oposto do esperado. Mesmo defeito que `gate.risco` tinha.
 
     `acertos_totais` / `respostas_totais` = historico do aluno em TODOS os
     topicos. Quando informados, entram como terceiro termo e levam a AUC de
@@ -146,12 +151,12 @@ def dominio(dificuldade_questao: float, acertos_no_topico: int, respostas_no_top
     n = respostas_no_topico
     aluno = (acertos_no_topico + media_global * PRIOR_ALUNO) / (n + PRIOR_ALUNO)
     if respostas_totais is None or acertos_totais is None:
-        p = PESO_QUESTAO_2 * dificuldade_questao + (1 - PESO_QUESTAO_2) * aluno
+        p = PESO_QUESTAO_2 * acerto_na_questao + (1 - PESO_QUESTAO_2) * aluno
     else:
         if not 0 <= acertos_totais <= respostas_totais:
             raise ValueError('acertos_totais incompativel com respostas_totais')
         glob = (acertos_totais + media_global * PRIOR_GLOBAL) / (respostas_totais + PRIOR_GLOBAL)
-        p = (PESO_QUESTAO * dificuldade_questao + PESO_TOPICO * aluno
+        p = (PESO_QUESTAO * acerto_na_questao + PESO_TOPICO * aluno
              + PESO_GLOBAL * glob)
     # A TENDENCIA E CALCULADA NA ESCALA CRUA, de proposito. A recalibracao
     # expande o logito por ~2, entao a mesma variacao de evidencia move o `p`

@@ -10,7 +10,7 @@ Base: EdNet KT3, 6.504.124 respostas, acerto global 0,6677, split por aluno 70/3
 
 ## Resultado das 7 partes
 
-**87 verificações. 47 defeitos encontrados**, todos da mesma família: uma saída afirmando uma escala que ninguém mediu. Nenhum apareceria olhando AUC.
+**97 verificações. 49 defeitos encontrados**, todos da mesma família: uma saída afirmando uma escala que ninguém mediu. Nenhum apareceria olhando AUC.
 
 | onde | o que afirmava | o que era |
 |---|---|---|
@@ -42,6 +42,8 @@ Base: EdNet KT3, 6.504.124 respostas, acerto global 0,6677, split por aluno 70/3
 | `trailup_faixa_risco` | ~top 10% em `alto` | pegava 0,27% — faixa morta |
 | `revisao._ACERTOU` | curva de esquecimento | sobe em dois pontos |
 | `dominio.incerteza` | "encolhe com n" | só para taxa fixa |
+| `dominio.dominio` | parâmetro "dificuldade" | recebia facilidade — invertia |
+| README | 133 testes | eram 135 |
 
 E oito que **conferiram**: `cobertura` (+0,462) e `conceitos_faltando` (−0,410) do `pre_avaliacao`, `gate.MIN_RESPOSTAS = 5` (é o cotovelo exato: 0,534 abaixo dele, 0,660 nele), a aproximação normal do `dificuldade` (cobertura 75,3% contra 74,8% do Beta), `perfil_chute` (p90 e p99), a tabela `REFERENCIA` do engajamento (diferença 0,000), o limite de 3× do `demorando`, e `ritmo.FRONTEIRA_SEG` — cujo 40 s é praticamente o corte ótimo por Otsu (39,8 s), com d de Cohen **maior** que o documentado (4,18 contra 3,30).
 
@@ -678,6 +680,29 @@ Consequência: `esquecimento` também não é monotônico para quem acertou, e `
 O docstring dizia *"é o que encolhe com n"*. Encolhe **para uma taxa fixa**; numa série real a taxa muda a cada resposta e a incerteza pode subir: `incerteza(10, 7) = 0,1233` contra `incerteza(11, 7) = 0,1237`.
 
 O script de monotonia virou permanente: [`82_monotonia.py`](scripts/82_monotonia.py), com as duas exceções medidas declaradas.
+
+---
+
+## Parte 13: a convenção de sinal do pacote inteiro
+
+Corrigi o nome enganoso em `gate.risco` e **não conferi o `dominio`** — que tinha o mesmo defeito, no seu parâmetro **principal**:
+
+| passado como `dificuldade_questao` | `p` devolvido |
+|---|---|
+| 0,2 (lido como "fácil") | **0,095** |
+| 0,9 (lido como "muito difícil") | **0,890** |
+
+Passar 0,9 como questão difícil dava o resultado de questão fácil.
+
+**A raiz é uma convenção que atravessa o pacote:** dificuldade é sempre representada pela **taxa de acerto** — valor alto significa questão **fácil**. `dificuldade.estimar(...).taxa` devolve facilidade, num módulo chamado `dificuldade`.
+
+A convenção é coerente, e é o tipo de coisa que inverte resultado em silêncio para quem chega de fora. Está agora declarada em [`trailup_core/__init__.py`](../../trailup_core/__init__.py), com a instrução: *se você tem dificuldade no sentido comum, passe `1 − dificuldade`*.
+
+Parâmetro renomeado para `acerto_na_questao`, com teste que verifica a coerência de sinal **entre os três módulos** — `estimar().taxa` alimentando `dominio` e `gate` na mesma direção.
+
+### E o verificador de consistência ganhou sete métricas
+
+Cobria três. Agora cobre dez, incluindo o **número de testes citado no README** — que já estava desatualizado (133 contra 135 reais) na primeira execução.
 
 ---
 

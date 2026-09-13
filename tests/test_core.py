@@ -865,3 +865,35 @@ def test_prever_turma_nunca_mais_estreito_que_estimar():
         for m in (5, 15, 30, 60, 120):
             k = int(0.7 * n)
             assert dificuldade.prever_turma(k, n, m).largura >= dificuldade.estimar(k, n).largura
+
+
+# ---------------- convenção de sinal ----------------
+def test_dominio_parametro_e_acerto_nao_dificuldade():
+    """Passar 0,9 como "questão difícil" devolvia p=0,890 — o oposto."""
+    import inspect
+    assert 'acerto_na_questao' in inspect.signature(dominio.dominio).parameters
+    facil = dominio.dominio(0.9, 5, 10).p
+    dificil = dominio.dominio(0.2, 5, 10).p
+    assert facil > dificil, 'acerto alto na questão = p alto'
+
+def test_convencao_de_sinal_e_coerente_entre_modulos():
+    """dificuldade.estimar().taxa alimenta dominio e gate — os três na mesma
+    direção: valor alto = fácil."""
+    facil = dificuldade.estimar(90, 100).taxa
+    dificil = dificuldade.estimar(10, 100).taxa
+    assert facil > dificil
+    assert dominio.dominio(facil, 5, 10).p > dominio.dominio(dificil, 5, 10).p
+    r_facil = gate.risco([False] * 10, 0.5, acerto_medio_topico=facil)
+    r_dificil = gate.risco([False] * 10, 0.5, acerto_medio_topico=dificil)
+    assert r_dificil.score > r_facil.score, 'tópico difícil = mais risco'
+
+
+def test_exemplo_usa_a_api_atual():
+    """O exemplo quebrou na renomeação de dominio — é o consumidor mais
+    próximo de um usuário real, e tem de compilar contra a API vigente."""
+    import ast
+    caminho = os.path.join(os.path.dirname(__file__), '..', 'exemplos', 'exemplo.py')
+    fonte = open(caminho).read()
+    ast.parse(fonte)
+    assert 'dificuldade_questao' not in fonte, 'kwarg renomeado ainda no exemplo'
+    assert 'acerto_na_questao' in fonte
