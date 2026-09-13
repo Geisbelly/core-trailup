@@ -424,3 +424,39 @@ Refeita sobre o objeto certo (§7), a cobertura é **nominal até n≈30** e cai
 | cobertura em n=200 | "87,9%" (preditiva) | **77,6%** (posterior) |
 | prior | força 15, no olho | **força 7,0**, derivada do corpus |
 | grupos de questões | 4, nomeados | **2**, separados pelo tempo |
+
+---
+
+## Correção de 2026-09-13 — a cobertura em *n* alto
+
+Este relatório afirmava que a cobertura do intervalo **degrada com muita evidência** (84,1% em n=100, 77,6% em n=200) e atribuía isso ao modelo binomial supor taxa fixa.
+
+**Estava errado, e pelo mesmo tipo de erro de antes:** o alvo da validação é a taxa observada numa amostra de validação, que tem **ruído próprio**. Em n alto esse ruído é comparável à largura do intervalo — o alvo se move tanto quanto o intervalo mede.
+
+Contabilizando o ruído do alvo:
+
+| n da estimativa | só o posterior | + ruído do alvo |
+|---|---|---|
+| 50–99 | 73,9% | **88,0%** |
+| 100–199 | 74,3% | **88,9%** |
+| 200–399 | 74,5% | **90,4%** |
+| 400+ | 76,4% | **90,5%** |
+
+**A cobertura é estável entre 88% e 91%.** O estimador estava certo; a validação é que media contra um alvo ruidoso.
+
+### O defeito real é outro
+
+`estimar()` responde *"qual é a dificuldade desta questão"*. A pergunta do professor é *"quanto a minha turma de 30 vai acertar"* — e para essa, o intervalo cobre **39,7%**.
+
+| turma | `estimar()` | `prever_turma()` |
+|---|---|---|
+| 15 alunos | 30,7% | **90,1%** |
+| 30 alunos | 39,7% | **88,8%** |
+| 60 alunos | 49,7% | **88,2%** |
+| 120 alunos | 58,4% | **86,4%** |
+
+Entra [`prever_turma()`](../../trailup_core/dificuldade.py). A largura triplica numa turma de 30 (0,097 → 0,279) porque a incerteza é real, não porque o método piorou.
+
+### Variação entre coortes reais
+
+Divisão **aleatória** de alunos dá σ = 0 — como tem de ser, já que não pode criar diferença real. Usando coortes reais (alunos antigos vs recentes no EdNet): **σ = 0,0153**, com correlação 0,953 entre as coortes. Pequena, mas não encolhe com n, e por isso entra no preditivo.

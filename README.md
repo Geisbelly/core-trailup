@@ -17,9 +17,9 @@ python3 -m pytest tests/ -q     # 20 testes de invariante
 
 | módulo | pergunta | medida | custo |
 |---|---|---|---|
-| [`dificuldade`](trailup_core/dificuldade.py) | quão difícil é esta questão? | cobertura nominal até n≈50; ±11 pts com 30 respostas | 30 alunos |
+| [`dificuldade`](trailup_core/dificuldade.py) | quão difícil é esta questão? | cobertura 88–91%; `prever_turma()` para a pergunta do professor | 30 alunos |
 | [`ritmo`](trailup_core/ritmo.py) | é de reconhecimento ou de elaboração? | 98% de acerto | **5 alunos** |
-| [`tempo`](trailup_core/tempo.py) | quanto deve demorar? | R² 0,56 | 5 alunos |
+| [`tempo`](trailup_core/tempo.py) | quanto deve demorar? | R² 0,578 | 5 alunos |
 | [`dominio`](trailup_core/dominio.py) | o aluno acerta a próxima? | AUC 0,721 (regra atual: 0,587) | histórico do aluno |
 | [`chute`](trailup_core/chute.py) | não sabe, ou não tentou? | traço com +0,922 de confiabilidade | 50 respostas na questão |
 | [`revisao`](trailup_core/revisao.py) | quando trazer de volta? | curva medida em 594 mil reencontros | nenhum |
@@ -30,7 +30,7 @@ python3 -m pytest tests/ -q     # 20 testes de invariante
 
 Cada arquivo traz **no cabeçalho** os números que o sustentam, o experimento que os produziu, e o que já se provou que **não** adianta tentar.
 
-Relatórios completos em [`docs/`](docs/) — cada um termina com um **apêndice de correções**, com o que mudou de uma versão para outra e por quê. A fila do que ainda não foi construído está em [`docs/CANDIDATOS.md`](docs/CANDIDATOS.md).
+Relatórios completos em [`docs/`](docs/) — cada um termina com um **apêndice de correções**. O caminho inteiro, de hipótese a estado atual, está em [`docs/TRAJETORIA.md`](docs/TRAJETORIA.md). A fila do que ainda não foi construído está em [`docs/CANDIDATOS.md`](docs/CANDIDATOS.md).
 
 ---
 

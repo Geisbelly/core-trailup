@@ -5,8 +5,24 @@ cortes arbitrarios: quem consome aplica o proprio limiar ao intervalo.
 
 Posterior Beta-Binomial com prior derivado do proprio corpus. O intervalo usa
 aproximacao normal do posterior - validada contra o Beta exato em 11.338
-questoes do EdNet, diferenca de cobertura menor que 1 ponto (ver
-FAIXA_DIFICULDADE.md).
+questoes do EdNet, diferenca de cobertura menor que 1 ponto.
+
+DOIS INTERVALOS, DUAS PERGUNTAS - nao confundir:
+
+  estimar()      "qual e a dificuldade desta questao?"
+                 intervalo sobre a taxa LATENTE. Cobertura 88-91% no EdNet,
+                 estavel de n=50 a n=400+.
+
+  prever_turma() "quanto a MINHA turma de 30 vai acertar?"
+                 soma o ruido de amostragem daquela turma. E MUITO mais largo,
+                 e e o unico honesto para essa pergunta.
+
+    turma de 30   so o posterior: cobre 39,7%  |  preditivo: cobre 88,8%
+    turma de 60   so o posterior: cobre 49,7%  |  preditivo: cobre 88,2%
+
+  Usar estimar() para responder "quanto minha turma vai acertar" erra em
+  3 de cada 5 turmas. A largura triplica (0,097 -> 0,279 numa turma de 30)
+  porque a incerteza e real, nao porque o metodo piorou.
 
 Sem dependencia externa.
 """
@@ -100,6 +116,34 @@ def estimar(acertos: int, respostas: int, prior: Prior = Prior(), nivel: float =
     z = Z[nivel]
     return Faixa(media, max(0.0, media - z * desvio), min(1.0, media + z * desvio),
                  nivel, alunos if alunos is not None else respostas)
+
+
+# Variacao da taxa de uma questao entre COORTES REAIS (alunos antigos vs
+# recentes no EdNet): sigma = 0,0153, com correlacao 0,953 entre as coortes.
+# E pequena, mas nao encolhe com n - entra no preditivo.
+SIGMA_COORTE = 0.0153
+
+
+def prever_turma(acertos: int, respostas: int, alunos_na_turma: int,
+                 prior: Prior = Prior(), nivel: float = 0.90,
+                 alunos: int | None = None) -> Faixa:
+    """Faixa da taxa que UMA TURMA de `alunos_na_turma` deve obter.
+
+    Diferente de `estimar()`, que cobre a taxa latente da questao. Aqui entra
+    tambem o sorteio daquela turma especifica - e e ele que domina em turma
+    pequena. Medido no EdNet: cobertura 88,8% numa turma de 30, contra 39,7%
+    do intervalo de `estimar()`.
+    """
+    if alunos_na_turma < 1:
+        raise ValueError('alunos_na_turma tem de ser >= 1')
+    base = estimar(acertos, respostas, prior, nivel, alunos)
+    z = Z[nivel]
+    var_post = ((base.maximo - base.minimo) / (2 * z)) ** 2
+    mu = base.taxa
+    var = var_post + mu * (1 - mu) / alunos_na_turma + SIGMA_COORTE ** 2
+    desvio = sqrt(var)
+    return Faixa(mu, max(0.0, mu - z * desvio), min(1.0, mu + z * desvio),
+                 nivel, base.respostas)
 
 
 def afirmar(faixa: Faixa, limiar: float, lado: str) -> bool:

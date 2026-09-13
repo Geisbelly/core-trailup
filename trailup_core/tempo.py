@@ -1,8 +1,16 @@
 """Tempo esperado de resposta a uma questao.
 
-Medido no EdNet (6,5 M respostas, split por aluno): R2 entre 0,56 e 0,57 sobre
-o log da latencia, usando APENAS a mediana da questao (0,571 e 0,561 em duas
-particoes por aluno). O modelo de boosting com 14 features chega a 0,651.
+Medido no EdNet (6,5 M respostas, split por aluno): R2 entre 0,56 e 0,58 sobre
+o log da latencia, usando APENAS a estatistica da questao.
+
+    media global                                  R2 -0,045
+    mediana bruta da questao                      R2  0,574
+    MEDIA DO LOG da questao (esperado_de_amostra) R2  0,578
+    mediana encolhida para a global (k=5)         R2  0,575
+    boosting com 14 features                      R2  0,651
+
+Encolher para a media global nao ajuda: a mediana da questao ja e estavel com
+poucas respostas. O teto do boosting nao e alcancavel por formula fechada.
 
 O aluno nao prediz o proprio tempo: sob split por aluno a mediana dele sequer
 existe (aluno de teste nunca visto no treino), e o preditor cai para o global -
@@ -44,6 +52,27 @@ def esperado(latencia_mediana: float, respostas: int) -> Esperado:
     if latencia_mediana <= 0:
         raise ValueError('latencia mediana deve ser positiva')
     return Esperado(float(latencia_mediana), respostas, respostas >= MIN_RESPOSTAS)
+
+
+def esperado_de_amostra(latencias, respostas: int | None = None) -> Esperado:
+    """Estimador melhor que a mediana bruta: MEDIA DO LOG das latencias.
+
+    O alvo previsto e log(tempo), entao a media no log e o estimador casado.
+    Medido no EdNet, split por aluno: R2 0,578 contra 0,574 da mediana bruta.
+    Ganho pequeno, mas de graca.
+
+    RESSALVA: e menos robusto que a mediana a outlier extremo. Com poucas
+    respostas e uma latencia absurda (aluno que deixou a tela aberta), a
+    mediana e mais segura. O ganho medido vale no agregado, com o corte de
+    600 s que a extracao aplica - aplique um corte parecido antes de chamar.
+    """
+    v = [float(x) for x in latencias if x is not None and float(x) > 0]
+    if not v:
+        raise ValueError('nenhuma latencia positiva na amostra')
+    from math import log, expm1, log1p
+    media_log = sum(log1p(x) for x in v) / len(v)
+    n = respostas if respostas is not None else len(v)
+    return Esperado(expm1(media_log), n, n >= MIN_RESPOSTAS)
 
 
 def quao_lento(segundos: float, esp: Esperado) -> float:

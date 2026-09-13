@@ -203,3 +203,36 @@ def test_trajetoria_nao_entra_no_score():
     """A trajetoria e descricao. ordenar() nao pode aceita-la como feature."""
     import inspect
     assert 'trajetoria' not in inspect.getsource(engajamento.ordenar)
+
+
+# ---------------- melhorias medidas ----------------
+def test_prever_turma_e_mais_largo_que_estimar():
+    """A pergunta da turma é mais incerta que a da questão. Tem de aparecer."""
+    f = dificuldade.estimar(20, 30)
+    t = dificuldade.prever_turma(20, 30, 30)
+    assert t.largura > f.largura * 1.3
+    assert abs(t.taxa - f.taxa) < 1e-9, 'o centro é o mesmo; só a incerteza muda'
+
+def test_prever_turma_estreita_com_turma_maior():
+    l = [dificuldade.prever_turma(20, 30, m).largura for m in (15, 30, 60, 120)]
+    assert l == sorted(l, reverse=True)
+
+def test_prever_turma_nunca_fica_abaixo_do_posterior():
+    for n in (10, 50, 200, 1000):
+        f = dificuldade.estimar(int(0.7 * n), n)
+        t = dificuldade.prever_turma(int(0.7 * n), n, 30)
+        assert t.largura >= f.largura
+
+def test_prever_turma_rejeita_turma_vazia():
+    with pytest.raises(ValueError):
+        dificuldade.prever_turma(20, 30, 0)
+
+def test_esperado_de_amostra_usa_media_do_log():
+    """Média do log fica entre a mediana e a média aritmética."""
+    v = [10, 12, 15, 60, 200, 11, 13]
+    e = tempo.esperado_de_amostra(v)
+    assert sorted(v)[len(v) // 2] < e.segundos < sum(v) / len(v)
+
+def test_esperado_de_amostra_rejeita_amostra_vazia():
+    with pytest.raises(ValueError):
+        tempo.esperado_de_amostra([0, -1, None])
