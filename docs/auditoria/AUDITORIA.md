@@ -10,7 +10,7 @@ Base: EdNet KT3, 6.504.124 respostas, acerto global 0,6677, split por aluno 70/3
 
 ## Resultado das 7 partes
 
-**118 verificações. 51 defeitos encontrados**, todos da mesma família: uma saída afirmando uma escala que ninguém mediu. Nenhum apareceria olhando AUC.
+**125 verificações. 52 defeitos encontrados**, todos da mesma família: uma saída afirmando uma escala que ninguém mediu. Nenhum apareceria olhando AUC.
 
 | onde | o que afirmava | o que era |
 |---|---|---|
@@ -46,6 +46,7 @@ Base: EdNet KT3, 6.504.124 respostas, acerto global 0,6677, split por aluno 70/3
 | README | 133 testes | eram 135 |
 | `DF_STOPWORD` | 0,5 é indistinguível de 0,4 | rejeitei com teste inválido |
 | `engajamento` AUC | 0,856 / 0,862 | 0,846 / 0,868 (média de 12) |
+| `gate` acumulado linear | 0,746 | 0,732 ± 0,003 (média de 6) |
 
 E oito que **conferiram**: `cobertura` (+0,462) e `conceitos_faltando` (−0,410) do `pre_avaliacao`, `gate.MIN_RESPOSTAS = 5` (é o cotovelo exato: 0,534 abaixo dele, 0,660 nele), a aproximação normal do `dificuldade` (cobertura 75,3% contra 74,8% do Beta), `perfil_chute` (p90 e p99), a tabela `REFERENCIA` do engajamento (diferença 0,000), o limite de 3× do `demorando`, e `ritmo.FRONTEIRA_SEG` — cujo 40 s é praticamente o corte ótimo por Otsu (39,8 s), com d de Cohen **maior** que o documentado (4,18 contra 3,30).
 
@@ -801,6 +802,46 @@ Compare com o `dominio`, que tinha desvio de 0,0016 e amplitude de 0,0039 em cin
 Idênticos na quarta casa. Não valia trocar — e o que **vale em todas as 12** é exatamente o que os testes já fixavam: o peso da frequência nunca fica negativo, e a recência sempre pesa mais de 4× que ela.
 
 > A lição prática: **checar estabilidade de semente custa minutos e deveria ser a primeira coisa**, não a décima-quarta rodada. Se eu tivesse feito antes, não teria publicado 0,856 como se fosse o número.
+
+---
+
+## Parte 17: varredura completa de estabilidade — sete medidas, seis partições
+
+Em vez de checar um número por rodada, apliquei a checagem de semente a **todos** os números de capa que faltavam, de uma vez.
+
+| medida | média | desvio | amplitude | afirmado | distância |
+|---|---|---|---|---|---|
+| **gate (acumulado linear)** | **0,7323** | 0,0027 | 0,0079 | **0,746** | **5,1 desvios** ❌ |
+| revisão binária | 0,6668 | 0,0018 | 0,0045 | 0,665 | 1,0 ✅ |
+| revisão interpolada | 0,6715 | 0,0020 | 0,0051 | 0,669 | 1,3 ✅ |
+| tempo R² (mediana) | 0,5627 | 0,0120 | 0,0334 | 0,574 | 0,9 ✅ |
+| tempo R² (média do log) | 0,5669 | 0,0117 | 0,0325 | 0,578 | 0,9 ✅ |
+| chute: gap no reencontro | 0,0574 | 0,0088 | 0,0248 | 0,061 | 0,4 ✅ |
+| dificuldade: cobertura | 0,8920 | 0,0074 | 0,0204 | 0,890 | 0,3 ✅ |
+
+**Seis confirmam. Uma está 5,1 desvios fora** — o terceiro número de capa que veio de uma partição favorável, depois do engajamento (1,8 desvios) e junto com ele.
+
+### E a distinção que importa
+
+O 0,746 aparecia na conclusão *"o gap do gate não é de não-linearidade"*, comparando tabela contra linear. **Essa comparação continua válida** — as duas foram medidas na mesma partição, é um teste pareado, exatamente o desenho que a Parte 15 estabeleceu como correto.
+
+O que não vale é citar **0,746 como o nível** da forma linear. O nível é **0,732 ± 0,003**.
+
+> Três números de capa vieram de partição favorável (engajamento EdNet, gate linear, e o 0,856 que repeti em seis documentos). Os três teriam sido pegos por uma checagem de 10 minutos feita **antes** de publicar. É o custo de tratar "medi uma vez" como "medi".
+
+### Diferença de sensibilidade entre os módulos
+
+| módulo | desvio entre partições | n |
+|---|---|---|
+| `dominio` | 0,0016 | 6,5 M respostas |
+| `gate` | 0,0027 | 5,4 M pontos de decisão |
+| `revisao` | 0,0018–0,0020 | 750 mil reencontros |
+| `dificuldade` | 0,0074 | 11 mil questões |
+| `engajamento` | 0,0059 | 18 mil alunos |
+| `tempo` | **0,0120** | 11 mil questões |
+| `chute` | **0,0088** | 128 mil casos |
+
+Quem agrega **por questão ou por aluno** é cinco vezes mais sensível que quem agrega por resposta. Qualquer melhoria abaixo de 0,02 no `tempo` ou no `chute` precisa de teste pareado para ser afirmada.
 
 ---
 

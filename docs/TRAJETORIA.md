@@ -77,12 +77,14 @@ O módulo mantém **dois conjuntos de pesos**, porque os ótimos diferem: sem hi
 
 **E o gap para o boosting não é de não-linearidade.** Testado exportando a interação entre as quatro features como **tabela de consulta** (1.646 células):
 
-| | AUC |
+| | AUC (uma partição) |
 |---|---|
 | só o acumulado, linear | 0,746 |
 | tabela de 1.646 células | **0,746** |
 | tabela + linear | 0,748 |
 | boosting com 30 features | **0,779** |
+
+> **Ressalva de estabilidade.** Em 6 partições, "só o acumulado, linear" dá **0,7323 ± 0,0027** — o 0,746 é uma partição favorável, 5,1 desvios acima. A **comparação** tabela-contra-linear continua válida (mesma partição, teste pareado); o que não vale é citar 0,746 como o nível da forma linear.
 
 A tabela captura toda interação possível entre essas quatro variáveis e **não ganha nada**. O que separa 0,748 de 0,779 são as outras 26 features — não a forma da função. Fechar o gap exige instrumentação nova, não aritmética mais esperta.
 

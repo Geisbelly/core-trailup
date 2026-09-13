@@ -127,6 +127,8 @@ Por isso `risco()` recebe **taxa de alerta**, não limiar: alertar os 10% de mai
 
 ## Como isto foi verificado
 
+> **Todo número de capa foi checado sob reamostragem.** Três vieram de partição favorável e foram corrigidos: o engajamento no EdNet (0,856 → **0,846 ± 0,006**), o acumulado linear do gate (0,746 → **0,732 ± 0,003**) e o 0,862 do OULAD (→ **0,868 ± 0,004**). Os demais confirmam dentro de 1,3 desvios.
+
 O pacote passou por uma auditoria de **13 rodadas**: cada número dos cabeçalhos remedido chamando o próprio código, depois fuzzing com entrada hostil, monotonicidade ao longo do domínio inteiro, cobertura símbolo a símbolo da API e consistência entre documentos.
 
 **97 verificações, 49 defeitos** — e nenhum deles apareceria olhando AUC. O padrão: **as saídas que só ordenam passaram sem defeito; as que têm unidade prometiam mais do que alguém tinha medido.**

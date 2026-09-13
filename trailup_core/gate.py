@@ -40,6 +40,16 @@ acerto no topico x acerto global x dificuldade x n de respostas:
     tabela + linear                           AUC 0,748
     boosting com 30 features                  AUC 0,779
 
+    RESSALVA DE ESTABILIDADE (2026-09-13): esses valores sao de UMA particao.
+    Em 6 particoes independentes, "so o acumulado, linear" da media 0,7323 com
+    desvio 0,0027 - o 0,746 publicado fica 5,1 DESVIOS acima. Era uma particao
+    favoravel.
+
+    A COMPARACAO entre tabela e linear continua valida, porque as duas foram
+    medidas na MESMA particao (teste pareado). O que nao vale e citar 0,746
+    como o nivel da forma linear: o nivel e 0,732 +- 0,003, que por acaso
+    coincide com o da forma combinada desta implementacao.
+
 A tabela captura toda interacao possivel entre essas quatro variaveis e nao
 ganha nada. O que separa 0,748 de 0,779 sao as OUTRAS 26 features, nao a forma
 da funcao. Fechar o gap exige instrumentacao nova, nao aritmetica mais
