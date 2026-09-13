@@ -110,6 +110,45 @@ def dias_ate_revisar(acertou_antes: bool, retencao_alvo: float = 0.75) -> float:
     return float('inf')
 
 
-def prioridade_revisao(dias_desde: float, acertou_antes: bool) -> float:
-    """0 a 1: quanto esta questao precisa ser revisada agora."""
-    return max(0.0, min(1.0, 1.0 - retencao(dias_desde, acertou_antes)))
+def esquecimento(dias_desde: float, acertou_antes: bool,
+                 proporcao_acertos: float | None = None) -> float:
+    """0 a 1: probabilidade estimada de o aluno JA TER ESQUECIDO.
+
+    E o complemento da retencao. Nome literal, porque e so isso que ela mede.
+    """
+    return max(0.0, min(1.0, 1.0 - retencao(dias_desde, acertou_antes, proporcao_acertos)))
+
+
+def prioridade_revisao(dias_desde: float, acertou_antes: bool,
+                       proporcao_acertos: float | None = None) -> float:
+    """Ordena por ESQUECIMENTO. Nao e ganho esperado - ver a ressalva.
+
+    RESSALVA MEDIDA (2026-09-13). O nome anterior desta funcao dizia "quanto
+    esta questao precisa ser revisada agora", o que sugere que ela encontra
+    onde a revisao rende mais. ISSO NAO ESTA DEMONSTRADO, e o que ha aponta
+    para o contrario.
+
+    Olhando o encontro SEGUINTE ao reencontro, por quintil de retencao prevista
+    (entre os que ERRARAM no reencontro, 60.433 casos):
+
+        retencao prevista    acerta no encontro seguinte
+             0,62                     64,6%
+             0,74                     66,7%
+             0,83                     64,8%
+             0,85                     71,0%
+             0,89                     70,9%
+
+    Item mais esquecido nao rende MAIS depois - rende menos. Entre os que
+    acertaram no reencontro o padrao e o mesmo (79,2% a 90,7%).
+
+    Isso NAO prova que revisar cedo e melhor: os itens de baixa retencao sao
+    mais dificeis e mais antigos, e iriam pior de qualquer jeito. Sem sortear
+    o momento da revisao nao da para separar as duas coisas com dado
+    observacional.
+
+    O que se pode afirmar: esta funcao ordena por PROBABILIDADE DE TER
+    ESQUECIDO. Use `esquecimento()`, que e o mesmo numero com o nome certo.
+    Tratar isso como "onde a revisao rende mais" e uma suposicao sua, nao um
+    achado deste corpus.
+    """
+    return esquecimento(dias_desde, acertou_antes, proporcao_acertos)

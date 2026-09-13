@@ -8,7 +8,28 @@ Base: EdNet KT3, 6.504.124 respostas, acerto global 0,6677, split por aluno 70/3
 
 ---
 
-## Resultado: 11 de 11 conferem
+## Resultado das 7 partes
+
+**23 verificações. 10 defeitos encontrados**, todos da mesma família: uma saída afirmando uma escala que ninguém mediu. Nenhum apareceria olhando AUC.
+
+| onde | o que afirmava | o que era |
+|---|---|---|
+| `ritmo._CONF` | confiança 1,00 | teto real 0,997 |
+| `ritmo.__str__` | exibia "100%" | arredondamento de 0,997 |
+| `engajamento.risco` | dispara na taxa pedida | estoura para 27,5% |
+| `evasao.sql` | probabilidade de evasão | **11× maior que a real** |
+| `evasao.sql` | sumir aumenta o risco | coeficiente invertido |
+| `dominio.p` | probabilidade | ECE 0,056, comprimido |
+| `dominio.confianca` | confiança cresce com n | erro real é plano |
+| `precisa_reforco` | limiar 0,45 | mudou de 2,3% para 12,2% |
+| `duracao_prevista` | soma de medianas | subestima 13% |
+| `prioridade_revisao` | onde revisar rende mais | só mede esquecimento |
+
+E três que **conferiram exatamente**: `perfil_chute` (p90 e p99), a tabela `REFERENCIA` do engajamento (diferença 0,000) e o limite de 3× do `demorando`.
+
+---
+
+## Parte 1: os números dos cabeçalhos
 
 | verificação | afirmado | medido | |
 |---|---|---|---|
@@ -254,6 +275,28 @@ Testei também somar **médias** em vez de medianas — acerta a mediana total s
 | p99 | 0,079 | **0,0786** |
 
 As faixas pegam 9,7% e 1,0% dos alunos — exatamente o que os percentis prometem. Nenhum ajuste necessário.
+
+---
+
+## Parte 7: `prioridade_revisao` prometia ganho, entrega esquecimento
+
+A função é `1 − retenção`, e o docstring dizia *"quanto esta questão precisa ser revisada agora"* — o que sugere que ela encontra **onde a revisão rende mais**.
+
+Testado olhando o encontro **seguinte** ao reencontro, entre os que erraram no reencontro (60.433 casos):
+
+| retenção prevista | acerta no encontro seguinte |
+|---|---|
+| 0,62 | 64,6% |
+| 0,74 | 66,7% |
+| 0,83 | 64,8% |
+| 0,85 | 71,0% |
+| 0,89 | **70,9%** |
+
+**Item mais esquecido não rende mais depois — rende menos.** Entre os que acertaram no reencontro o padrão se repete (79,2% a 90,7%).
+
+> **Mas isso não prova o contrário.** Os itens de baixa retenção são mais difíceis e mais antigos: iriam pior de qualquer jeito. **Sem sortear o momento da revisão, dado observacional não separa as duas coisas.** O que se pode afirmar é o que a função calcula, não o que ela sugeria calcular.
+
+**Conserto:** entra `esquecimento()`, que é o mesmo número com o nome literal. `prioridade_revisao` vira alias, com a ressalva no docstring: tratar isso como "onde a revisão rende mais" é suposição de quem usa, não achado deste corpus.
 
 ---
 

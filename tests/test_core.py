@@ -489,3 +489,19 @@ def test_perfil_chute_fronteiras():
     assert chute.perfil_chute(0.0199) == 'dentro do normal'
     assert chute.perfil_chute(0.020) == 'acima do normal'
     assert chute.perfil_chute(0.079) == 'muito acima do normal'
+
+
+# ---------------- revisao: prioridade é esquecimento, não ganho ----------------
+def test_esquecimento_e_o_complemento_da_retencao():
+    for dias in (1, 7, 60):
+        for ac in (True, False):
+            assert revisao.esquecimento(dias, ac) == pytest.approx(
+                1 - revisao.retencao(dias, ac))
+
+def test_prioridade_e_alias_de_esquecimento():
+    """Mesmo número, nomes diferentes — o honesto é `esquecimento`."""
+    assert revisao.prioridade_revisao(7, True) == revisao.esquecimento(7, True)
+
+def test_esquecimento_cresce_com_o_tempo():
+    v = [revisao.esquecimento(d, acertou_antes=False) for d in (1, 7, 60)]
+    assert v == sorted(v)
