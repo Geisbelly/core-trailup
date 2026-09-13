@@ -67,6 +67,25 @@ $$;
 COMMENT ON FUNCTION trailup_risco_evasao IS
   'Risco de abandono nas proximas 4 semanas. Coeficientes do OULAD; recalibrar com dado proprio.';
 
+-- LIMIARES REFEITOS EM 2026-09-13, junto com os coeficientes. Os anteriores
+-- (0,28 e 0,15) vinham da escala antiga, que superestimava o risco em 11x.
+-- Sobre a escala corrigida eles ficaram MORTOS:
+--
+--   faixa 'alto' com limiar 0,28  ->  pegava 0,27% dos alunos-semana
+--   faixa 'atencao' com 0,15      ->  pegava 0,63%
+--
+-- A precisao continuava alta (25% de evasao entre os marcados), mas a
+-- cobertura era nula: a funcao praticamente nao classificava ninguem. Foi a
+-- terceira vez neste modulo que consertar uma escala deixou para tras o
+-- limiar que cortava nela - as outras duas foram `precisa_reforco` e o
+-- limiar de `tendencia` do dominio.
+--
+-- Distribuicao do risco na escala corrigida (teste 2014J, 195.797 linhas):
+--   media 0,0212 | mediana 0,0141 | p70 0,0213 | p90 0,0428 | p95 0,0557
+--
+-- Os limiares sao os percentis EXATOS, nao arredondados: arredondar 0,0428
+-- para 0,043 empurra o corte para cima do p90 e a faixa pega menos de 10%.
+--
 -- Faixa em vez de score bruto: o professor ve a faixa, nao o numero.
 -- Ver a issue de LGPD (#195): score bruto e serie historica de risco de menor
 -- sao perfil; a faixa e acionavel sem expor o perfil.
@@ -74,8 +93,8 @@ CREATE OR REPLACE FUNCTION trailup_faixa_risco(p_risco numeric)
 RETURNS text LANGUAGE sql IMMUTABLE PARALLEL SAFE AS $$
   SELECT CASE
     WHEN p_risco IS NULL THEN 'sem dados'
-    WHEN p_risco >= 0.28 THEN 'alto'        -- ~top 10%: precisao 12,2%, lift 3,3x
-    WHEN p_risco >= 0.15 THEN 'atencao'
-    ELSE 'normal'
+    WHEN p_risco >= 0.0428 THEN 'alto'      -- p90 medido: evasao 9,96%, lift 3,8x
+    WHEN p_risco >= 0.0213 THEN 'atencao'   -- p70 medido: evasao 4,24%, lift 1,6x
+    ELSE 'normal'                           -- 70%: evasao 1,11%, lift 0,4x
   END;
 $$;

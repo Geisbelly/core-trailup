@@ -54,6 +54,17 @@ from __future__ import annotations
 from bisect import bisect_right
 
 # (dias, retencao) medidos
+# ATENCAO: _ACERTOU NAO E MONOTONICA. Sobe em dois pontos:
+#   0,04 -> 1 dia   : 0,901 -> 0,907
+#   60   -> 180 dias: 0,819 -> 0,831
+# Sao os numeros medidos, nao suavizados. A primeira subida e compativel com
+# consolidacao; a segunda, com selecao (quem reencontra uma questao depois de
+# 180 dias e quem continuou estudando). Nao da para separar as duas coisas com
+# dado observacional, entao a tabela fica como medida.
+#
+# Consequencia: `esquecimento` tambem nao e monotonico para quem acertou, e
+# `dias_ate_revisar` devolve o PRIMEIRO cruzamento com o alvo - nao o unico.
+# `_ERROU`, essa sim, e estritamente decrescente.
 _ACERTOU = [(0.04, .901), (1, .907), (3, .873), (7, .859), (21, .835), (60, .819), (180, .831)]
 _ERROU   = [(0.04, .836), (1, .793), (3, .715), (7, .661), (21, .614), (60, .581), (180, .575)]
 
@@ -124,6 +135,11 @@ def dias_ate_revisar(acertou_antes: bool, retencao_alvo: float = 0.75,
     Com alvo de 75%: quem ERROU precisa voltar em ~2 dias; quem ACERTOU nao
     chega a cair ate 75% no horizonte medido (180 dias) - revisar por outra
     razao que nao o esquecimento.
+
+    Devolve o PRIMEIRO cruzamento com o alvo. Como `_ACERTOU` nao e monotonica
+    (sobe de 60 para 180 dias), um alvo entre 0,819 e 0,831 e cruzado, e depois
+    a retencao volta a subir acima dele. O primeiro cruzamento continua sendo a
+    resposta util - so nao e o unico.
 
     `margem` compensa o vies medido de ~4 pontos (ver a tabela acima): o prazo
     e calculado para `retencao_alvo + margem`, que e o que entrega o alvo

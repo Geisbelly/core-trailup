@@ -81,7 +81,12 @@ class Dominio:
 
 
 def incerteza(respostas: int, acertos: int = 0, media_global: float = 0.67) -> float:
-    """Desvio-padrao posterior da taxa do aluno no topico. E o que ENCOLHE com n.
+    """Desvio-padrao posterior da taxa do aluno no topico.
+
+    Encolhe com n PARA UMA TAXA FIXA. Nao e funcao so de n: depende tambem da
+    taxa observada, e uma taxa que se aproxima de 0,5 aumenta a variancia. Numa
+    serie real de um aluno a incerteza pode subir de uma resposta para a outra
+    - `incerteza(10, 7)` = 0,1233 e `incerteza(11, 7)` = 0,1237.
 
     Medido no EdNet, por faixa de n no topico:
 

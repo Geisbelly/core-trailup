@@ -10,7 +10,7 @@ Base: EdNet KT3, 6.504.124 respostas, acerto global 0,6677, split por aluno 70/3
 
 ## Resultado das 7 partes
 
-**64 verificações. 44 defeitos encontrados**, todos da mesma família: uma saída afirmando uma escala que ninguém mediu. Nenhum apareceria olhando AUC.
+**87 verificações. 47 defeitos encontrados**, todos da mesma família: uma saída afirmando uma escala que ninguém mediu. Nenhum apareceria olhando AUC.
 
 | onde | o que afirmava | o que era |
 |---|---|---|
@@ -39,6 +39,9 @@ Base: EdNet KT3, 6.504.124 respostas, acerto global 0,6677, split por aluno 70/3
 | `tempo.demorando` | limiar de 3× | inverte na margem de erro da mediana |
 | `discriminacao.confirmar` | marca suspeita | dizia "ok" para o não-mensurável |
 | 20 entradas hostis | erro claro ou valor são | NaN e infinito vazando |
+| `trailup_faixa_risco` | ~top 10% em `alto` | pegava 0,27% — faixa morta |
+| `revisao._ACERTOU` | curva de esquecimento | sobe em dois pontos |
+| `dominio.incerteza` | "encolhe com n" | só para taxa fixa |
 
 E oito que **conferiram**: `cobertura` (+0,462) e `conceitos_faltando` (−0,410) do `pre_avaliacao`, `gate.MIN_RESPOSTAS = 5` (é o cotovelo exato: 0,534 abaixo dele, 0,660 nele), a aproximação normal do `dificuldade` (cobertura 75,3% contra 74,8% do Beta), `perfil_chute` (p90 e p99), a tabela `REFERENCIA` do engajamento (diferença 0,000), o limite de 3× do `demorando`, e `ritmo.FRONTEIRA_SEG` — cujo 40 s é praticamente o corte ótimo por Otsu (39,8 s), com d de Cohen **maior** que o documentado (4,18 contra 3,30).
 
@@ -631,6 +634,50 @@ Uma questão que **não deu para medir** era silenciosamente classificada como b
 Todas passam a validar na entrada. `calibrar` agora **diz qual campo falta**, em vez de `KeyError: 'dias_recentes'`.
 
 O fuzzer virou script permanente: [`80_fuzz.py`](scripts/80_fuzz.py). Roda sem dataset e falha se passar de 3 problemas.
+
+---
+
+## Parte 12: as faixas do SQL estavam mortas, e a curva não é monotônica
+
+### As faixas de `evasao.sql` ficaram na escala antiga
+
+Consertei os coeficientes e **deixei os limiares**. Terceira vez neste módulo — as outras foram `precisa_reforco` e o limiar de `tendencia`.
+
+| faixa | limiar antigo | pegava, na escala nova |
+|---|---|---|
+| `alto` | ≥ 0,28 | **0,27%** dos alunos-semana |
+| `atencao` | ≥ 0,15 | 0,63% |
+
+**A precisão continuava alta** (25% de evasão entre os marcados) **e a cobertura era nula** — a função praticamente não classificava ninguém. É o modo de falha que passa despercebido: não há erro, só silêncio.
+
+Distribuição real do risco na escala corrigida: média 0,0212, p70 **0,0213**, p90 **0,0428**.
+
+| faixa nova | limiar | casos | evasão | lift |
+|---|---|---|---|---|
+| `alto` | ≥ 0,0428 | 10,0% | **9,96%** | 3,8× |
+| `atencao` | ≥ 0,0213 | 20,0% | 4,24% | 1,6× |
+| `normal` | — | 70,0% | 1,11% | 0,4× |
+
+> **Detalhe que quase me pegou de novo:** arredondei 0,0428 para 0,043 e o teste falhou — 0,043 fica **acima** do p90, e a faixa passaria a pegar menos de 10%. Os limiares são os percentis exatos.
+
+### A curva de esquecimento não é monotônica
+
+Varredura de monotonicidade ao longo de **todo o domínio** (não em pontos isolados) achou quatro violações. Duas eram artefato da minha varredura; **duas são reais**:
+
+```
+_ACERTOU = [0,901, 0,907, 0,873, 0,859, 0,835, 0,819, 0,831]
+             ↑ sobe de 0,04 para 1 dia          ↑ sobe de 60 para 180
+```
+
+`_ERROU` é estritamente decrescente. A de quem **acertou** sobe em dois pontos — compatível com consolidação no primeiro caso e com **seleção** no segundo (quem reencontra uma questão depois de 180 dias é quem continuou estudando). Não dá para separar com dado observacional, então a tabela fica como medida, **documentada**.
+
+Consequência: `esquecimento` também não é monotônico para quem acertou, e `dias_ate_revisar` devolve o **primeiro** cruzamento — não o único.
+
+### E `incerteza` não é função só de `n`
+
+O docstring dizia *"é o que encolhe com n"*. Encolhe **para uma taxa fixa**; numa série real a taxa muda a cada resposta e a incerteza pode subir: `incerteza(10, 7) = 0,1233` contra `incerteza(11, 7) = 0,1237`.
+
+O script de monotonia virou permanente: [`82_monotonia.py`](scripts/82_monotonia.py), com as duas exceções medidas declaradas.
 
 ---
 

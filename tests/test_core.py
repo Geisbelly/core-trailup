@@ -809,3 +809,59 @@ def test_esperado_de_amostra_filtra_nao_finitos():
     e = tempo.esperado_de_amostra([inf, 10.0, 20.0])
     assert e.segundos == pytest.approx(
         tempo.esperado_de_amostra([10.0, 20.0]).segundos)
+
+
+# ---------------- as faixas do SQL ----------------
+def _faixa_do_sql(risco):
+    """Lê os limiares direto do .sql — pega drift entre arquivo e documentação."""
+    caminho = os.path.join(os.path.dirname(__file__), '..', 'sql', 'evasao.sql')
+    corpo = open(caminho).read()
+    corpo = corpo[corpo.index('trailup_faixa_risco'):]
+    alto = float(_re.search(r">=\s*([\d.]+)\s*THEN\s*'alto'", corpo).group(1))
+    aten = float(_re.search(r">=\s*([\d.]+)\s*THEN\s*'atencao'", corpo).group(1))
+    return 'alto' if risco >= alto else ('atencao' if risco >= aten else 'normal')
+
+def test_faixas_do_sql_cobrem_a_escala_real():
+    """Os limiares antigos (0,28/0,15) pegavam 0,27% dos casos na escala nova —
+    precisão alta e cobertura nula."""
+    assert _faixa_do_sql(0.05) == 'alto', 'p90 da escala real tem de cair em alto'
+    assert _faixa_do_sql(0.03) == 'atencao'
+    assert _faixa_do_sql(0.01) == 'normal'
+
+def test_faixas_do_sql_sao_monotonicas():
+    ordem = {'normal': 0, 'atencao': 1, 'alto': 2}
+    v = [ordem[_faixa_do_sql(r)] for r in (0.0, 0.01, 0.02, 0.03, 0.05, 0.3, 0.9)]
+    assert v == sorted(v)
+
+def test_limiar_alto_do_sql_bate_o_p90_medido():
+    """p90 medido no teste 2014J: 0,0428. Arredondar para 0,043 empurra o corte
+    para cima do percentil e a faixa passa a pegar menos de 10%."""
+    assert _faixa_do_sql(0.0428) == 'alto'
+    assert _faixa_do_sql(0.0427) != 'alto'
+
+
+# ---------------- monotonia: o que vale e o que não vale ----------------
+def test_curva_de_quem_acertou_nao_e_monotonica():
+    """Achado medido, não suavizado: sobe em 0,04->1 dia e em 60->180."""
+    v = [r for _, r in revisao._ACERTOU]
+    assert v != sorted(v, reverse=True), 'a tabela é a medida, não uma curva ideal'
+    assert v[1] > v[0], 'sobe no primeiro dia'
+    assert v[-1] > v[-2], 'sobe de 60 para 180'
+
+def test_curva_de_quem_errou_e_estritamente_decrescente():
+    v = [r for _, r in revisao._ERROU]
+    assert v == sorted(v, reverse=True)
+    assert len(set(v)) == len(v)
+
+def test_incerteza_cai_com_n_para_taxa_fixa():
+    """Não é função só de n: com acertos=int(0,7n) a taxa oscila e a monotonia
+    se quebra por discretização."""
+    v = [dominio.incerteza(n, n) for n in range(1, 60)]
+    assert v == sorted(v, reverse=True)
+    assert dominio.incerteza(11, 7) > dominio.incerteza(10, 7), 'a taxa também pesa'
+
+def test_prever_turma_nunca_mais_estreito_que_estimar():
+    for n in (10, 30, 100, 400):
+        for m in (5, 15, 30, 60, 120):
+            k = int(0.7 * n)
+            assert dificuldade.prever_turma(k, n, m).largura >= dificuldade.estimar(k, n).largura
