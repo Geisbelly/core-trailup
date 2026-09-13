@@ -576,3 +576,139 @@ A logística linear **ganha AUC e perde calibração** no EdNet (ECE 0,049 contr
 - **Os desfechos não são idênticos.** No EdNet e no ARES, "voltou" é atividade. No OULAD existe também a **desmatrícula formal**, e contra ela a profundidade (0,611) é melhor que contra atividade (0,564) — sinal de que os dois desfechos não são a mesma coisa. Só o de atividade é comparável entre as bases.
 - **A recência é adjacente à janela do desfecho.** Ela olha os dias 20–29 para prever os dias 30–59. Não há vazamento — é tudo informação disponível na hora da decisão — mas parte do ganho vem de estar mais perto no tempo, não de medir melhor.
 - **Tudo observacional.** Nada aqui autoriza dizer que fazer o aluno aparecer o faria ficar.
+
+---
+
+# Terceira rodada: um modelo só, treinado nas duas bases
+
+## 21. O problema de juntar as bases cruas
+
+Juntar EdNet e OULAD num conjunto só e treinar parece o caminho óbvio. Não é, e o motivo é medível.
+
+**Teste:** prever, a partir dos três eixos, **de qual base a linha veio**.
+
+| representação | AUC para adivinhar a base |
+|---|---|
+| valor absoluto (3 eixos) | **0,994** |
+| valor absoluto (2 eixos) | 0,828 |
+| **z dentro da coorte** | **0,508** |
+| percentil dentro da coorte | 0,493 |
+
+Com os valores absolutos as duas bases são **quase perfeitamente separáveis**. Um modelo treinado assim não precisa medir engajamento: basta identificar a plataforma e aplicar a taxa dela — 30,5% ou 92,9%. É atalho, não aprendizado.
+
+E o efeito aparece no resultado: treinando junto sem normalizar, o **EdNet piora de 0,849 para 0,788**.
+
+**A padronização dentro de cada coorte resolve.** Subtrair a média e dividir pelo desvio *da própria base* antes de juntar leva a identificabilidade a **0,508** — indistinguível de cara ou coroa. O modelo deixa de ter como trapacear.
+
+---
+
+## 22. Com normalização, um modelo só empata com os dois
+
+Logística treinada no conjunto **junto e normalizado**, avaliada nos 30% de teste de cada base:
+
+| base de teste | modelo único | modelo só daquela base |
+|---|---|---|
+| EdNet | **0,856** | 0,854 |
+| OULAD | **0,862** | 0,862 |
+
+**Empate.** Um modelo só, com três coeficientes, faz o que dois modelos específicos faziam.
+
+E ele ordena bem até numa base que **nunca viu**:
+
+| treino → teste | AUC |
+|---|---|
+| EdNet → OULAD | **0,865** |
+| OULAD → EdNet | **0,842** |
+
+Os pesos (sobre z da própria coorte):
+
+| termo | peso |
+|---|---|
+| intercepto | +0,846 |
+| **recência** | **+0,829** |
+| frequência | +0,136 |
+
+A recência pesa **6 vezes** mais que a frequência.
+
+### A profundidade sai do ordenador
+
+| eixos no modelo único | EdNet | OULAD |
+|---|---|---|
+| recência + frequência | **0,856** | 0,862 |
+| + profundidade | 0,848 | 0,862 |
+
+Ela **piora** o modelo único, porque significa coisas diferentes em cada plataforma — segundos lendo explicação no EdNet, fração de cliques em conteúdo no OULAD. Dentro de uma base ajuda; entre bases, injeta ruído.
+
+Fica no módulo como eixo de **diagnóstico** — diz *o que* está acontecendo — e fora do de **predição**.
+
+---
+
+## 23. A ordem transfere; o nível não transfere de jeito nenhum
+
+Exportando o modelo de uma base para a outra, sem recalibrar:
+
+| treino → teste | AUC | **ECE** |
+|---|---|---|
+| EdNet → OULAD | 0,869 | **0,359** |
+| OULAD → EdNet | 0,832 | **0,571** |
+
+AUC alto, calibração catastrófica. O modelo do OULAD aplicado ao EdNet diz que quase todo mundo fica; o erro médio entre previsto e observado é de **57 pontos percentuais**.
+
+> Testei se usar **percentil** em vez de valor absoluto resolveria — era minha hipótese. **Não resolve:** AUC praticamente igual (0,866 / 0,844) e ECE ainda pior (0,596 / 0,655). Normalizar a *feature* não conserta uma diferença que está na *prevalência do desfecho*.
+
+O mesmo ordenador precisa de limiares completamente diferentes:
+
+| base | saem | limiar para alertar os 10% piores | precisão | cobertura |
+|---|---|---|---|---|
+| EdNet | 69,8% | **0,440** | 94,9% | 13,6% |
+| OULAD | 7,1% | **0,582** | 38,7% | 54,4% |
+
+**Daí a arquitetura:** um ordenador comum, compartilhado; e limiar, faixas e probabilidade esperada **por coorte**. É o que `ordenar()` e `calibrar()` implementam.
+
+---
+
+## 24. Acurácia: o número que não se deve olhar sozinho
+
+Alvo invertido para "vai sair", que é sobre o que se age.
+
+### OULAD — onde 92,9% de acurácia não vale nada
+
+| limiar | alerta em | acurácia | acurácia balanceada | precisão | cobertura |
+|---|---|---|---|---|---|
+| **0,5 (padrão)** | **0,0%** | **92,9%** | **50,0%** | — | 0,0% |
+| taxa base | 31,9% | 72,7% | 77,3% | 18,4% | 82,6% |
+| top 5% de risco | 5,0% | 92,1% | 63,5% | **42,6%** | 30,1% |
+| **top 10% de risco** | 10,0% | 90,8% | **74,6%** | 39,7% | 55,8% |
+| top 20% de risco | 20,0% | 82,9% | 77,0% | 24,9% | 70,1% |
+| *nunca alertar* | *0,0%* | *92,9%* | *50,0%* | — | *0,0%* |
+
+**Com limiar 0,5 o modelo não alerta ninguém e acerta 92,9% — exatamente a acurácia de não ter modelo.** A acurácia balanceada de 50,0% denuncia: ele não distingue nada *naquele ponto de corte*. E no entanto o AUC é 0,863 — ele ordena muito bem, só nunca cruza 0,5.
+
+### EdNet — onde a base é o oposto
+
+| limiar | alerta em | acurácia | acurácia balanceada | precisão | cobertura |
+|---|---|---|---|---|---|
+| 0,5 (padrão) | 81,2% | 81,5% | 72,7% | 81,6% | 95,0% |
+| taxa base | 73,8% | 82,4% | 77,2% | 85,3% | 90,2% |
+| top 10% de risco | 10,0% | 39,3% | 56,0% | **95,1%** | 13,6% |
+| melhor acc. balanceada | 67,0% | 81,0% | **78,7%** | 87,9% | 84,4% |
+| *sempre alertar* | *100%* | *69,8%* | *50,0%* | *69,8%* | *100%* |
+
+Aqui 69,8% dos alunos saem, então "sempre alertar" já dá 69,8% de acurácia. Alertar os 10% de maior risco derruba a acurácia para 39,3% — **e é o melhor ponto de operação se a intervenção for cara**, porque a precisão é 95,1%.
+
+### A regra
+
+**Acurácia não é a métrica deste problema.** Ela depende da taxa base, que varia de 7% a 70% entre as duas plataformas, e do limiar, que é escolha de produto.
+
+O que reportar: **AUC** (ordena?), **acurácia balanceada** (distingue nos dois lados?), e **precisão e cobertura no ponto de operação escolhido** (quantos alertas, e quantos certos).
+
+O módulo expõe `risco(..., taxa_alerta=0.10)` em vez de um limiar fixo, exatamente por isso.
+
+---
+
+## 25. Limites desta rodada
+
+- **O AUC do teste *junto* (0,702) é mais baixo que o de cada base**, e não é métrica útil: misturar duas populações com prevalências de 30,5% e 92,9%, tendo padronizado *dentro* de cada uma, faz um aluno de z alto no EdNet e outro de z alto no OULAD receberem o mesmo score com probabilidades reais muito diferentes. **A AUC que importa é a de dentro de cada coorte.**
+- **Duas bases não provam generalização.** O empate do modelo único com os específicos vale para estas duas. A terceira pode quebrar — foi o que aconteceu com o volume.
+- **`risco()` dispara um pouco acima da taxa pedida** (7,9% quando se pede 5%), porque `dias_recentes` é contagem discreta e há empates no limiar. Para taxas pequenas, conferir a taxa efetiva na coorte.
+- **A profundidade foi excluída do ordenador por um resultado de duas bases** com operacionalizações diferentes. Não está provado que ela não ajudaria com uma medida equivalente nas duas.

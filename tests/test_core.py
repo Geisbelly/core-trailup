@@ -128,3 +128,57 @@ def test_pre_avaliacao_ordena_o_obvio():
     assert completa.nota > vazia.nota
     assert completa.cobertura > vazia.cobertura
     assert vazia.divagacao > completa.divagacao
+
+
+# ---------------- engajamento: ordenador comum ----------------
+def _coorte(n=900):
+    import random
+    r = random.Random(11)
+    out = []
+    for _ in range(n):
+        dr = r.choice([0] * 5 + list(range(1, 11)))
+        da = min(30, dr * 2 + r.randint(0, 8))
+        out.append({'dias_recentes': dr, 'dias_ativos': da,
+                    'profundidade_seg': r.random() * 40,
+                    'voltou': 1 if r.random() < 0.1 + 0.08 * dr else 0})
+    return out
+
+def test_ordenar_exige_calibracao():
+    """Sem media/desvio da coorte o peso comum nao significa nada."""
+    vazia = engajamento.Calibracao()
+    with pytest.raises(ValueError):
+        engajamento.ordenar(3, 10, vazia)
+
+def test_ordenar_e_monotonico_na_recencia():
+    cal = engajamento.calibrar(_coorte())
+    scores = [engajamento.ordenar(k, 15, cal) for k in range(11)]
+    assert scores == sorted(scores)
+
+def test_risco_dispara_perto_da_taxa_pedida():
+    cal = engajamento.calibrar(_coorte())
+    coorte = _coorte()
+    for taxa in (0.10, 0.20, 0.30):
+        disp = sum(engajamento.risco(c['dias_recentes'], c['dias_ativos'], cal, taxa)
+                   for c in coorte) / len(coorte)
+        assert abs(disp - taxa) < 0.08, f'{taxa:.0%} disparou {disp:.0%}'
+
+def test_risco_rejeita_taxa_nao_calibrada():
+    cal = engajamento.calibrar(_coorte())
+    with pytest.raises(ValueError):
+        engajamento.risco(0, 0, cal, taxa_alerta=0.42)
+
+def test_pesos_comuns_priorizam_recencia():
+    """O achado das duas bases: recencia pesa ~6x mais que frequencia."""
+    assert engajamento.PESOS['recencia'] > 5 * engajamento.PESOS['frequencia']
+
+def test_z_neutraliza_escala_entre_coortes():
+    """O passo que impede o modelo de aprender 'de qual plataforma veio'."""
+    baixa = [{'dias_recentes': k % 6, 'dias_ativos': k % 12, 'voltou': k % 2}
+             for k in range(600)]
+    alta = [{'dias_recentes': 5 + k % 6, 'dias_ativos': 18 + k % 12, 'voltou': k % 2}
+            for k in range(600)]
+    ca, cb = engajamento.calibrar(baixa), engajamento.calibrar(alta)
+    # o aluno mediano de cada coorte tem z ~ 0 nas duas, apesar das escalas
+    assert abs(ca.z('recencia', ca.media['recencia'])) < 1e-9
+    assert abs(cb.z('recencia', cb.media['recencia'])) < 1e-9
+    assert cb.media['recencia'] > ca.media['recencia'] + 4

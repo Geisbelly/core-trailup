@@ -24,7 +24,7 @@ python3 -m pytest tests/ -q     # 20 testes de invariante
 | [`chute`](trailup_core/chute.py) | não sabe, ou não tentou? | traço com +0,922 de confiabilidade | 50 respostas na questão |
 | [`revisao`](trailup_core/revisao.py) | quando trazer de volta? | curva medida em 594 mil reencontros | nenhum |
 | [`discriminacao`](trailup_core/discriminacao.py) | esta questão está quebrada? | marca com 18–27% de precisão | 40 respostas |
-| [`engajamento`](trailup_core/engajamento.py) | o aluno vai continuar? | AUC 0,843 / 0,861 em **duas bases** | 30 eventos |
+| [`engajamento`](trailup_core/engajamento.py) | o aluno vai continuar? | AUC 0,856 / 0,862 — **um modelo, duas bases** | 30 eventos |
 | [`pre_avaliacao`](trailup_core/pre_avaliacao.py) | esta resposta aberta está boa? | Spearman 0,447 (teto ≈0,88) | nenhum |
 | [`sql/evasao.sql`](sql/evasao.sql) | quem está em risco de abandonar? | lift 3,4× no top 10% | semanas de uso |
 
@@ -74,10 +74,26 @@ Os cortes do EdNet aplicados ao OULAD, na **mesma unidade** (fração de dias at
 
 A régua não transfere. Por isso `engajamento.calibrar()` existe, e por isso `dificuldade.derivar_prior()` não é parâmetro de ajuste — é propriedade do seu banco de questões.
 
+### Um modelo só, sem deixar ele adivinhar a plataforma
+
+Juntar as duas bases cruas **não funciona**: com os valores absolutos, prever *de qual base a linha veio* dá **AUC 0,994**. O modelo aprende a plataforma e aplica a taxa dela. Treinado assim, o EdNet piora de 0,849 para 0,788.
+
+Padronizando **dentro de cada coorte** antes de juntar, a identificabilidade cai para **0,508** — indistinguível de cara ou coroa. E aí um modelo único empata com os específicos:
+
+| base de teste | modelo único | modelo só daquela base |
+|---|---|---|
+| EdNet | **0,856** | 0,854 |
+| OULAD | **0,862** | 0,862 |
+
+**A ordem transfere; o nível não.** Exportando o modelo de uma base para a outra sem recalibrar, o AUC se mantém (0,832–0,869) mas o ECE vai a **0,36–0,57**. O mesmo ordenador precisa de limiares de 0,440 e 0,582 para alertar os mesmos 10%.
+
 ```python
 from trailup_core import engajamento
 
 cal = engajamento.calibrar(coorte)          # >= 300 alunos com desfecho
+engajamento.ordenar(2, 9, cal)              # score comum, sobre z da sua coorte
+engajamento.risco(2, 9, cal, taxa_alerta=0.10)   # está entre os 10% piores?
+
 e = engajamento.medir(dias_recentes=2, dias_ativos=9,
                       eventos=180, calibracao=cal)
 e.recencia.faixa        # 'medio'
@@ -85,7 +101,13 @@ e.retencao_esperada     # None enquanto a calibração não for confiável
 e.alertas()             # ['recencia'] quando há o que fazer
 ```
 
-Sem calibração, o módulo entrega **só a recência** — o único eixo cujos cortes são contagem, não escala. Ele prefere devolver menos a devolver um número que não significa nada.
+Sem calibração, o módulo entrega **só a recência** — o único eixo cujos cortes são contagem, não escala — e `ordenar()` levanta erro em vez de devolver um número sem sentido.
+
+### Acurácia não é a métrica aqui
+
+No OULAD, com limiar 0,5, o modelo **alerta ninguém e acerta 92,9%** — a mesma acurácia de não ter modelo. Acurácia balanceada nesse ponto: 50,0%. No EdNet, onde 69,8% saem, "sempre alertar" já dá 69,8%.
+
+Por isso `risco()` recebe **taxa de alerta**, não limiar: alertar os 10% de maior risco dá precisão de 95,1% no EdNet e 39,7% no OULAD, com a mesma régua de ordenação.
 
 ---
 

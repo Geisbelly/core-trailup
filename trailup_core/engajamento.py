@@ -42,6 +42,41 @@ CORTES ABSOLUTOS NAO TRANSFEREM - ESTE E O PONTO DA CALIBRACAO
                         OULAD  6% baixo / 17% medio / 77% alto
     Por isso as faixas saem de tabela por coorte, e `calibrar()` existe.
 
+UM MODELO SO, TREINADO NAS DUAS BASES JUNTAS
+    Juntar as bases cruas NAO funciona: com os valores absolutos, prever DE QUAL
+    BASE a linha veio da AUC 0,994. O modelo aprende a base e aplica a taxa dela
+    - nao mede engajamento. Treinar assim PIORA o EdNet (0,849 -> 0,788).
+
+    A correcao e padronizar DENTRO de cada coorte (z) ANTES de juntar:
+
+        prever a base, valor absoluto        AUC 0,994
+        prever a base, z dentro da coorte    AUC 0,508   <- indistinguivel
+
+    Com isso, um modelo unico treinado nas duas empata com o modelo especifico
+    de cada uma:
+
+        base     modelo unico   so aquela base
+        EdNet       0,856           0,854
+        OULAD       0,862           0,862
+
+    E ele ordena bem ate numa base que nunca viu:
+        treinado no EdNet, ordenando o OULAD    AUC 0,865
+        treinado no OULAD, ordenando o EdNet    AUC 0,842
+
+    E POR ISSO QUE `ordenar()` EXISTE E `calibrar()` E OBRIGATORIO:
+    a ORDEM transfere entre plataformas; o NIVEL nao transfere de jeito nenhum
+    (ECE 0,36 a 0,57 ao exportar o modelo de uma base para a outra). O mesmo
+    ordenador precisa de limiares completamente diferentes:
+
+        base    saem    limiar p/ alertar os 10% piores   precisao
+        EdNet   69,8%              0,440                    94,9%
+        OULAD    7,1%              0,582                    38,7%
+
+ACURACIA SOZINHA NAO DIZ NADA AQUI
+    No OULAD, com limiar 0,5 o modelo alerta NINGUEM e acerta 92,9% - a mesma
+    acuracia de "nunca alertar". Acuracia balanceada nesse ponto: 50,0%.
+    Use ponto de operacao (alertar os X% de maior risco), nao limiar fixo.
+
 LIMITE MEDIDO - LEIA ANTES DE EXIBIR
     Nenhum eixo prediz GANHO de acerto entre os dois meses (Spearman -0,04 a
     +0,03, n=5.523 no EdNet). Engajamento prediz PERMANENCIA, nao APRENDIZADO.
@@ -51,6 +86,12 @@ ONDE NAO FUNCIONOU
     de 87,7% e AUC 0,49-0,57 em todos os eixos. Quando a participacao e
     compulsoria e quase todo mundo volta, nao ha variacao a prever. Este modulo
     pressupoe continuacao VOLUNTARIA.
+
+A PROFUNDIDADE FICA FORA DO ORDENADOR
+    Ela ajuda dentro de uma base, mas atrapalha no modelo unico (EdNet cai de
+    0,856 para 0,848), porque significa coisas diferentes em cada plataforma -
+    segundos lendo explicacao no EdNet, fracao de cliques em conteudo no OULAD.
+    Fica como eixo de DIAGNOSTICO (o que esta acontecendo), nao de predicao.
 
 Sem dependencia externa.
 """
@@ -81,6 +122,11 @@ REFERENCIA = {
 # Sao os unicos cortes que valem nas duas bases, porque sao contagem, nao escala.
 CORTE_RECENCIA = (0, 3)   # 0 dias = baixo | 1 a 3 = medio | 4+ = alto
 
+# Ordenador comum: logistica treinada nas DUAS bases juntas, sobre features
+# padronizadas DENTRO de cada coorte. Preve p(continuar).
+# So vale sobre z da propria coorte - passar valor cru aqui nao significa nada.
+PESOS = {'intercepto': 0.8462, 'recencia': 0.8285, 'frequencia': 0.1358}
+
 
 @dataclass(frozen=True)
 class Eixo:
@@ -95,14 +141,23 @@ class Eixo:
 
 @dataclass(frozen=True)
 class Calibracao:
-    """Faixas de uma coorte propria. Sem isto, so a recencia tem faixa."""
+    """Tudo que e propriedade da SUA coorte, e nao transfere de outra."""
     cortes: dict = field(default_factory=dict)      # eixo -> (lim_baixo, lim_medio)
     retencao: dict = field(default_factory=dict)    # dias_recentes -> taxa observada
+    media: dict = field(default_factory=dict)       # eixo -> media da coorte
+    desvio: dict = field(default_factory=dict)      # eixo -> desvio da coorte
+    limiar: dict = field(default_factory=dict)      # taxa de alerta -> limiar de risco
     n: int = 0
 
     @property
     def confiavel(self) -> bool:
         return self.n >= 300
+
+    def z(self, eixo: str, valor: float) -> float:
+        """Padroniza dentro da coorte. E o passo que impede o modelo de
+        aprender 'de qual plataforma veio' em vez de engajamento."""
+        sd = self.desvio.get(eixo, 0.0)
+        return 0.0 if sd <= 0 else (valor - self.media.get(eixo, 0.0)) / sd
 
 
 @dataclass(frozen=True)
@@ -164,7 +219,71 @@ def calibrar(coorte, janela_dias: int = JANELA_DIAS,
         sel = [l['voltou'] for l in com_desfecho if int(l['dias_recentes']) == k]
         if len(sel) >= 30:
             ret[k] = sum(sel) / len(sel)
-    return Calibracao(cortes=cortes, retencao=ret, n=len(com_desfecho))
+
+    # media e desvio da coorte - sem isto o ordenador comum nao se aplica
+    media, desvio = {}, {}
+    for eixo, chave, transf in (('recencia', 'dias_recentes', float),
+                                ('frequencia', 'dias_ativos', lambda v: v / janela_dias)):
+        vals = [transf(l[chave]) for l in linhas if l.get(chave) is not None]
+        if len(vals) >= 30:
+            mu = sum(vals) / len(vals)
+            var = sum((v - mu) ** 2 for v in vals) / len(vals)
+            media[eixo], desvio[eixo] = mu, var ** 0.5
+
+    cal = Calibracao(cortes=cortes, retencao=ret, media=media, desvio=desvio,
+                     n=len(com_desfecho))
+
+    # limiares de risco para alertar os X% piores DESTA coorte
+    limiar = {}
+    if media and desvio and com_desfecho:
+        riscos = sorted(1.0 - ordenar(int(l['dias_recentes']),
+                                      l.get('dias_ativos', 0), cal, janela_dias)
+                        for l in linhas)
+        for taxa in (0.05, 0.10, 0.20, 0.30):
+            i = int((1 - taxa) * (len(riscos) - 1))
+            limiar[taxa] = riscos[i]
+    return Calibracao(cortes=cortes, retencao=ret, media=media, desvio=desvio,
+                      limiar=limiar, n=len(com_desfecho))
+
+
+def ordenar(dias_recentes: int, dias_ativos: int, calibracao: Calibracao,
+            janela_dias: int = JANELA_DIAS) -> float:
+    """Score de 0 a 1 - chance relativa de continuar, pelo ordenador comum.
+
+    Treinado nas duas bases de referencia JUNTAS, sobre features padronizadas
+    dentro de cada coorte. Empata com o modelo especifico de cada base
+    (EdNet 0,856 vs 0,854; OULAD 0,862 vs 0,862) e ordena bem numa base que
+    nunca viu (0,842 a 0,865).
+
+    NAO e probabilidade calibrada. Serve para ORDENAR e para cortar nos
+    limiares da propria coorte (`Calibracao.limiar`). O nivel absoluto nao
+    transfere entre plataformas - exportar o limiar de uma base para outra da
+    erro de calibracao de 0,36 a 0,57.
+    """
+    if not calibracao.desvio:
+        raise ValueError('ordenar() exige calibracao com media/desvio da coorte; '
+                         'rode calibrar() primeiro')
+    from math import exp
+    zr = calibracao.z('recencia', float(dias_recentes))
+    zf = calibracao.z('frequencia', dias_ativos / max(janela_dias, 1))
+    logit = (PESOS['intercepto'] + PESOS['recencia'] * zr
+             + PESOS['frequencia'] * zf)
+    logit = max(-30.0, min(30.0, logit))
+    return 1.0 / (1.0 + exp(-logit))
+
+
+def risco(dias_recentes: int, dias_ativos: int, calibracao: Calibracao,
+          taxa_alerta: float = 0.10, janela_dias: int = JANELA_DIAS) -> bool:
+    """Este aluno esta entre os `taxa_alerta` de maior risco DESTA coorte?
+
+    Usar isto, e nao um limiar fixo de 0,5. Medido no OULAD: com limiar 0,5 o
+    modelo alerta ninguem e acerta 92,9% - a mesma coisa que nao ter modelo.
+    """
+    if taxa_alerta not in calibracao.limiar:
+        raise ValueError(f'limiar para {taxa_alerta:.0%} nao calibrado; '
+                         f'disponiveis: {sorted(calibracao.limiar)}')
+    r = 1.0 - ordenar(dias_recentes, dias_ativos, calibracao, janela_dias)
+    return r >= calibracao.limiar[taxa_alerta]
 
 
 def medir(dias_recentes: int, dias_ativos: int, eventos: int,
