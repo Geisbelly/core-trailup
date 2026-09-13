@@ -174,6 +174,7 @@ class Calibracao:
     media: dict = field(default_factory=dict)       # eixo -> media da coorte
     desvio: dict = field(default_factory=dict)      # eixo -> desvio da coorte
     limiar: dict = field(default_factory=dict)      # taxa de alerta -> limiar de risco
+    taxa_efetiva: dict = field(default_factory=dict)  # taxa pedida -> taxa que de fato dispara
     n: int = 0
 
     @property
@@ -287,16 +288,19 @@ def calibrar(coorte, janela_dias: int = JANELA_DIAS,
                      n=len(com_desfecho))
 
     # limiares de risco para alertar os X% piores DESTA coorte
-    limiar = {}
+    limiar, efetiva = {}, {}
     if media and desvio and com_desfecho:
-        riscos = sorted(1.0 - ordenar(int(l['dias_recentes']),
-                                      l.get('dias_ativos', 0), cal, janela_dias)
-                        for l in linhas)
+        rs = [1.0 - ordenar(int(l['dias_recentes']), l.get('dias_ativos', 0), cal, janela_dias)
+              for l in linhas]
+        ordenados = sorted(rs)
         for taxa in (0.05, 0.10, 0.20, 0.30):
-            i = int((1 - taxa) * (len(riscos) - 1))
-            limiar[taxa] = riscos[i]
+            i = int((1 - taxa) * (len(ordenados) - 1))
+            lim = ordenados[i]
+            limiar[taxa] = lim
+            # quantos DE FATO passam nesse limiar - empates fazem estourar
+            efetiva[taxa] = sum(1 for r in rs if r >= lim) / len(rs)
     return Calibracao(cortes=cortes, retencao=ret, media=media, desvio=desvio,
-                      limiar=limiar, n=len(com_desfecho))
+                      limiar=limiar, taxa_efetiva=efetiva, n=len(com_desfecho))
 
 
 def ordenar(dias_recentes: int, dias_ativos: int, calibracao: Calibracao,
@@ -331,6 +335,16 @@ def risco(dias_recentes: int, dias_ativos: int, calibracao: Calibracao,
 
     Usar isto, e nao um limiar fixo de 0,5. Medido no OULAD: com limiar 0,5 o
     modelo alerta ninguem e acerta 92,9% - a mesma coisa que nao ter modelo.
+
+    ATENCAO: a taxa pedida NAO e a taxa que dispara. `dias_recentes` e contagem
+    discreta e no EdNet 67% dos alunos tem zero - muitos empatam no limiar e o
+    alerta estoura. Medido, pedindo 20%:
+
+        EdNet   dispara em 27,5%
+        OULAD   dispara em 20,8%
+
+    Consulte `calibracao.taxa_efetiva[taxa]` ANTES de dimensionar a operacao;
+    ela traz quantos de fato passam, medido na sua propria coorte.
     """
     if taxa_alerta not in calibracao.limiar:
         raise ValueError(f'limiar para {taxa_alerta:.0%} nao calibrado; '

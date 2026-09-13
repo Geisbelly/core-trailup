@@ -8,7 +8,7 @@ O TrailUp hoje dispara de 8 a 14 chamadas ao Gemini por lote de telemetria de 60
 
 ```bash
 python3 exemplos/exemplo.py     # os módulos trabalhando juntos
-python3 -m pytest tests/ -q     # 56 testes de invariante
+python3 -m pytest tests/ -q     # 58 testes de invariante
 ```
 
 ---
@@ -26,7 +26,7 @@ python3 -m pytest tests/ -q     # 56 testes de invariante
 | [`discriminacao`](trailup_core/discriminacao.py) | esta questão está quebrada? | 25% de precisão (lift 7,1×) com `confirmar()` | 40 respostas |
 | [`gate`](trailup_core/gate.py) | vale abrir a LLM agora? | AUC 0,732 (regra atual: 0,687) | 5 respostas no tópico |
 | [`engajamento`](trailup_core/engajamento.py) | o aluno vai continuar? | AUC 0,856 / 0,862 — **um modelo, duas bases** | 30 eventos |
-| [`pre_avaliacao`](trailup_core/pre_avaliacao.py) | esta resposta aberta está boa? | Spearman 0,463 (teto ≈0,88) | nenhum |
+| [`pre_avaliacao`](trailup_core/pre_avaliacao.py) | esta resposta aberta está boa? | Spearman 0,483 (teto ≈0,88) | nenhum |
 | [`sql/evasao.sql`](sql/evasao.sql) | quem está em risco de abandonar? | lift 3,4× no top 10% | semanas de uso |
 
 Cada arquivo traz **no cabeçalho** os números que o sustentam, o experimento que os produziu, e o que já se provou que **não** adianta tentar.

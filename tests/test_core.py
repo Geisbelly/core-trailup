@@ -353,3 +353,19 @@ def test_ritmo_nunca_exibe_100_por_cento():
     """0,997 arredondado com .0% vira "100%" - a falsa certeza pela porta dos fundos."""
     for n in (5, 50, 100000):
         assert '100%' not in str(ritmo.ritmo(15.0, n))
+
+
+def test_calibrar_reporta_a_taxa_efetiva():
+    """A taxa pedida não é a que dispara: dias_recentes é discreto e empata."""
+    cal = engajamento.calibrar(_coorte())
+    assert cal.taxa_efetiva, 'calibrar tem de reportar a taxa efetiva'
+    for taxa, ef in cal.taxa_efetiva.items():
+        assert ef >= taxa - 1e-9, 'empate só pode fazer disparar MAIS, nunca menos'
+
+def test_taxa_efetiva_bate_com_risco():
+    cal = engajamento.calibrar(_coorte())
+    coorte = _coorte()
+    for taxa in (0.10, 0.20):
+        disp = sum(engajamento.risco(c['dias_recentes'], c['dias_ativos'], cal, taxa)
+                   for c in coorte) / len(coorte)
+        assert abs(disp - cal.taxa_efetiva[taxa]) < 0.05

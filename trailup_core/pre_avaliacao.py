@@ -6,8 +6,21 @@ ordena respostas para o professor revisar.
 Medido no classEx (1.167 respostas, validacao agrupada por aluno):
 
     versao anterior (8 features)              Spearman 0,451 | QWK 0,318
-    esta versao (10 features, sem dependencia) Spearman 0,463 | QWK 0,350
+    esta versao, features do pipeline sklearn Spearman 0,463 | QWK 0,350
+    ESTA VERSAO PONTA A PONTA (auditoria)     Spearman 0,483
     boosting sobre as mesmas features         Spearman 0,429 | QWK 0,398
+
+A auditoria de 2026-09-13 chamou preparar()/avaliar() sobre os textos crus e
+mediu 0,483 - MELHOR que os 0,463 do pipeline sklearn que gerou os pesos. As
+duas implementacoes do grafo diferem (o pipeline usa as 60 palavras mais
+frequentes como stopword; este modulo deriva por frequencia de documento, o
+que no classEx da apenas 5). O numero que descreve o que ESTE codigo faz e
+0,483.
+
+LIMITE DA ESCALA: as previsoes ficam entre 2,29 e 5,00. O modulo nao consegue
+dizer "muito ruim" - o piso efetivo e 2,3 numa escala de 1 a 5. Para triagem
+isso nao atrapalha (as 10 piores tem nota real 2,20 contra 3,50 do geral),
+mas nao use o valor absoluto como nota.
     + encoder multilingue (torch, ~900 MB)    Spearman 0,532 | QWK 0,433
     TETO: execucoes INDEPENDENTES do LLM      Spearman 0,871-0,897
 
