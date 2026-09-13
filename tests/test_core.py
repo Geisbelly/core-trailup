@@ -460,3 +460,32 @@ def test_demorando_usa_a_distribuicao_da_questao():
 def test_demorando_nao_opina_sem_corpus():
     frouxo = tempo.esperado(latencia_mediana=10.0, respostas=2)
     assert not tempo.demorando(1000.0, frouxo), 'sem corpus não afirma'
+
+
+# ---------------- duracao_prevista: soma de medianas é enviesada ----------------
+def test_duracao_corrige_o_vies_da_soma():
+    """Soma de medianas subestima 13%. O fator desfaz."""
+    medianas = [20.0] * 10
+    crua = sum(medianas)
+    assert tempo.duracao_prevista(medianas) > crua
+    assert tempo.duracao_prevista(medianas) == pytest.approx(crua * 1.155)
+
+def test_duracao_permite_desligar_a_correcao():
+    medianas = [20.0] * 10
+    assert tempo.duracao_prevista(medianas, correcao=1.0) == pytest.approx(200.0)
+
+def test_duracao_de_atividade_vazia():
+    assert tempo.duracao_prevista([]) == 0.0
+
+
+# ---------------- perfil_chute: os percentis conferem ----------------
+def test_perfil_chute_usa_os_percentis_medidos():
+    assert chute.perfil_chute(0.001) == 'dentro do normal'
+    assert chute.perfil_chute(0.030) == 'acima do normal'
+    assert chute.perfil_chute(0.100) == 'muito acima do normal'
+
+def test_perfil_chute_fronteiras():
+    """p90 = 0,020 e p99 = 0,079, medidos em 16.790 alunos."""
+    assert chute.perfil_chute(0.0199) == 'dentro do normal'
+    assert chute.perfil_chute(0.020) == 'acima do normal'
+    assert chute.perfil_chute(0.079) == 'muito acima do normal'

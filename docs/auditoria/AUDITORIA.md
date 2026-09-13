@@ -228,6 +228,35 @@ Mas **a queda acontece entre 1× e 2×** (72,7% → 62,7%), já está em 54% na 
 
 ---
 
+## Parte 6: `duracao_prevista` somava medianas
+
+**Soma de medianas não é a mediana da soma.** A função somava as medianas das questões para prever o tempo de uma atividade inteira, e o erro é sistemático:
+
+| questões | soma das medianas | mediana real | média real | erro |
+|---|---|---|---|---|
+| 5 | 102 s | 117 s | 140 s | **−13%** |
+| 10 | 207 s | 239 s | 291 s | **−13%** |
+| 20 | 404 s | 466 s | 594 s | **−13%** |
+
+Estável nos três tamanhos. A latência é assimétrica à direita e a soma se concentra na média, não na mediana.
+
+**Conserto:** fator de correção medido, `1,155`. Leva 207 s a 239 s, a mediana real.
+
+Testei também somar **médias** em vez de medianas — acerta a mediana total sem correção (243 s contra 239 s reais) mas tem erro absoluto pior (26% contra 24%). Ficou mediana + fator.
+
+> **E a precisão foi documentada, porque não estava:** mesmo corrigida, só **~62%** das atividades de 10 questões caem dentro de ±25% do tempo real, com erro absoluto médio de **24%**. Serve para dizer "uns 4 minutos", não para cronometrar.
+
+### `perfil_chute` confere exatamente
+
+| | no módulo | medido |
+|---|---|---|
+| p90 | 0,020 | **0,0196** |
+| p99 | 0,079 | **0,0786** |
+
+As faixas pegam 9,7% e 1,0% dos alunos — exatamente o que os percentis prometem. Nenhum ajuste necessário.
+
+---
+
 ## O que a auditoria **não** cobre
 
 - **A transferência para o TrailUp.** Continua sem medida: o banco está vazio.

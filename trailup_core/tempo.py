@@ -107,6 +107,32 @@ def demorando(segundos: float, esp: Esperado, limite: float = LIMITE_LENTO) -> b
     return esp.confiavel and quao_lento(segundos, esp) >= limite
 
 
-def duracao_prevista(latencias_medianas: list[float]) -> float:
-    """Duracao esperada de uma atividade inteira, em segundos."""
-    return float(sum(latencias_medianas))
+# Soma de medianas NAO e a mediana da soma. Medido no EdNet, a soma crua das
+# medianas subestima o tempo real da atividade em 13%, de forma estavel:
+#
+#   questoes   soma das medianas   mediana real   media real   erro
+#      5             102 s            117 s         140 s      -13%
+#     10             207 s            239 s         291 s      -13%
+#     20             404 s            466 s         594 s      -13%
+#
+# O fator abaixo corrige o vies: 207 x 1,155 = 239, a mediana real.
+CORRECAO_SOMA = 1.155
+
+
+def duracao_prevista(latencias_medianas: list[float],
+                     correcao: float = CORRECAO_SOMA) -> float:
+    """Duracao esperada de uma atividade inteira, em segundos.
+
+    A soma crua das medianas subestima em 13% - latencia e assimetrica a
+    direita e a soma se concentra na media, nao na mediana. `correcao` desfaz
+    o vies (medido; ver a tabela acima).
+
+    PRECISAO: e estimativa grosseira. Mesmo corrigida, so ~62% das atividades
+    de 10 questoes caem dentro de +-25% do tempo real, e o erro absoluto medio
+    e de 24%. Serve para dizer "uns 4 minutos", nao para cronometrar.
+
+    Somar MEDIAS em vez de medianas acerta a mediana total sem correcao
+    (243 s contra 239 s reais), mas tem erro absoluto pior (26%). Por isso a
+    escolha foi mediana + fator.
+    """
+    return float(sum(latencias_medianas)) * correcao
