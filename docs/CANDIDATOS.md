@@ -78,14 +78,19 @@ Esforço medido como **resíduo** de `log(tempo na resposta) ~ tempo esperado da
 
 A medida é boa: **traço estável (+0,920)**, não é capacidade disfarçada (correlação −0,144 com acerto) e correlaciona +0,456 com ler a explicação após errar.
 
-**Mas não prediz aprendizado**, que era a única razão para construí-lo — o engajamento já mede permanência:
+**Mas não prediz nada útil.** Três operacionalizações independentes, três nulos:
 
-| desfecho | resultado |
-|---|---|
-| acertar ao reencontrar a mesma questão | AUC **0,516** (dificuldade da questão: 0,584) |
-| ganho de acerto entre metades | +0,044 bruto, **−0,025** controlando o acerto inicial |
+| tentativa | melhor AUC | por que caiu |
+|---|---|---|
+| nível de esforço (resíduo de tempo) | 0,516 | a dificuldade da questão prediz mais (0,584) |
+| comportamento **após o erro** | 0,524 | **o placebo prediz mais** (0,527) |
+| **trajetória** do próprio aluno (caiu/constante/subiu) | 0,504 | nulo com medida confiável |
 
-O +0,044 era regressão à média. E exigiria tempo por questão, que o TrailUp não coleta.
+A trajetória é o desenho certo — cada aluno é seu próprio controle, o que elimina o confundimento que derrubou a "base pessoal" do M1. E a medida **não é ruído**: confiabilidade 0,705 entre metades independentes, com teto de correlação de 0,839. **O nulo é do fenômeno, não do instrumento.**
+
+Sobra uma diferença grande, e ela não é sobre esforço: **ler ou não ler a explicação** (59,2% contra 75,3% de acerto no reencontro), sem dose-resposta.
+
+**Uso descritivo ainda vale:** "empenho caiu / constante" é exibível, porque a medida é confiável. O que não se pode é **disparar intervenção** com ela.
 
 
 | Descartado | Por quê |
