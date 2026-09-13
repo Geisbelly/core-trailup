@@ -72,6 +72,22 @@ Dois cuidados embutidos no código:
 
 ## Descartados, com o motivo
 
+### Empenho do aluno (regressão) — **testado, não passou** → [relatório](empenho/RELATORIO_EMPENHO.md)
+
+Esforço medido como **resíduo** de `log(tempo na resposta) ~ tempo esperado da questão + dificuldade + habilidade do aluno`. Sem inventar rótulo.
+
+A medida é boa: **traço estável (+0,920)**, não é capacidade disfarçada (correlação −0,144 com acerto) e correlaciona +0,456 com ler a explicação após errar.
+
+**Mas não prediz aprendizado**, que era a única razão para construí-lo — o engajamento já mede permanência:
+
+| desfecho | resultado |
+|---|---|
+| acertar ao reencontrar a mesma questão | AUC **0,516** (dificuldade da questão: 0,584) |
+| ganho de acerto entre metades | +0,044 bruto, **−0,025** controlando o acerto inicial |
+
+O +0,044 era regressão à média. E exigiria tempo por questão, que o TrailUp não coleta.
+
+
 | Descartado | Por quê |
 |---|---|
 | inferência de estado emocional (M1) | AUC 0,505 (IC contém 0,50); e a "base pessoal" que parecia salvar o slot é estilo de resposta — AUC intra-aluno 0,379 |
@@ -84,50 +100,7 @@ Dois cuidados embutidos no código:
 
 ## Na fila
 
-### 1. Empenho do aluno — **por análise regressiva** · não testado
-
-**A pergunta:** este aluno está se esforçando nesta tarefa? É diferente das duas que já existem no módulo:
-
-| modelo | pergunta | horizonte |
-|---|---|---|
-| `dominio` | ele **consegue**? | capacidade |
-| `engajamento` | ele **vai continuar**? | permanência |
-| **empenho** | ele **está tentando**? | esforço na tarefa |
-
-**Por que regressão, e não classificação.** Não existe rótulo de "empenho" em dataset nenhum, e inventar um corte ("empenhado / não empenhado") repetiria o erro do `k=4` das questões. O empenho é contínuo por natureza — e há uma forma principiada de medi-lo sem rótulo: **como resíduo**.
-
-```
-tempo_observado ~ tempo_esperado_da_questao + habilidade_do_aluno + ...
-empenho = resíduo (quanto o aluno investiu além do que a tarefa e a
-                   capacidade dele explicam)
-```
-
-O resíduo é exatamente "o que sobra depois de descontar o que era previsível". É o mesmo método que a [análise de estrutura de dificuldade](dificuldade/FAIXA_DIFICULDADE.md) usa para remover habilidade e dificuldade antes de comparar questões.
-
-**Insumos que já existem e já estão medidos:**
-
-| sinal | de onde vem | já medido em |
-|---|---|---|
-| tempo esperado da questão | `tempo.py` (R² 0,56) | mediana da questão |
-| habilidade do aluno | `dominio.py` | acerto acumulado |
-| chute (esforço zero) | `chute.py` (traço +0,922) | latência relativa |
-| revisão da resposta | `n_trocas` no EdNet | 15,9% das respostas |
-| leitura da explicação após erro | `expl_sec` | presente em 93,2% |
-| abandono da sessão | `n_quits` | — |
-
-**O teste que decide se vale a pena — e ele é forte.** O engajamento **não prediz aprendizado** (Spearman −0,04 a +0,03 com ganho de acerto; ver [relatório](engajamento/RELATORIO_ENGAJAMENTO.md) §10). Se o empenho **predisser**, ele mede algo que nenhum modelo atual mede, e passa a ser o mais valioso da lista. Se também não predisser, é mais um número bonito e não entra.
-
-Dá para rodar no EdNet: a estrutura de reencontro da mesma questão pelo mesmo aluno (594 mil casos) permite medir ganho, e o resíduo de tempo é calculável com o que já está extraído.
-
-**Três armadilhas a evitar, todas já cometidas antes neste estudo:**
-
-1. **Circularidade.** Se o empenho for definido dividindo por uma quantidade que também entra no alvo, ele correlaciona por construção — foi o que aconteceu com `persistencia` no engajamento (r = 0,94 por álgebra, não por achado).
-2. **Confundir com capacidade.** Aluno fraco demora mais na mesma questão. Sem descontar habilidade, "empenho" vira "dificuldade percebida" com outro nome.
-3. **Confundir com lentidão.** Tempo alto pode ser esforço ou distração. O sinal de `n_quits` e a comparação com a distribuição da própria questão separam os dois — parcialmente.
-
-**Instrumentação:** exige **tempo por questão**, que o TrailUp não coleta. É a mesma lacuna que trava `chute` e `tempo`.
-
-### 2. Sugestão de pontuação — **não testado; provavelmente não é modelo**
+### 1. Sugestão de pontuação — **não testado; provavelmente não é modelo**
 
 Quanto vale uma questão na gamificação. Hoje o TrailUp tem `eventos_pontuacao` (tipo → pontos), fixo e ajustável sem migration.
 

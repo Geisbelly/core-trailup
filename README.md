@@ -122,6 +122,7 @@ Por isso `risco()` recebe **taxa de alerta**, não limiar: alertar os 10% de mai
 | categorias de dificuldade por habilidade | dificuldade é unidimensional no corpus (HDBSCAN: 0 grupos) |
 | roteador de intenção do chat | era circular — 88% viraram 38% ao remover o template da ferramenta |
 | **volume por sessão** no engajamento | sinal forte no EdNet (AUC 0,400) que **some no OULAD** (0,522) |
+| **empenho do aluno** (resíduo de tempo) | traço estável (+0,920) que **não prediz aprendizado** — AUC 0,516 no reencontro |
 | avaliador discursivo como substituto da LLM | 0,532 contra teto de ≈0,88 — serve como triagem, nunca como nota |
 | análise de frames de câmera | nenhum consumidor, nenhum dataset, e é biometria de menor |
 
