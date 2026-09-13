@@ -26,6 +26,11 @@ from __future__ import annotations
 #    0,15     0,6%           58,7%                72,3%       -13,6 pts
 #    0,20     0,8%           60,8%                72,3%       -11,5 pts
 #    0,30     1,9%           64,7%                72,3%        -7,6 pts   <- padrao
+#
+# AUDITORIA 2026-09-13, chamando foi_chute() sobre 128.431 casos: a diferenca
+# no limiar 0,30 mede -6,1 pts, nao -7,6. A tabela acima veio de um recorte
+# ligeiramente diferente. A FORMA (encolhe monotonicamente ao afrouxar) se
+# sustenta; a magnitude exata varia de -6 a -8 pts conforme o recorte.
 #    0,40     3,7%           66,4%                72,4%        -6,0 pts
 #    0,60    10,8%           69,1%                72,6%        -3,5 pts
 #

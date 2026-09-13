@@ -332,3 +332,24 @@ def test_gate_pesos_somam_um():
     from trailup_core import gate
     assert gate.PESO_ACUMULADO + gate.PESO_SEQUENCIAL == pytest.approx(1.0)
     assert gate.PESO_TOPICO + gate.PESO_GLOBAL + gate.PESO_DIF == pytest.approx(1.0)
+
+
+# ---------------- ritmo: a confianca nao pode afirmar certeza ----------------
+def test_ritmo_confianca_nunca_e_certeza():
+    for n in (5, 10, 21, 50, 500, 100000):
+        assert ritmo.ritmo(15.0, n).confianca < 1.0, f'certeza afirmada em n={n}'
+
+def test_ritmo_confianca_cresce_com_n():
+    v = [ritmo.ritmo(15.0, n).confianca for n in (5, 10, 21, 50)]
+    assert v == sorted(v)
+    assert v[0] == pytest.approx(0.973)
+
+def test_ritmo_recusa_amostra_pequena():
+    with pytest.raises(ValueError):
+        ritmo.ritmo(15.0, 4)
+
+
+def test_ritmo_nunca_exibe_100_por_cento():
+    """0,997 arredondado com .0% vira "100%" - a falsa certeza pela porta dos fundos."""
+    for n in (5, 50, 100000):
+        assert '100%' not in str(ritmo.ritmo(15.0, n))

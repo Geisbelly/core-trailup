@@ -19,7 +19,17 @@ from dataclasses import dataclass
 FRONTEIRA_SEG = 40.0
 
 # acerto da classificacao de ritmo por n de respostas, medido no EdNet
-_CONF = [(5, .98), (10, .99), (21, 1.0)]
+# Acerto MEDIDO da classificacao com n respostas, contra a classificacao feita
+# sobre 200+ respostas. 8.673 questoes, tres reamostragens independentes.
+# A versao anterior desta tabela dizia (5, .98), (10, .99), (21, 1.0) - vinha
+# de uma medida que a auditoria de 2026-09-13 refutou, e afirmava CERTEZA em
+# n=21, que nunca e verdade.
+#
+#   n=3  0,953 [0,950-0,956]     n=15  0,993 [0,991-0,994]
+#   n=5  0,973 [0,971-0,975]     n=21  0,994 [0,993-0,995]
+#   n=8  0,986 [0,985-0,988]     n=30  0,996 [0,995-0,997]
+#   n=10 0,989 [0,987-0,990]     n=50  0,997 [0,996-0,997]
+_CONF = [(5, .973), (10, .989), (21, .994), (50, .997)]
 
 RITMOS = {
     'rapida': 'respondida em menos de ~40 s: reconhecimento, aplicacao direta',
@@ -34,14 +44,20 @@ class Ritmo:
     confianca: float
     respostas: int
     def __str__(self):
-        return f'{self.valor} ({self.latencia:.0f}s mediana, confianca {self.confianca:.0%})'
+        # uma casa decimal: com .0% o teto medido (0,997) aparece como 100%,
+        # que e a falsa certeza que esta tabela existe para nao afirmar
+        return f'{self.valor} ({self.latencia:.0f}s mediana, confianca {self.confianca:.1%})'
 
 
 def ritmo(latencia_mediana: float, respostas: int) -> Ritmo:
     """`respostas` = quantos ALUNOS responderam a questao.
 
-    Precisa de muito pouco: 5 respostas ja classificam o ritmo com 98% de
-    acerto, 21 com 100%. E o eixo barato - o caro e o acerto.
+    Precisa de muito pouco: 5 respostas classificam o ritmo com 97,3% de
+    acerto contra a classificacao feita sobre 200+ respostas. E o eixo barato -
+    o caro e o acerto.
+
+    A confianca devolvida NUNCA chega a 1,0, nem com 50 respostas: o teto
+    medido e 0,997. A tabela anterior afirmava 1,00 em n=21.
     """
     if respostas < 5:
         raise ValueError(f'{respostas} respostas e pouco: o ritmo precisa de >=5')

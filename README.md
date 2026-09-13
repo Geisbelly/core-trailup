@@ -8,7 +8,7 @@ O TrailUp hoje dispara de 8 a 14 chamadas ao Gemini por lote de telemetria de 60
 
 ```bash
 python3 exemplos/exemplo.py     # os módulos trabalhando juntos
-python3 -m pytest tests/ -q     # 20 testes de invariante
+python3 -m pytest tests/ -q     # 56 testes de invariante
 ```
 
 ---
@@ -18,7 +18,7 @@ python3 -m pytest tests/ -q     # 20 testes de invariante
 | módulo | pergunta | medida | custo |
 |---|---|---|---|
 | [`dificuldade`](trailup_core/dificuldade.py) | quão difícil é esta questão? | cobertura 88–91%; `prever_turma()` para a pergunta do professor | 30 alunos |
-| [`ritmo`](trailup_core/ritmo.py) | é de reconhecimento ou de elaboração? | 98% de acerto | **5 alunos** |
+| [`ritmo`](trailup_core/ritmo.py) | é de reconhecimento ou de elaboração? | 97,3% de acerto | **5 alunos** |
 | [`tempo`](trailup_core/tempo.py) | quanto deve demorar? | R² 0,578 | 5 alunos |
 | [`dominio`](trailup_core/dominio.py) | o aluno acerta a próxima? | AUC 0,727 (regra atual: 0,587) | histórico do aluno |
 | [`chute`](trailup_core/chute.py) | não sabe, ou não tentou? | traço com +0,922 de confiabilidade | 50 respostas na questão |
@@ -34,6 +34,8 @@ Cada arquivo traz **no cabeçalho** os números que o sustentam, o experimento q
 Relatórios completos em [`docs/`](docs/) — cada um termina com um **apêndice de correções**. O caminho inteiro, de hipótese a estado atual, está em [`docs/TRAJETORIA.md`](docs/TRAJETORIA.md). A fila do que ainda não foi construído está em [`docs/CANDIDATOS.md`](docs/CANDIDATOS.md).
 
 ---
+
+Todo número dos cabeçalhos foi **reconferido chamando o código** — ver [`docs/auditoria/`](docs/auditoria/AUDITORIA.md).
 
 ## As três regras de desenho
 

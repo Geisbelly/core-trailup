@@ -16,6 +16,9 @@ Medido no EdNet, split por aluno, 1.721.188 pontos de decisao, taxa base 12,2%:
     acerto acumulado no topico       0,720     36,3%     31,0%     2,5x
     forma fechada (3 termos)         0,725     37,0%     33,0%     2,7x
     ESTA (fechada + regra)           0,732     40,0%     33,9%     2,8x
+
+Auditado em 2026-09-13 chamando risco() sobre 1.627.217 pontos de decisao:
+AUC 0,738 e precisao 33,7% no ponto de 10% (lift 2,9x). Confere.
     boosting com 30 features         0,779         -     41,7%     3,4x
 
 POR QUE COMBINAR COM A REGRA, QUE E PIOR. A regra satura - 27,7% das
