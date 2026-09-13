@@ -93,13 +93,35 @@ def retencao(dias: float, acertou_antes: bool,
     return baixo + proporcao_acertos * (alto - baixo)
 
 
-def dias_ate_revisar(acertou_antes: bool, retencao_alvo: float = 0.75) -> float:
+# Vies medido do prazo (2026-09-13): quem reencontra perto do dia sugerido
+# acerta MENOS que o alvo, de forma sistematica e sempre para o mesmo lado:
+#
+#     alvo    dias sugeridos   acerto real   diferenca
+#     0,60        37,5            57,0%        -3,0
+#     0,70         4,1            65,7%        -4,3
+#     0,75         2,1            70,4%        -4,6
+#     0,80         0,8            75,2%        -4,8
+#     0,85        12,2            81,3%        -3,7
+#
+# Cerca de 4 pontos em todos os alvos. A curva foi medida sobre TODOS os
+# reencontros; quem de fato reencontra perto do prazo e um subconjunto
+# selecionado, e pior que a media. `margem` corrige.
+MARGEM_ALVO = 0.04
+
+
+def dias_ate_revisar(acertou_antes: bool, retencao_alvo: float = 0.75,
+                     margem: float = MARGEM_ALVO) -> float:
     """Em quantos dias a retencao cai ate o alvo? Devolve o prazo de revisao.
 
     Com alvo de 75%: quem ERROU precisa voltar em ~2 dias; quem ACERTOU nao
     chega a cair ate 75% no horizonte medido (180 dias) - revisar por outra
     razao que nao o esquecimento.
+
+    `margem` compensa o vies medido de ~4 pontos (ver a tabela acima): o prazo
+    e calculado para `retencao_alvo + margem`, que e o que entrega o alvo
+    pedido na pratica. Passe margem=0 para o prazo cru da curva.
     """
+    retencao_alvo = min(0.999, retencao_alvo + margem)
     t = _ACERTOU if acertou_antes else _ERROU
     if t[0][1] < retencao_alvo:
         return 0.0

@@ -57,6 +57,19 @@ PISO, TETO = 0.05, 0.98
 PESO_ACUMULADO = 0.50      # medido: 0,5/0,5 foi o melhor no ponto de operacao
 PESO_SEQUENCIAL = 0.50
 PESO_TOPICO, PESO_GLOBAL, PESO_DIF = 0.50, 0.35, 0.15
+# CONFERIDO (2026-09-13): 5 e o cotovelo. AUC do acerto acumulado no topico
+# para prever travamento, por numero de respostas ja dadas:
+#
+#     n no topico     casos       AUC
+#        1-2        127.273      0,534    <- quase acaso
+#        3-4        119.650      0,610
+#        5-9        265.976      0,660    <- o minimo
+#       10-19       424.188      0,695
+#       20-49       865.299      0,714
+#       50+       3.801.801      0,738
+#
+# Abaixo de 5 o sinal e quase acaso (0,534 com 1-2 respostas). O corte esta
+# no lugar certo, e nao era escolha justificada ate esta medida.
 MIN_RESPOSTAS = 5          # abaixo disso o gate nao opina
 
 

@@ -542,3 +542,19 @@ def test_min_eventos_e_piso_nao_garantia():
     baixo = engajamento.medir(dias_recentes=3, dias_ativos=9, eventos=30)
     assert baixo.confiavel, '30 passa do piso'
     assert not engajamento.medir(dias_recentes=3, dias_ativos=9, eventos=29).confiavel
+
+
+# ---------------- revisao: a margem que corrige o viés do prazo ----------------
+def test_margem_encurta_o_prazo():
+    """Viés medido: o prazo cru entrega ~4 pontos abaixo do alvo."""
+    cru = revisao.dias_ate_revisar(acertou_antes=False, retencao_alvo=0.75, margem=0.0)
+    corr = revisao.dias_ate_revisar(acertou_antes=False, retencao_alvo=0.75)
+    assert corr < cru, 'com margem o aluno volta ANTES'
+
+def test_margem_e_o_padrao():
+    assert revisao.MARGEM_ALVO == pytest.approx(0.04)
+    assert revisao.dias_ate_revisar(False, 0.75) == revisao.dias_ate_revisar(False, 0.75, 0.04)
+
+def test_alvo_alto_nao_estoura():
+    """alvo + margem não pode passar de 1,0."""
+    assert revisao.dias_ate_revisar(False, retencao_alvo=0.99) >= 0.0

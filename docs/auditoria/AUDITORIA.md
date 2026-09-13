@@ -10,7 +10,7 @@ Base: EdNet KT3, 6.504.124 respostas, acerto global 0,6677, split por aluno 70/3
 
 ## Resultado das 7 partes
 
-**29 verificações. 12 defeitos encontrados**, todos da mesma família: uma saída afirmando uma escala que ninguém mediu. Nenhum apareceria olhando AUC.
+**31 verificações. 13 defeitos encontrados**, todos da mesma família: uma saída afirmando uma escala que ninguém mediu. Nenhum apareceria olhando AUC.
 
 | onde | o que afirmava | o que era |
 |---|---|---|
@@ -26,8 +26,9 @@ Base: EdNet KT3, 6.504.124 respostas, acerto global 0,6677, split por aluno 70/3
 | `prioridade_revisao` | onde revisar rende mais | só mede esquecimento |
 | `tempo.MIN_RESPOSTAS` | 5 respostas é estável | erro típico de 20% |
 | `engajamento.MIN_EVENTOS` | 30 eventos e os eixos funcionam | AUC 0,644, não 0,810 |
+| `dias_ate_revisar` | revise em N dias e retém X% | entrega X−4 pontos |
 
-E quatro que **conferiram**: `perfil_chute` (p90 e p99), a tabela `REFERENCIA` do engajamento (diferença 0,000), o limite de 3× do `demorando`, e `ritmo.FRONTEIRA_SEG` — cujo 40 s é praticamente o corte ótimo por Otsu (39,8 s), com d de Cohen **maior** que o documentado (4,18 contra 3,30).
+E seis que **conferiram**: `gate.MIN_RESPOSTAS = 5` (é o cotovelo exato: 0,534 abaixo dele, 0,660 nele), a aproximação normal do `dificuldade` (cobertura 75,3% contra 74,8% do Beta), `perfil_chute` (p90 e p99), a tabela `REFERENCIA` do engajamento (diferença 0,000), o limite de 3× do `demorando`, e `ritmo.FRONTEIRA_SEG` — cujo 40 s é praticamente o corte ótimo por Otsu (39,8 s), com d de Cohen **maior** que o documentado (4,18 contra 3,30).
 
 ---
 
@@ -402,6 +403,34 @@ O comentário dizia *"abaixo disso os eixos são ruído"*, sugerindo que a parti
 **No mínimo de 30 o eixo entrega 0,644, não os 0,810 do agregado.** O número de capa vem dos alunos com muita atividade.
 
 30 fica como **piso para não devolver lixo**; para o desempenho anunciado, exija ~100. É a terceira vez que um mínimo vinha com comentário sugerindo suficiência — depois de `tempo.MIN_RESPOSTAS` e da confiança do `ritmo`.
+
+### `dias_ate_revisar` quebra a promessa em 4 pontos
+
+A função promete: *"revise em N dias e a retenção estará no alvo"*. Conferido — quem reencontra perto do dia sugerido acerta **sistematicamente menos**:
+
+| alvo | dias sugeridos | acerto real | diferença |
+|---|---|---|---|
+| 0,60 | 37,5 | 57,0% | **−3,0** |
+| 0,70 | 4,1 | 65,7% | **−4,3** |
+| 0,75 | 2,1 | 70,4% | **−4,6** |
+| 0,80 | 0,8 | 75,2% | **−4,8** |
+| 0,85 | 12,2 | 81,3% | **−3,7** |
+
+**Sempre para o mesmo lado**, ~4 pontos em todos os alvos. A causa provável: a curva foi medida sobre **todos** os reencontros, mas quem de fato volta perto do prazo é um subconjunto selecionado — e pior que a média.
+
+Entra `MARGEM_ALVO = 0,04`: o prazo passa a ser calculado para `alvo + margem`, que é o que entrega o alvo pedido na prática. Com alvo 0,75, o prazo cai de 2,1 para 1,1 dia. `margem=0` devolve o prazo cru da curva.
+
+### `gate.MIN_RESPOSTAS = 5` — confere, e é o cotovelo exato
+
+| n no tópico | casos | AUC |
+|---|---|---|
+| 1–2 | 127.273 | **0,534** |
+| 3–4 | 119.650 | 0,610 |
+| **5–9** | 265.976 | **0,660** |
+| 20–49 | 865.299 | 0,714 |
+| 50+ | 3.801.801 | 0,738 |
+
+Abaixo de 5 o sinal é quase acaso. O corte está no lugar certo — e não era escolha justificada até esta medida.
 
 ### As que são arbitrárias e **não importam**
 
