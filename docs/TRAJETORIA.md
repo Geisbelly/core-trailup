@@ -195,7 +195,7 @@ Escolhido pela **cauda baixa**, que é o uso declarado: as 20 piores previstas p
 
 > **Um vazamento evitado.** A primeira versão do teste pegou todas as colunas numéricas do arquivo — o que incluía `Run1_AI Evaluation`, `Run2_…` e `Style_Mean`, que são a avaliação do próprio LLM. Seria vazamento direto do alvo. O script agora tem lista explícita de features e um `assert` contra as colunas proibidas.
 
-**Onde parou.** Linear sem dependência, Spearman 0,463 (boosting 0,429 no mesmo conjunto, encoder 0,532). **Só para ordenar**, nunca para nota — os pesos foram ajustados em alemão. Como triagem funciona: as 10 piores previstas têm nota real média 1,87 contra 3,50 do geral.
+**Onde parou.** Linear sem dependência, Spearman **0,501** ponta a ponta (era 0,463 nas features do pipeline; boosting 0,429 no mesmo conjunto, encoder 0,532). **Só para ordenar**, nunca para nota — os pesos foram ajustados em alemão. Como triagem funciona: as 10 piores previstas têm nota real média 1,87 contra 3,50 do geral.
 
 **Bug que quase passou:** `stopwords()` pegava as 60 palavras mais frequentes de dois textos curtos, o que zerava o grafo de referência e fazia a resposta puramente divagante tirar 5,0. Corrigido para frequência de documento com guarda de 10 textos.
 
@@ -352,6 +352,8 @@ Depois das melhorias, veio uma auditoria em **13 rodadas**. Cada número dos cab
 **2. Consertar uma escala deixa órfão quem corta nela.** Aconteceu **três vezes**: `precisa_reforco` (2,3% → 12,2% de disparo), o limiar de `tendencia` (passaria a disparar com metade da evidência) e as faixas do `evasao.sql` (que ficaram pegando **0,27%** dos casos — precisão alta, cobertura nula).
 
 **3. Corrigir um sintoma sem varrer os vizinhos.** O parâmetro com nome invertido apareceu no `gate`; eu corrigi e **não olhei o `dominio`**, que tinha o mesmo defeito no parâmetro principal. Passar 0,9 como "questão difícil" devolvia `p = 0,890`. A raiz era uma convenção do pacote inteiro — dificuldade é sempre **taxa de acerto** — agora declarada no `__init__.py`.
+
+**4b. Usar um teste que não testa.** Rejeitei uma melhoria real do `pre_avaliacao` porque os intervalos de confiança se sobrepunham — o que não é um teste para medidas correlacionadas. A diferença **pareada** era +0,019, positiva em 100% das reamostras. Descartei sinal achando que estava sendo rigoroso.
 
 **4. Afirmar cobertura sem enumerar.** Disse três vezes que "está tudo auditado". Nas três, escrever um script que checasse me desmentiu: o mapa de cobertura achou **16 símbolos sem teste**, incluindo `chute.foi_chute`, a função principal daquele módulo.
 

@@ -897,3 +897,17 @@ def test_exemplo_usa_a_api_atual():
     ast.parse(fonte)
     assert 'dificuldade_questao' not in fonte, 'kwarg renomeado ainda no exemplo'
     assert 'acerto_na_questao' in fonte
+
+
+def test_df_stopword_foi_medido_em_teste_pareado():
+    """0,40 bate 0,50 com diferença pareada +0,019 [+0,012, +0,029], positiva
+    em 100% das reamostras. Eu tinha rejeitado olhando IC sobrepostos, que não
+    é um teste."""
+    assert pre_avaliacao.DF_STOPWORD == pytest.approx(0.40)
+
+def test_stopwords_do_corpus_nao_zeram_o_vocabulario():
+    """Com df mais baixo saem mais stopwords — não pode zerar o grafo."""
+    corpus = [f'a inflacao afeta o item {i} da economia brasileira hoje' for i in range(30)]
+    stop = pre_avaliacao.stopwords(corpus)
+    ref = pre_avaliacao.preparar('a inflacao e o aumento generalizado dos precos', stop=stop)
+    assert len(ref.nos) > 0, 'o grafo de referência não pode ficar vazio'

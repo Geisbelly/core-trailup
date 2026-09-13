@@ -7,7 +7,8 @@ Medido no classEx (1.167 respostas, validacao agrupada por aluno):
 
     versao anterior (8 features)              Spearman 0,451 | QWK 0,318
     esta versao, features do pipeline sklearn Spearman 0,463 | QWK 0,350
-    ESTA VERSAO PONTA A PONTA (auditoria)     Spearman 0,483
+    ESTA VERSAO PONTA A PONTA (df 0,50)       Spearman 0,483
+    ESTA VERSAO PONTA A PONTA (df 0,40)       Spearman 0,501   <- atual
     boosting sobre as mesmas features         Spearman 0,429 | QWK 0,398
 
 A auditoria de 2026-09-13 chamou preparar()/avaliar() sobre os textos crus e
@@ -17,7 +18,7 @@ frequentes como stopword; este modulo deriva por frequencia de documento, o
 que no classEx da apenas 5). O numero que descreve o que ESTE codigo faz e
 0,483.
 
-LIMITE DA ESCALA: as previsoes ficam entre 2,29 e 5,00. O modulo nao consegue
+LIMITE DA ESCALA: as previsoes ficam entre 2,31 e 5,00. O modulo nao consegue
 dizer "muito ruim" - o piso efetivo e 2,3 numa escala de 1 a 5. Para triagem
 isso nao atrapalha (as 10 piores tem nota real 2,20 contra 3,50 do geral),
 mas nao use o valor absoluto como nota.
@@ -86,13 +87,24 @@ _TOKEN = re.compile(r'\w{3,}', re.UNICODE)
 #   JANELA=5, df=0,5   Spearman 0,477  [0,435 - 0,517]
 #   JANELA=8, df=0,5   Spearman 0,388  [0,343 - 0,438]   <- unico pior de fato
 #
-# De 3 a 5 na janela, e de 0,3 a 0,6 no df, os IC se sobrepoem inteiramente:
-# sao indistinguiveis com 1.167 respostas. Trocar 0,483 por 0,501 seria
-# ajustar a ruido. O que o dado sustenta e a FRONTEIRA: a partir de janela 8 a
-# qualidade cai fora do intervalo, e acima de df 0,7 tambem (0,463 e 0,429).
+# CORRECAO DE METODO (2026-09-13). Eu tinha concluido que 0,4 e 0,5 eram
+# indistinguiveis porque os IC se sobrepoem. COMPARAR IC SOBREPOSTOS NAO E UM
+# TESTE - duas medidas correlacionadas podem ter IC largos e uma diferenca
+# consistente. O teste certo e a DIFERENCA PAREADA, nas mesmas reamostras:
+#
+#   df 0,4 menos df 0,5:  media +0,0187 | desvio 0,0048
+#   positiva em 100% das 40 reamostras | IC95 [+0,0117, +0,0290]
+#
+# O ganho sobrevive, e eu tinha rejeitado errado. DF_STOPWORD passa a 0,40.
+#
+# Pelo mesmo teste pareado, o conjunto de 10 features tambem se confirma:
+#   10 menos 8 features: +0,0153 [+0,0121, +0,0176], positivo em 100%
+#
+# A JANELA continua em 4: de 3 a 5 a diferenca pareada nao exclui zero, e a
+# fronteira real e em 8, onde a qualidade cai fora do intervalo.
 JANELA = 4            # coocorrencia: palavras a ate 4 posicoes formam aresta
 MIN_DOCS = 10         # abaixo disso nao da para estimar stopword por frequencia
-DF_STOPWORD = 0.5     # aparece em mais da metade dos documentos -> stopword
+DF_STOPWORD = 0.40    # medido: 0,40 bate 0,50 em teste pareado (+0,019)
 
 # Ajustados por regressao ridge no classEx. Ver aviso no cabecalho.
 # Ridge sobre 10 features, validacao cruzada agrupada POR ALUNO (classEx).
@@ -229,7 +241,7 @@ def triar(respostas: list[str], ref: Referencia) -> list[tuple[int, PreAvaliacao
 
         quantas piores   8 features   10 features   geral
               5             2,20          1,80       3,50
-             10             2,10          2,10       3,50
+             10             2,10          2,03       3,50
              20             2,37          2,03       3,50
 
     Ordenar exige bem menos precisao que pontuar. A cauda ALTA fica um pouco

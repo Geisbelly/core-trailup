@@ -10,7 +10,7 @@ Base: EdNet KT3, 6.504.124 respostas, acerto global 0,6677, split por aluno 70/3
 
 ## Resultado das 7 partes
 
-**102 verificações. 49 defeitos encontrados**, todos da mesma família: uma saída afirmando uma escala que ninguém mediu. Nenhum apareceria olhando AUC.
+**106 verificações. 50 defeitos encontrados**, todos da mesma família: uma saída afirmando uma escala que ninguém mediu. Nenhum apareceria olhando AUC.
 
 | onde | o que afirmava | o que era |
 |---|---|---|
@@ -44,6 +44,7 @@ Base: EdNet KT3, 6.504.124 respostas, acerto global 0,6677, split por aluno 70/3
 | `dominio.incerteza` | "encolhe com n" | só para taxa fixa |
 | `dominio.dominio` | parâmetro "dificuldade" | recebia facilidade — invertia |
 | README | 133 testes | eram 135 |
+| `DF_STOPWORD` | 0,5 é indistinguível de 0,4 | rejeitei com teste inválido |
 
 E oito que **conferiram**: `cobertura` (+0,462) e `conceitos_faltando` (−0,410) do `pre_avaliacao`, `gate.MIN_RESPOSTAS = 5` (é o cotovelo exato: 0,534 abaixo dele, 0,660 nele), a aproximação normal do `dificuldade` (cobertura 75,3% contra 74,8% do Beta), `perfil_chute` (p90 e p99), a tabela `REFERENCIA` do engajamento (diferença 0,000), o limite de 3× do `demorando`, e `ritmo.FRONTEIRA_SEG` — cujo 40 s é praticamente o corte ótimo por Otsu (39,8 s), com d de Cohen **maior** que o documentado (4,18 contra 3,30).
 
@@ -730,6 +731,45 @@ Todo número do módulo veio de **uma** partição (`random_state=7`). Se o resu
 **Confirma.** A amplitude entre sementes é de 4 milésimos — menor que qualquer diferença que o módulo afirma (o ganho do terceiro termo foi +0,005, e mesmo esse fica no limite). É o tipo de checagem que deveria vir antes de reportar qualquer melhoria de terceira casa decimal, e eu só fiz agora.
 
 > **Ressalva honesta:** isso valida a **estabilidade amostral dentro do EdNet**, não a transferência para outro corpus. São coisas diferentes, e só a segunda importa para o TrailUp.
+
+---
+
+## Parte 15: eu rejeitei uma melhoria usando um teste inválido
+
+A checagem de sementes levantou a pergunta seguinte: o ganho de +0,012 do `pre_avaliacao` sobrevive à reamostragem, com **n = 1.167** e IC de largura 0,09?
+
+**Teste pareado** — mesmas dobras para os dois conjuntos, olhando a distribuição da **diferença**:
+
+| | média | desvio | IC 95% | positiva em |
+|---|---|---|---|---|
+| 10 menos 8 features | **+0,0153** | 0,0016 | [+0,0121; +0,0176] | **100%** das 40 repartições |
+
+Sobrevive. **Mas o mesmo teste expôs um erro meu de método.**
+
+### O erro
+
+Na Parte 8 eu varri `DF_STOPWORD`, vi **0,501 contra 0,483**, olhei os IC:
+
+```
+df 0,5:  0,483  [0,440 – 0,526]
+df 0,4:  0,501  [0,456 – 0,542]      <- sobrepõem
+```
+
+...e concluí *"trocar seria ajustar a ruído"*. **Comparar IC sobrepostos não é um teste.** Duas medidas correlacionadas — mesmos dados, mesma pipeline, só um hiperparâmetro diferente — podem ter IC largos e uma diferença perfeitamente consistente.
+
+Refazendo **pareado**:
+
+| | média | desvio | IC 95% | positiva em |
+|---|---|---|---|---|
+| df 0,40 menos df 0,50 | **+0,0187** | 0,0048 | [+0,0117; +0,0290] | **100%** |
+
+**O ganho era real e eu rejeitei errado**, com a justificativa de estar sendo rigoroso.
+
+`DF_STOPWORD` passa a 0,40. Ponta a ponta: **Spearman 0,501**, e a triagem melhora junto (as 20 piores previstas vão de 2,37 para 2,03 de nota real).
+
+> A ironia é o ponto: eu escrevi *"trocar 0,483 por 0,501 seria ajustar a ruído, que é exatamente o erro que esta auditoria existe para não cometer"* — e o erro que cometi foi o oposto, **descartar sinal usando um teste que não distingue sinal de ruído**.
+
+A `JANELA` continua em 4: de 3 a 5 a diferença pareada não exclui zero, e a fronteira real é em 8.
 
 ---
 
