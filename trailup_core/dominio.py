@@ -9,10 +9,17 @@ Formula medida (EdNet, split por aluno):
 
     so a regra atual                              AUC 0,586
     so a dificuldade da questao                   AUC 0,703
-    0,7 x questao + 0,3 x aluno no topico         AUC 0,721   <- esta
+    0,7 questao + 0,3 topico                      AUC 0,722
+    0,60 questao + 0,15 topico + 0,25 GLOBAL      AUC 0,727   <- esta
     modelo de boosting com 25 features            AUC 0,754
 
 Uma linha de aritmetica captura 95% do ganho do modelo sobre a regra.
+
+O TERCEIRO TERMO, E POR QUE ELE PESA MAIS QUE O TOPICO: o acerto do aluno em
+TODAS as questoes e mais estavel que o acerto dele naquele topico, que quase
+sempre tem poucas observacoes. Medido, o peso otimo do global (0,25) e maior
+que o do topico (0,15). Testadas 14 combinacoes; o ganho e de +0,005 e some
+se o global entrar sozinho (0,721).
 
 Sem dependencia externa.
 """
@@ -21,8 +28,13 @@ from __future__ import annotations
 from dataclasses import dataclass
 from math import exp, sqrt
 
-PESO_QUESTAO = 0.70        # medido: 0,7/0,3 foi melhor que 0,5/0,5 e 0,3/0,7
-PRIOR_ALUNO = 3            # encolhimento do acerto do aluno no topico
+# Dois conjuntos de pesos, porque os otimos sao diferentes:
+PESO_QUESTAO_2 = 0.70      # sem historico global: 0,70 questao + 0,30 topico  -> 0,722
+PESO_QUESTAO = 0.60        # com historico global                              -> 0,727
+PESO_TOPICO = 0.15         # historico do aluno NAQUELE topico
+PESO_GLOBAL = 0.25         # historico do aluno em tudo - mais estavel
+PRIOR_ALUNO = 3            # encolhimento do acerto no topico
+PRIOR_GLOBAL = 8           # encolhimento do acerto global (mais dados, encolhe menos)
 
 
 @dataclass(frozen=True)
@@ -42,11 +54,25 @@ def confianca(respostas: int) -> float:
 
 
 def dominio(dificuldade_questao: float, acertos_no_topico: int, respostas_no_topico: int,
-            media_global: float = 0.67, p_anteriores: list[float] | None = None) -> Dominio:
-    """`dificuldade_questao` = taxa de acerto da questao (use dificuldade.estimar)."""
+            media_global: float = 0.67, p_anteriores: list[float] | None = None,
+            acertos_totais: int | None = None, respostas_totais: int | None = None) -> Dominio:
+    """`dificuldade_questao` = taxa de acerto da questao (use dificuldade.estimar).
+
+    `acertos_totais` / `respostas_totais` = historico do aluno em TODOS os
+    topicos. Quando informados, entram como terceiro termo e levam a AUC de
+    0,722 para 0,727. Sem eles, o peso do global vai para o topico e a formula
+    volta a ser a de dois termos.
+    """
     n = respostas_no_topico
     aluno = (acertos_no_topico + media_global * PRIOR_ALUNO) / (n + PRIOR_ALUNO)
-    p = PESO_QUESTAO * dificuldade_questao + (1 - PESO_QUESTAO) * aluno
+    if respostas_totais is None or acertos_totais is None:
+        p = PESO_QUESTAO_2 * dificuldade_questao + (1 - PESO_QUESTAO_2) * aluno
+    else:
+        if not 0 <= acertos_totais <= respostas_totais:
+            raise ValueError('acertos_totais incompativel com respostas_totais')
+        glob = (acertos_totais + media_global * PRIOR_GLOBAL) / (respostas_totais + PRIOR_GLOBAL)
+        p = (PESO_QUESTAO * dificuldade_questao + PESO_TOPICO * aluno
+             + PESO_GLOBAL * glob)
     tend = 'estavel'
     if p_anteriores and len(p_anteriores) >= 3:
         d = p - p_anteriores[-3]

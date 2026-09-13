@@ -16,6 +16,19 @@ Controle: a dificuldade media das questoes e constante entre as faixas
 (0,715 a 0,734), entao a queda e do TEMPO, nao da composicao.
 
 Sem dependencia externa.
+
+VALIDACAO COMO PREDITOR (2026-09-13, 223.358 reencontros, split por aluno):
+
+    curva de esquecimento (este modulo)     AUC 0,665   ECE 0,021
+    so "acertou antes" (sim/nao)            AUC 0,586
+    so a dificuldade da questao             AUC 0,618
+    curva + dificuldade da questao          AUC 0,661   ECE 0,077
+
+A curva bate os dois componentes isolados, e somar a dificuldade da questao
+PIORA - tanto a ordenacao quanto a calibracao. Ela ja carrega o que precisa.
+
+Ate esta medida a curva era so descritiva: o formato tinha sido medido, mas
+nunca testado como preditor.
 """
 from __future__ import annotations
 

@@ -236,3 +236,25 @@ def test_esperado_de_amostra_usa_media_do_log():
 def test_esperado_de_amostra_rejeita_amostra_vazia():
     with pytest.raises(ValueError):
         tempo.esperado_de_amostra([0, -1, None])
+
+
+# ---------------- dominio: terceiro termo ----------------
+def test_dominio_dois_pesos_distintos():
+    """Sem histórico global o ótimo é 0,70; com ele é 0,60. Não reutilizar."""
+    assert dominio.PESO_QUESTAO_2 == 0.70
+    assert dominio.PESO_QUESTAO + dominio.PESO_TOPICO + dominio.PESO_GLOBAL == pytest.approx(1.0)
+
+def test_dominio_sem_global_usa_a_formula_de_dois_termos():
+    d = dominio.dominio(0.45, 3, 8)
+    esperado = dominio.PESO_QUESTAO_2 * 0.45 + (1 - dominio.PESO_QUESTAO_2) * (
+        (3 + 0.67 * dominio.PRIOR_ALUNO) / (8 + dominio.PRIOR_ALUNO))
+    assert d.p == pytest.approx(round(esperado, 3))
+
+def test_dominio_global_puxa_na_direcao_certa():
+    fraco = dominio.dominio(0.45, 3, 8, acertos_totais=40, respostas_totais=150)
+    forte = dominio.dominio(0.45, 3, 8, acertos_totais=130, respostas_totais=150)
+    assert forte.p > fraco.p
+
+def test_dominio_rejeita_global_impossivel():
+    with pytest.raises(ValueError):
+        dominio.dominio(0.45, 3, 8, acertos_totais=200, respostas_totais=150)

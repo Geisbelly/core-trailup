@@ -59,7 +59,19 @@ Esse padrão não foi hipótese inicial. Foi o que sobrou.
 
 **Onde parou.** Fórmula fechada `0,7 × questão + 0,3 × aluno`, AUC 0,721 contra 0,586 da regra. Uma linha de aritmética captura 95% do ganho do boosting.
 
-**Tentativa de melhoria (2026-09-13).** Testados peso ótimo, encolhimento do termo do aluno e combinação em logito. Melhor: 0,722 com k=3 — que **já é o que o módulo faz**. Logito é pior (0,715). **Não há ganho disponível na forma fechada**; o teto de 0,753 exige o conjunto completo de features.
+**Tentativa de melhoria (2026-09-13).** Primeira rodada: peso ótimo, encolhimento e logito não rendem nada (melhor 0,722, que já era o que o módulo fazia; logito é pior, 0,715).
+
+**Segunda rodada, com um terceiro termo.** O acerto do aluno em **todos** os tópicos, e não só naquele:
+
+| fórmula | AUC |
+|---|---|
+| 0,70 questão + 0,30 tópico | 0,722 |
+| 0,70 questão + 0,30 global | 0,721 |
+| **0,60 questão + 0,15 tópico + 0,25 global** | **0,727** |
+
+Testadas 14 combinações. O global sozinho não ajuda; junto com o tópico, sim. E **o peso ótimo do global (0,25) é maior que o do tópico (0,15)** — o acerto geral é mais estável que o acerto naquele tópico, que quase sempre tem poucas observações.
+
+O módulo mantém **dois conjuntos de pesos**, porque os ótimos diferem: sem histórico global, 0,70/0,30; com ele, 0,60/0,15/0,25.
 
 ---
 
@@ -157,6 +169,37 @@ A trajetória era o desenho certo — cada aluno é seu próprio controle, elimi
 **Como é fácil fabricar grupos falsos.** Trocando a transformação por quantis por `StandardScaler`, o resultado vira ARI 0,917 e silhueta 0,821 — grupos "sólidos". São a cauda de outliers separada do resto: d = 3,17 num eixo e **0,09 em outro**.
 
 **Bug corrigido.** "Zero questões com discriminação negativa" era comparação contra −1 em vez de 0. Real: 2,96% numa metade dos alunos, **0,53% confirmadas nas duas**.
+
+---
+
+## 8b. Revisão — validada como preditor
+
+A curva de esquecimento foi medida em 594 mil reencontros desde o início, mas **nunca tinha sido testada como preditor** — só o formato havia sido descrito.
+
+| preditor | AUC | ECE |
+|---|---|---|
+| **curva de esquecimento** | **0,665** | **0,021** |
+| só "acertou antes" | 0,586 | — |
+| só a dificuldade da questão | 0,618 | — |
+| curva + dificuldade da questão | 0,661 | 0,077 |
+
+Bate os dois componentes isolados, e **somar a dificuldade da questão piora** — tanto a ordenação quanto a calibração. A curva já carrega o que precisa.
+
+---
+
+## 8c. Chute — o limiar, medido em toda a faixa
+
+O limiar de 30% da mediana era escolha não justificada. Validação em 127.554 casos (errou na 1ª vez, reencontrou):
+
+| limiar | marca | acerta ao reencontrar | não-marcados | diferença |
+|---|---|---|---|---|
+| 0,15 | 0,6% | 58,7% | 72,3% | **−13,6 pts** |
+| 0,20 | 0,8% | 60,8% | 72,3% | −11,5 pts |
+| **0,30** | 1,9% | 64,7% | 72,3% | −7,6 pts |
+| 0,40 | 3,7% | 66,4% | 72,4% | −6,0 pts |
+| 0,60 | 10,8% | 69,1% | 72,6% | −3,5 pts |
+
+A diferença encolhe **monotonicamente** conforme o limiar afrouxa — o construto é real e graduado. 0,30 fica como padrão; para sinalizar só o caso gritante, `fracao=0,15` dobra a separação marcando um terço.
 
 ---
 

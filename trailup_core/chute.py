@@ -19,6 +19,19 @@ Sem dependencia externa.
 """
 from __future__ import annotations
 
+# Compromisso do limiar, medido em 127.554 casos (errou na 1a vez, reencontrou).
+# "acerta ao reencontrar" e a validacao: chute deve aprender MENOS.
+#
+#   limiar   marca    acerta ao reencontrar   nao-marcados   diferenca
+#    0,15     0,6%           58,7%                72,3%       -13,6 pts
+#    0,20     0,8%           60,8%                72,3%       -11,5 pts
+#    0,30     1,9%           64,7%                72,3%        -7,6 pts   <- padrao
+#    0,40     3,7%           66,4%                72,4%        -6,0 pts
+#    0,60    10,8%           69,1%                72,6%        -3,5 pts
+#
+# A diferenca encolhe monotonicamente conforme o limiar afrouxa - o construto
+# e real e graduado. 0,30 e o meio-termo; para sinalizar so o caso gritante,
+# passe fracao=0,15 e ganhe o dobro de separacao marcando um terco.
 FRACAO_RAPIDA = 0.30       # abaixo de 30% da mediana da questao
 MIN_RESPOSTAS_QUESTAO = 50 # a mediana precisa ser estavel para o limiar valer
 
