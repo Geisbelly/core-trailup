@@ -369,3 +369,43 @@ def test_taxa_efetiva_bate_com_risco():
         disp = sum(engajamento.risco(c['dias_recentes'], c['dias_ativos'], cal, taxa)
                    for c in coorte) / len(coorte)
         assert abs(disp - cal.taxa_efetiva[taxa]) < 0.05
+
+
+# ---------------- evasao.sql: a aritmética conferida em Python ----------------
+import math, re as _re
+
+def _coef_do_sql():
+    """Lê os coeficientes do SQL publicado — pega drift entre doc e arquivo."""
+    caminho = os.path.join(os.path.dirname(__file__), '..', 'sql', 'evasao.sql')
+    corpo = open(caminho).read()
+    corpo = corpo[corpo.index('SELECT 1.0'):corpo.index('$$;')]
+    return [float(x) for x in _re.findall(r'\(?(-?\d+\.\d{6})\)?', corpo)]
+
+def _risco_sql(cl1, cl4, sem_sem_acesso, semana, nota, feitas, perdidas, taxa, atraso):
+    c = _coef_do_sql()
+    z = (c[0] + c[1]*math.log1p(max(cl1, 0)) + c[2]*math.log1p(max(cl4, 0))
+         + c[3]*(cl1/(cl4/4.0 + 1)) + c[4]*sem_sem_acesso + c[5]*semana
+         + c[6]*76.68 + c[7]*nota + c[8]*feitas + c[9]*perdidas
+         + c[10]*taxa + c[11]*atraso)
+    return 1/(1 + math.exp(-z))
+
+def test_sql_nao_superestima_o_risco():
+    """O defeito encontrado na auditoria: devolvia 11x a taxa real."""
+    tipico = _risco_sql(cl1=20, cl4=80, sem_sem_acesso=0, semana=10, nota=60,
+                        feitas=3, perdidas=1, taxa=0.75, atraso=0)
+    assert tipico < 0.15, f'aluno típico com risco {tipico:.2f} - alto demais'
+
+def test_sql_entrega_perdida_aumenta_o_risco():
+    poucos = _risco_sql(20, 80, 0, 10, 60, 3, 0, 0.9, 0)
+    muitos = _risco_sql(20, 80, 0, 10, 60, 3, 4, 0.4, 0)
+    assert muitos > poucos
+
+def test_sql_mais_cliques_reduz_o_risco():
+    ativo = _risco_sql(200, 800, 0, 10, 60, 3, 1, 0.75, 0)
+    sumido = _risco_sql(1, 10, 0, 10, 60, 3, 1, 0.75, 0)
+    assert sumido > ativo
+
+def test_sql_semanas_sem_acesso_nao_reduz_o_risco():
+    """Era o sinal invertido: -0,081 fazia sumir baixar o risco."""
+    v = [_risco_sql(5, 40, k, 10, 60, 3, 1, 0.75, 0) for k in (0, 2, 4)]
+    assert v[-1] >= v[0] - 1e-3, f'sumir reduz o risco: {v}'

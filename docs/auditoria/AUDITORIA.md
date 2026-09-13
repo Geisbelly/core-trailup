@@ -93,9 +93,58 @@ O módulo agora devolve `Calibracao.taxa_efetiva[taxa]`, medida na própria coor
 
 ---
 
+## Parte 3: `evasao.sql` — dois defeitos, um deles grave
+
+O SQL foi auditado reimplementando a aritmética dele em Python e refazendo o ajuste sobre o OULAD.
+
+### 1. A função devolvia probabilidade 11× maior que a real
+
+| | valor |
+|---|---|
+| média devolvida pelo SQL publicado | **0,302** |
+| taxa real de evasão | 0,027 |
+| **fator de superestimação** | **11,1×** |
+| ECE | 0,275 |
+| AUC (ordenação) | 0,764 |
+
+A causa: os coeficientes vinham de um ajuste com `class_weight='balanced'`, que otimiza ordenação e **destrói a calibração**. Quem lesse o número cru concluiria que um terço da turma está saindo.
+
+**O defeito era invisível para quem usava só a faixa** — a ordenação continuava razoável. Só aparecia para quem lesse o score. É exatamente o tipo de erro que a regra "persistir a ação, não o diagnóstico" esconde em vez de evitar.
+
+### 2. `p_semanas_sem_acesso` com o sinal invertido
+
+Coeficiente **−0,081**: mais semanas sumido **reduzia** o risco.
+
+| semanas sem acesso | risco devolvido | evasão real |
+|---|---|---|
+| 0 | 0,383 | 2,11% |
+| 2 | 0,345 | 3,76% |
+| 4 | 0,309 | 4,22% |
+
+O risco cai enquanto a evasão real sobe, monotonicamente nas duas direções.
+
+### O conserto
+
+Coeficientes refeitos **sem** `class_weight`, sobre um painel de 564.006 linhas com split por coorte:
+
+| | antes | depois |
+|---|---|---|
+| AUC | 0,764 | **0,783** |
+| ECE | 0,275 | **0,006** |
+| média prevista | 0,302 | **0,021** (real: 0,026) |
+| lift@10% | 3,3× | **4,1×** |
+| lift@5% | — | **5,6×** |
+| equidade (cobertura N × Y) | — | 40% × **45%** |
+
+**Nuance sobre `sem_clique`:** o coeficiente correto é ≈**zero** (−0,0008), não positivo. A relação **marginal** é forte e positiva, mas **condicionada aos cliques da semana ela desaparece** — "zero cliques" já codifica "sumiu". O erro do SQL não era só o sinal; era afirmar um efeito condicional que não existe.
+
+**Quatro testes novos leem os coeficientes direto do arquivo `.sql`** e verificam que o aluno típico não recebe risco alto, que entrega perdida aumenta o risco, que mais cliques reduzem, e que sumir nunca reduz. Isso pega drift entre o arquivo e a documentação sem precisar de Postgres.
+
+---
+
 ## O que a auditoria **não** cobre
 
-- **`evasao.sql`.** É SQL com coeficientes embutidos; validar exige rodar contra um Postgres, não apenas Python. Continua sem auditoria.
+- **A transferência para o TrailUp.** Continua sem medida: o banco está vazio.
 - **A transferência para o TrailUp.** Continua sem medida: o banco está vazio. O que esta auditoria garante é que os números publicados descrevem o que o código faz **no corpus de referência** — não que se sustentem em dado brasileiro e escolar.
 - **Calibração dos que dependem de coorte.** `engajamento.ordenar` e `gate.risco` devolvem score para ordenar, não probabilidade; a auditoria confere a ordenação, não um nível absoluto que eles não afirmam ter.
 

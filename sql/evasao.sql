@@ -4,11 +4,30 @@
 -- TrailUp: precisa de relogio (rodada diaria), e a API hiberna no free tier do
 -- Render. Regressao logistica vira aritmetica; nao precisa de runtime de ML.
 --
--- Coeficientes medidos no OULAD (CC BY 4.0), painel aluno x semana, 523 mil
--- linhas, split por coorte (treina 2013B/2013J/2014B, testa 2014J):
---   AUC 0,737 (logistica) / 0,746 (boosting) | alertando o top 10%:
---   precisao 12,2% contra base de 3,6% -> lift 3,3x, cobrindo 1/3 de quem evade.
---   Sem gap de equidade: AUC 0,747 (disability=N) x 0,732 (Y).
+-- Coeficientes REFEITOS em 2026-09-13. Os anteriores tinham dois defeitos que
+-- a auditoria encontrou (ver docs/auditoria/AUDITORIA.md):
+--
+--   1. A funcao devolvia probabilidade 11,1x maior que a real - media 0,302
+--      contra taxa de evasao de 2,7%, ECE 0,275. Vinham de um ajuste com
+--      class_weight='balanced', que otimiza ordenacao e destroi calibracao.
+--      Quem lesse o numero cru concluiria que um terco da turma esta saindo.
+--
+--   2. p_semanas_sem_acesso tinha coeficiente NEGATIVO (-0,081): mais semanas
+--      sumido REDUZIA o risco. No dado bruto a evasao sobe monotonicamente com
+--      as semanas sem acesso (2,11% -> 3,28% -> 3,76% -> 4,42%).
+--
+-- O defeito era invisivel para quem usava so a FAIXA, porque a ordenacao
+-- continuava razoavel (AUC 0,764). So aparecia para quem lesse o score.
+--
+-- Painel aluno x semana do OULAD (CC BY 4.0), 564.006 linhas, split por coorte
+-- (treina 2013B/2013J/2014B, testa 2014J em 195.797 linhas):
+--   AUC 0,783 | ECE 0,006 | media prevista 0,021 contra 0,026 real
+--   alertando o top 10%: precisao 10,9%, lift 4,1x
+--   alertando o top  5%: precisao 14,7%, lift 5,6x
+--   equidade: cobertura 40% (disability=N) x 45% (Y) - sem gap contra o grupo
+--   de maior risco (4,1% x 2,5% de evasao).
+--
+-- Reproduzivel por docs/auditoria/scripts/64_sql.py.
 --
 -- ATENCAO: os coeficientes sao de universitarios a distancia do Reino Unido.
 -- Transferem a FORMA (quais sinais importam), nao os valores. Recalibrar com
@@ -27,18 +46,21 @@ CREATE OR REPLACE FUNCTION trailup_risco_evasao(
 ) RETURNS numeric
 LANGUAGE sql IMMUTABLE PARALLEL SAFE AS $$
   SELECT 1.0 / (1.0 + exp(-(
-      1.560766
-    + (-0.332613) * ln(1 + greatest(p_cliques_semana,    0))
-    + (-0.040751) * ln(1 + greatest(p_cliques_4semanas,  0))
-    + ( 0.076028) * (p_cliques_semana / (p_cliques_4semanas / 4.0 + 1))
-    + (-0.081478) * p_semanas_sem_acesso
-    + (-0.032992) * p_semana_do_curso
-    + ( 0.007351) * 76.68                    -- carga: media do corpus (sem analogo)
-    + (-0.007206) * p_nota_media
-    + ( 0.011575) * p_entregas_feitas
-    + ( 0.012417) * p_entregas_perdidas
-    + (-1.023119) * p_taxa_entrega           -- o preditor mais forte depois dos cliques
-    + ( 0.007044) * p_atraso_medio
+     -0.998883
+    + (-0.239863) * ln(1 + greatest(p_cliques_semana,    0))
+    + ( 0.013061) * ln(1 + greatest(p_cliques_4semanas,  0))
+    + ( 0.002436) * (p_cliques_semana / (p_cliques_4semanas / 4.0 + 1))
+    + (-0.000836) * p_semanas_sem_acesso     -- ~zero: os cliques da semana ja
+                                             -- codificam "sumiu". A relacao
+                                             -- MARGINAL e positiva e forte, mas
+                                             -- condicionada aos cliques some.
+    + (-0.040591) * p_semana_do_curso
+    + ( 0.005945) * 76.68                    -- carga: media do corpus (sem analogo)
+    + (-0.008495) * p_nota_media
+    + (-0.027413) * p_entregas_feitas
+    + ( 0.251735) * p_entregas_perdidas
+    + (-1.688502) * p_taxa_entrega           -- o preditor mais forte depois dos cliques
+    + ( 0.019125) * p_atraso_medio
   )));
 $$;
 
