@@ -486,6 +486,18 @@ Corrigido: o rótulo passa a ser `fora do gabarito 45% (típico ~72%)`, o campo 
 
 ---
 
+## Mapa de cobertura da API, sem dataset
+
+```bash
+python3 docs/auditoria/scripts/79_cobertura.py
+```
+
+Enumera **toda função pública e todo campo de dataclass** do pacote e checa se existe teste. Roda sem dataset, e falha se sobrar símbolo descoberto.
+
+**Foi escrito porque eu afirmei duas vezes que "está tudo auditado" sem conferir.** Na primeira execução apontou **16 símbolos sem teste**, incluindo `chute.foi_chute` — a função principal daquele módulo, usada em toda a auditoria e nunca testada diretamente.
+
+E o teste que escrevi para fechar a lacuna encontrou outra coisa: `ritmo.descrever(faixa, r)` recebe uma `dificuldade.Faixa` no primeiro parâmetro, não o rótulo do ritmo — e o parâmetro estava **sem anotação de tipo**, o que escondia isso de quem lesse a assinatura.
+
 ## Verificação de consistência, sem dataset
 
 ```bash

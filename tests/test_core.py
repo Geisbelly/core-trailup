@@ -577,3 +577,62 @@ def test_str_nao_chama_divagacao_de_divagacao():
     ref = pre_avaliacao.preparar(gab)
     texto = str(pre_avaliacao.avaliar('os precos sobem muito', ref))
     assert 'fora do gabarito' in texto
+
+
+# ---------------- lacunas que o mapa de cobertura apontou ----------------
+def test_foi_chute_exige_erro_e_pressa():
+    """Chute = rápido demais PARA AQUELA QUESTÃO *e* errado."""
+    assert chute.foi_chute(4.0, acertou=False, latencia_mediana_questao=30.0,
+                           respostas_questao=60)
+    assert not chute.foi_chute(4.0, acertou=True, latencia_mediana_questao=30.0,
+                               respostas_questao=60), 'acertou não é chute'
+    assert not chute.foi_chute(25.0, acertou=False, latencia_mediana_questao=30.0,
+                               respostas_questao=60), '25s de 30s não é pressa'
+
+def test_foi_chute_nao_opina_sem_corpus():
+    assert not chute.foi_chute(1.0, acertou=False, latencia_mediana_questao=30.0,
+                               respostas_questao=10), 'sem 50 respostas não afirma'
+
+def test_foi_chute_fracao_ajustavel():
+    """fracao=0,15 dobra a separação marcando um terço (ver a tabela)."""
+    assert chute.foi_chute(8.0, False, 30.0, 60, fracao=0.30)
+    assert not chute.foi_chute(8.0, False, 30.0, 60, fracao=0.15)
+
+def test_taxa_chute_lida_com_zero_respostas():
+    assert chute.taxa_chute(0, 0) == 0.0
+    assert chute.taxa_chute(3, 100) == pytest.approx(0.03)
+
+def test_quao_lento_e_razao_nao_segundos():
+    esp = tempo.esperado(latencia_mediana=20.0, respostas=50)
+    assert tempo.quao_lento(40.0, esp) == pytest.approx(2.0)
+    assert tempo.quao_lento(10.0, esp) == pytest.approx(0.5)
+
+def test_descrever_junta_ritmo_e_dificuldade():
+    """descrever() recebe a Faixa do `dificuldade`, não o rótulo do ritmo —
+    a assinatura sem anotação escondia isso."""
+    r = ritmo.ritmo(15.0, respostas=50)
+    f = dificuldade.estimar(20, 30)
+    texto = ritmo.descrever(f, r)
+    assert isinstance(texto, str) and 'rapida' in texto and '%' in texto
+
+def test_descrever_recusa_tipo_errado():
+    r = ritmo.ritmo(15.0, respostas=50)
+    with pytest.raises((AttributeError, TypeError)):
+        ritmo.descrever('rapida', r)
+
+def test_discriminacao_veredito_acompanha_o_valor():
+    boa = discriminacao.discriminacao([(i % 3 == 0, i / 100.0) for i in range(120)])
+    assert isinstance(boa.veredito, str)
+    assert boa.respostas == 120
+
+def test_discriminacao_nao_opina_com_poucas_respostas():
+    d = discriminacao.discriminacao([(True, 0.5)] * 10)
+    assert 'poucas' in d.veredito.lower() or d.valor is None or d.respostas < 40
+
+def test_conceitos_faltando_aponta_o_que_falta():
+    gab = ('Inflacao e o aumento generalizado dos precos. '
+           'O banco central controla elevando os juros.')
+    ref = pre_avaliacao.preparar(gab)
+    vazia = pre_avaliacao.avaliar('nao sei', ref)
+    cheia = pre_avaliacao.avaliar(gab, ref)
+    assert len(vazia.conceitos_faltando) > len(cheia.conceitos_faltando)
