@@ -10,7 +10,7 @@ Base: EdNet KT3, 6.504.124 respostas, acerto global 0,6677, split por aluno 70/3
 
 ## Resultado das 7 partes
 
-**27 verificações. 11 defeitos encontrados**, todos da mesma família: uma saída afirmando uma escala que ninguém mediu. Nenhum apareceria olhando AUC.
+**29 verificações. 12 defeitos encontrados**, todos da mesma família: uma saída afirmando uma escala que ninguém mediu. Nenhum apareceria olhando AUC.
 
 | onde | o que afirmava | o que era |
 |---|---|---|
@@ -25,6 +25,7 @@ Base: EdNet KT3, 6.504.124 respostas, acerto global 0,6677, split por aluno 70/3
 | `duracao_prevista` | soma de medianas | subestima 13% |
 | `prioridade_revisao` | onde revisar rende mais | só mede esquecimento |
 | `tempo.MIN_RESPOSTAS` | 5 respostas é estável | erro típico de 20% |
+| `engajamento.MIN_EVENTOS` | 30 eventos e os eixos funcionam | AUC 0,644, não 0,810 |
 
 E quatro que **conferiram**: `perfil_chute` (p90 e p99), a tabela `REFERENCIA` do engajamento (diferença 0,000), o limite de 3× do `demorando`, e `ritmo.FRONTEIRA_SEG` — cujo 40 s é praticamente o corte ótimo por Otsu (39,8 s), com d de Cohen **maior** que o documentado (4,18 contra 3,30).
 
@@ -371,6 +372,36 @@ Com 14 dias a recência ocupa metade da janela de 30 e fica **colinear com a fre
 > **Otimizar o eixo isolado piorava o sistema em 0,044.** É a segunda vez nesta sessão que afinar uma parte degrada o todo — a primeira foi a logística linear ganhando AUC e perdendo calibração. Um teste novo trava o sintoma: peso de frequência negativo é ajuste degenerado, e falha.
 
 E o **30 é pior que tudo de 5 para cima nas duas bases** — a janela cheia dilui. É isso que sustenta a recência existir como eixo separado da frequência.
+
+### A aproximação normal: confere — e eu quase a reprovei medindo a coisa errada
+
+`dificuldade` diz usar aproximação normal do posterior, *"validada contra o Beta exato, diferença de cobertura menor que 1 ponto"*.
+
+Medi a diferença entre os **limites** dos intervalos e deu até **2,56 pontos** — ia marcar como defeito. Mas a afirmação é sobre **cobertura**, não sobre limites:
+
+| | cobertura |
+|---|---|
+| normal (o módulo) | 75,3% |
+| Beta exato | 74,8% |
+
+**Meio ponto. A afirmação confere.** Errar o objeto da medida é o mesmo erro que esta auditoria encontrou nos outros — desta vez fui eu, no teste.
+
+Fica documentado o que eu de fato descobri: **os limites diferem em até 2,6 pontos** em n pequeno com taxa extrema (n=10 com 1 acerto: [0,169–0,539] normal contra [0,179–0,549] exato). Quem decide por `afirmar()` não se importa; quem exibir o limite cru ao professor com n baixo, sim.
+
+### `engajamento.MIN_EVENTOS = 30` — mesmo defeito do `tempo`
+
+O comentário dizia *"abaixo disso os eixos são ruído"*, sugerindo que a partir de 30 funcionam. AUC da recência por faixa de eventos:
+
+| eventos | alunos | AUC |
+|---|---|---|
+| **30–49** | 4.708 | **0,644** |
+| 50–99 | 5.032 | 0,718 |
+| 100–299 | 5.440 | 0,801 |
+| 300–999 | 2.491 | **0,864** |
+
+**No mínimo de 30 o eixo entrega 0,644, não os 0,810 do agregado.** O número de capa vem dos alunos com muita atividade.
+
+30 fica como **piso para não devolver lixo**; para o desempenho anunciado, exija ~100. É a terceira vez que um mínimo vinha com comentário sugerindo suficiência — depois de `tempo.MIN_RESPOSTAS` e da confiança do `ritmo`.
 
 ### As que são arbitrárias e **não importam**
 

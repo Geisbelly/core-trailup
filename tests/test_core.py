@@ -535,3 +535,10 @@ def test_peso_da_recencia_domina():
     crescer a ponto de colinearizar, o peso da frequência degenera."""
     assert engajamento.PESOS['recencia'] > 4 * abs(engajamento.PESOS['frequencia'])
     assert engajamento.PESOS['frequencia'] > 0, 'peso negativo = ajuste degenerado'
+
+
+def test_min_eventos_e_piso_nao_garantia():
+    """30 eventos é o piso para não devolver lixo; o AUC anunciado exige ~100."""
+    baixo = engajamento.medir(dias_recentes=3, dias_ativos=9, eventos=30)
+    assert baixo.confiavel, '30 passa do piso'
+    assert not engajamento.medir(dias_recentes=3, dias_ativos=9, eventos=29).confiavel

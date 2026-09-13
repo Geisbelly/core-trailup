@@ -4,8 +4,14 @@ Devolve um intervalo sobre a taxa de acerto, com a incerteza explicita. Sem
 cortes arbitrarios: quem consome aplica o proprio limiar ao intervalo.
 
 Posterior Beta-Binomial com prior derivado do proprio corpus. O intervalo usa
-aproximacao normal do posterior - validada contra o Beta exato em 11.338
-questoes do EdNet, diferenca de cobertura menor que 1 ponto.
+aproximacao normal do posterior - validada contra o Beta exato em 5.202
+questoes do EdNet: COBERTURA 75,3% contra 74,8% do Beta, meio ponto de
+diferenca. A afirmacao e sobre COBERTURA.
+
+Os LIMITES do intervalo, esses, diferem mais: ate 2,6 pontos percentuais em
+n pequeno com taxa extrema (n=10 com 1 acerto: [0,169-0,539] normal contra
+[0,179-0,549] exato). Quem so decide com `afirmar()` nao se importa; quem
+exibir o limite cru ao professor, com n baixo, deve saber disso.
 
 DOIS INTERVALOS, DUAS PERGUNTAS - nao confundir:
 

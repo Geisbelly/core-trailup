@@ -159,7 +159,22 @@ JANELA_DIAS = 30        # janela de observacao
 # e o que sustenta a recencia existir como eixo separado da frequencia.
 JANELA_RECENTE = 10     # ultimos dias da janela que formam a recencia
 GAP_SESSAO_SEG = 1800   # inatividade que separa duas sessoes
-MIN_EVENTOS = 30        # abaixo disso os eixos sao ruido
+# MIN_EVENTOS = 30 foi escolhido sem medida, e "abaixo disso os eixos sao
+# ruido" sugeria que a partir de 30 eles funcionam. Medido no EdNet, o AUC da
+# recencia por faixa de eventos na janela:
+#
+#    eventos      alunos    AUC
+#     30-49        4.708    0,644
+#     50-99        5.032    0,718
+#    100-299       5.440    0,801
+#    300-999       2.491    0,864
+#    1000+           448    0,853
+#
+# No minimo de 30 o eixo entrega 0,644, nao os 0,810 do agregado. O numero de
+# capa vem dos alunos com muita atividade. 30 e o piso para NAO devolver lixo;
+# para o desempenho anunciado, exija ~100. `Engajamento.confiavel` diz apenas
+# que passou do piso.
+MIN_EVENTOS = 30        # piso; ver a curva acima antes de confiar no numero
 
 FAVORAVEL = {'recencia': True, 'frequencia': True, 'profundidade': True}
 
