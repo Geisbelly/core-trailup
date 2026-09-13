@@ -10,7 +10,7 @@ Base: EdNet KT3, 6.504.124 respostas, acerto global 0,6677, split por aluno 70/3
 
 ## Resultado das 7 partes
 
-**38 verificações. 18 defeitos encontrados**, todos da mesma família: uma saída afirmando uma escala que ninguém mediu. Nenhum apareceria olhando AUC.
+**43 verificações. 23 defeitos encontrados**, todos da mesma família: uma saída afirmando uma escala que ninguém mediu. Nenhum apareceria olhando AUC.
 
 | onde | o que afirmava | o que era |
 |---|---|---|
@@ -32,6 +32,11 @@ Base: EdNet KT3, 6.504.124 respostas, acerto global 0,6677, split por aluno 70/3
 | `prever_turma` | variância do posterior | vinha do intervalo clipado |
 | `gate.risco` | parâmetro "dificuldade" | recebia facilidade — invertia o termo |
 | `dominio.incerteza` | usa a média global dada | fixava 0,67 e ignorava |
+| `dominio.tendencia` | limiar 0,03 | recalibração fez disparar com metade |
+| `revisao.retencao` | usa `acertou_antes` | ignorava em silêncio |
+| `engajamento.trajetoria` | limiar fixo | muda com o nº de janelas |
+| `derivar_prior` | prior do corpus | força 210.000 sem avisar |
+| `tempo.demorando` | limiar de 3× | inverte na margem de erro da mediana |
 
 E oito que **conferiram**: `cobertura` (+0,462) e `conceitos_faltando` (−0,410) do `pre_avaliacao`, `gate.MIN_RESPOSTAS = 5` (é o cotovelo exato: 0,534 abaixo dele, 0,660 nele), a aproximação normal do `dificuldade` (cobertura 75,3% contra 74,8% do Beta), `perfil_chute` (p90 e p99), a tabela `REFERENCIA` do engajamento (diferença 0,000), o limite de 3× do `demorando`, e `ritmo.FRONTEIRA_SEG` — cujo 40 s é praticamente o corte ótimo por Otsu (39,8 s), com d de Cohen **maior** que o documentado (4,18 contra 3,30).
 
@@ -532,6 +537,65 @@ Quem lesse só a assinatura passaria a dificuldade e **inverteria o termo**. Ren
 ### 4. `dominio.incerteza` ignorava `media_global`
 
 Fixava `0,67`/`0,33` no prior mesmo quando o chamador declarava outra média global — a confiança devolvida era idêntica com `media_global=0,20` e `0,90`. Corrigido e propagado até `dominio()`.
+
+---
+
+## Parte 10: segunda varredura — interações e casos-limite
+
+Atacando o que nenhuma rodada anterior tocou: o que acontece **entre** os módulos e nas bordas.
+
+### 1. A recalibração quebrou o limiar de `tendencia` — e eu não tinha conferido
+
+Corrigi `precisa_reforco` quando a recalibração mudou a escala. **Não olhei `tendencia`, que corta na mesma escala.**
+
+| | variação de `p` para a mesma evidência |
+|---|---|
+| escala crua | +0,046 |
+| recalibrada | **+0,091** |
+
+O limiar de 0,03 passaria a disparar com **metade** da evidência. Corrigido calculando a tendência **antes** de expandir, com teste que exige que ela não dependa da recalibração.
+
+E `LIMIAR_TENDENCIA = 0,03` virou constante nomeada, **declarada como escolha** — nenhum experimento a definiu.
+
+### 2. `retencao` aceitava parâmetros contraditórios em silêncio
+
+`retencao(7, acertou_antes=True, proporcao_acertos=0.0)` devolvia o mesmo que com `acertou_antes=False`. O parâmetro era aceito e ignorado. Agora levanta nos dois casos contraditórios.
+
+### 3. `trajetoria`: o limiar depende de quantas janelas você passa
+
+Para a **mesma queda de 8 para 1**:
+
+| janelas | inclinação |
+|---|---|
+| `[8, 1]` | **−7,00** |
+| `[8, 4, 1]` | −3,50 |
+| `[8, 6, 4, 1]` | **−2,33** |
+
+`incl` é a variação média **por janela**. Os números do módulo foram medidos com **três janelas de 10 dias**; com outra divisão o mesmo padrão muda de rótulo. Documentado, com recusa acima de 6 janelas.
+
+### 4. `derivar_prior` devolvia força 210.000
+
+| corpus | resultado antes |
+|---|---|
+| todas as questões com a mesma taxa | **Beta(146.999; 62.999)** — força 209.999 |
+| bimodal (0,01 e 0,99) | **Beta(0,02; 0,02)** — força 0,04 |
+
+O primeiro vem de `max(var − ruido, 1e-6)`: quando não há variação genuína, a divisão por 1e-6 explode. **Um prior de força 210 mil significa que 30 respostas não moveriam a estimativa em nada** — e a função devolvia isso sem avisar.
+
+O segundo é um Beta **bimodal**, com massa em 0 e 1 — o oposto de "dificuldade típica".
+
+Agora recusa nos dois casos, com `FORCA_MIN, FORCA_MAX = 0,5, 200` e mensagem que diz o que fazer.
+
+### 5. `demorando` inverte com a imprecisão da mediana
+
+Com `respostas=5` a mediana tem 20% de erro. Para **55 s**, o mesmo aluno:
+
+| mediana da questão | `demorando(55s)` |
+|---|---|
+| 16 s (−20%) | **True** |
+| 24 s (+20%) | **False** |
+
+A decisão inverte dentro da margem de erro do próprio estimador. Já estava documentado que 5 não é preciso; aqui está a consequência concreta.
 
 ---
 

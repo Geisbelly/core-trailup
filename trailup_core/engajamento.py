@@ -272,6 +272,12 @@ def trajetoria(dias_por_janela, limiar: float = 0.25) -> str:
     So faz sentido comparada entre alunos de MESMO TOTAL de atividade. Entre
     alunos de mesma recencia ela se inverte - ver o cabecalho do modulo.
 
+    O LIMIAR PRESSUPOE JANELAS DE ~10 DIAS. `incl` e a variacao media POR
+    JANELA, entao o mesmo padrao muda de rotulo conforme quantas janelas voce
+    passa: [8, 1] da inclinacao -7,0 e [8, 6, 4, 1] da -2,33, para a mesma
+    queda de 8 para 1. Os numeros do cabecalho foram medidos com TRES janelas
+    de 10 dias; com outra divisao, remeca o limiar.
+
     O limiar de 0,25 dia por janela e ESTRITO: [5, 5, 4] ja e "caiu". E a regra
     exata sob a qual os numeros do cabecalho foram medidos, e por isso ela e o
     padrao - mas "estavel" fica sendo uma faixa estreita (no EdNet, 633 alunos
@@ -281,6 +287,10 @@ def trajetoria(dias_por_janela, limiar: float = 0.25) -> str:
     j = [float(x) for x in dias_por_janela]
     if len(j) < 2:
         raise ValueError('precisa de ao menos duas sub-janelas')
+    if len(j) > 6:
+        raise ValueError(f'{len(j)} sub-janelas e demais: o limiar foi medido '
+                         'com tres janelas de 10 dias e nao transfere para '
+                         'janelas muito curtas')
     incl = (j[-1] - j[0]) / (len(j) - 1)
     return 'caiu' if incl < -limiar else ('subiu' if incl > limiar else 'estavel')
 

@@ -39,6 +39,12 @@ from math import sqrt
 
 Z = {0.50: 0.674, 0.80: 1.282, 0.90: 1.645, 0.95: 1.960}
 
+# Faixa em que uma forca de prior faz sentido. Fora dela `derivar_prior` recusa
+# em vez de devolver numero inutil: com forca 0,04 o Beta e bimodal (massa em 0
+# e 1, o oposto de "dificuldade tipica"); com forca 210.000 - que o corpus sem
+# variacao produzia - 30 respostas nao moveriam a estimativa em nada.
+FORCA_MIN, FORCA_MAX = 0.5, 200.0
+
 
 @dataclass(frozen=True)
 class Prior:
@@ -68,10 +74,22 @@ def derivar_prior(taxas, tamanhos) -> Prior:
     mu = sum(taxas) / n
     var = sum((t - mu) ** 2 for t in taxas) / n
     ruido = sum(t * (1 - t) / m for t, m in zip(taxas, tamanhos) if m > 0) / n
-    genuina = max(var - ruido, 1e-6)
+    genuina = var - ruido
+    if genuina <= 0:
+        raise ValueError(
+            'as questoes deste corpus nao variam mais do que o ruido binomial '
+            f'explica (variancia {var:.5f}, ruido esperado {ruido:.5f}). Sem '
+            'variacao genuina nao ha prior a derivar - use Prior() ou colete '
+            'mais respostas por questao.')
     k = mu * (1 - mu) / genuina - 1
-    if k <= 0:
-        raise ValueError('corpus sem variacao genuina de dificuldade')
+    if not FORCA_MIN <= k <= FORCA_MAX:
+        raise ValueError(
+            f'forca derivada de {k:.1f} esta fora de [{FORCA_MIN}, {FORCA_MAX}]. '
+            + ('Abaixo do minimo o Beta vira bimodal (massa em 0 e 1), que nao '
+               'descreve dificuldade. ' if k < FORCA_MIN else
+               'Acima do maximo o prior domina qualquer evidencia de turma: '
+               f'com forca {k:.0f}, 30 respostas nao moveriam a estimativa. ')
+            + 'Verifique se os tamanhos passados sao os reais.')
     return Prior(mu * k, (1 - mu) * k)
 
 

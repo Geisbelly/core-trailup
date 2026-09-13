@@ -61,6 +61,10 @@ PRIOR_GLOBAL = 8           # encolhimento do acerto global
 # acontece em torno de 0,6412: acima dele as previsoes SOBEM, abaixo DESCEM.
 # Como a taxa base (0,6677) fica acima do ponto fixo, a previsao media sobe um
 # pouco - o oposto de "a recalibracao centra na media do corpus".
+# Limiar de variacao para chamar de subindo/caindo. E ESCOLHA, nao medida:
+# nenhum experimento definiu 0,03. Vale na escala CRUA do `p` (ver `dominio`).
+LIMIAR_TENDENCIA = 0.03
+
 RECAL_A = -0.578273
 RECAL_B = +1.995671
 
@@ -142,12 +146,17 @@ def dominio(dificuldade_questao: float, acertos_no_topico: int, respostas_no_top
         glob = (acertos_totais + media_global * PRIOR_GLOBAL) / (respostas_totais + PRIOR_GLOBAL)
         p = (PESO_QUESTAO * dificuldade_questao + PESO_TOPICO * aluno
              + PESO_GLOBAL * glob)
-    if recalibrar:
-        p = _recalibrar(p)
+    # A TENDENCIA E CALCULADA NA ESCALA CRUA, de proposito. A recalibracao
+    # expande o logito por ~2, entao a mesma variacao de evidencia move o `p`
+    # recalibrado o dobro - e o limiar de 0,03 passaria a disparar 2x mais
+    # facil. Mesmo defeito que a recalibracao causou em `precisa_reforco`,
+    # aqui evitado comparando antes de expandir.
     tend = 'estavel'
     if p_anteriores and len(p_anteriores) >= 3:
         d = p - p_anteriores[-3]
-        tend = 'subindo' if d > 0.03 else ('caindo' if d < -0.03 else 'estavel')
+        tend = 'subindo' if d > LIMIAR_TENDENCIA else ('caindo' if d < -LIMIAR_TENDENCIA else 'estavel')
+    if recalibrar:
+        p = _recalibrar(p)
     return Dominio(round(p, 3), confianca(n, acertos_no_topico, media_global), tend, n)
 
 

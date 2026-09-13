@@ -712,3 +712,47 @@ def test_ritmo_guarda_a_latencia_recebida():
     r = ritmo.ritmo(52.0, respostas=30)
     assert r.latencia == pytest.approx(52.0)
     assert str(int(r.latencia)) in str(r)
+
+
+# ---------------- segunda varredura adversarial ----------------
+def test_tendencia_usa_a_escala_crua():
+    """A recalibração expande o logito ~2x; calcular a tendência depois faria
+    o limiar de 0,03 disparar o dobro — o defeito que atingiu precisa_reforco."""
+    ant = [dominio.dominio(0.5, 4, 10, recalibrar=False).p] * 3
+    d = dominio.dominio(0.5, 5, 10, p_anteriores=ant, recalibrar=True)
+    d_cru = dominio.dominio(0.5, 5, 10, p_anteriores=ant, recalibrar=False)
+    assert d.tendencia == d_cru.tendencia, 'a tendência não pode depender da recalibração'
+
+def test_limiar_de_tendencia_e_declarado_como_escolha():
+    assert dominio.LIMIAR_TENDENCIA == 0.03
+
+def test_retencao_recusa_parametros_contraditorios():
+    with pytest.raises(ValueError):
+        revisao.retencao(7, acertou_antes=True, proporcao_acertos=0.0)
+    with pytest.raises(ValueError):
+        revisao.retencao(7, acertou_antes=False, proporcao_acertos=1.0)
+
+def test_trajetoria_recusa_janelas_demais():
+    """O limiar foi medido com três janelas de 10 dias e não transfere."""
+    with pytest.raises(ValueError):
+        engajamento.trajetoria([9, 8, 7, 6, 5, 4, 3])
+
+def test_trajetoria_depende_do_numero_de_janelas():
+    """Documentado: a mesma queda muda de inclinação conforme a divisão."""
+    duas = engajamento.trajetoria([8, 1], limiar=5.0)
+    quatro = engajamento.trajetoria([8, 6, 4, 1], limiar=5.0)
+    assert duas == 'caiu' and quatro == 'estavel'
+
+def test_derivar_prior_recusa_corpus_sem_variacao():
+    """Devolvia força 210.000 — um prior que 30 respostas não moveriam."""
+    with pytest.raises(ValueError, match='ruido binomial'):
+        dificuldade.derivar_prior([0.7] * 20, [100] * 20)
+
+def test_derivar_prior_recusa_forca_degenerada():
+    """Beta(0,02; 0,02) é bimodal em 0 e 1 — o oposto de dificuldade típica."""
+    with pytest.raises(ValueError, match='fora de'):
+        dificuldade.derivar_prior([0.01, 0.99] * 10, [100] * 20)
+
+def test_derivar_prior_aceita_corpus_plausivel():
+    p = dificuldade.derivar_prior([.4, .5, .6, .7, .8, .9, .55, .65, .75, .85], [200] * 10)
+    assert dificuldade.FORCA_MIN <= p.forca <= dificuldade.FORCA_MAX

@@ -88,6 +88,12 @@ def retencao(dias: float, acertou_antes: bool,
         return _na_tabela(_ACERTOU if acertou_antes else _ERROU, dias)
     if not 0.0 <= proporcao_acertos <= 1.0:
         raise ValueError('proporcao_acertos tem de estar entre 0 e 1')
+    # com a proporcao, `acertou_antes` deixa de ser usado - e aceitar os dois
+    # em contradicao esconde erro de quem chama.
+    if acertou_antes and proporcao_acertos == 0.0:
+        raise ValueError('acertou_antes=True com proporcao_acertos=0 e contraditorio')
+    if not acertou_antes and proporcao_acertos == 1.0:
+        raise ValueError('acertou_antes=False com proporcao_acertos=1 e contraditorio')
     baixo = _na_tabela(_ERROU, dias)
     alto = _na_tabela(_ACERTOU, dias)
     return baixo + proporcao_acertos * (alto - baixo)
