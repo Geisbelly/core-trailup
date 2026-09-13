@@ -37,8 +37,17 @@ PESO_QUESTAO_2 = 0.70      # sem historico global: 0,70 questao + 0,30 topico  -
 PESO_QUESTAO = 0.60        # com historico global                              -> 0,727
 PESO_TOPICO = 0.15         # historico do aluno NAQUELE topico
 PESO_GLOBAL = 0.25         # historico do aluno em tudo - mais estavel
+# Os dois priors foram escolhidos sem medida. Varridos em 2026-09-13 sobre
+# 120.000 previsoes, com IC95 por bootstrap - e o resultado e INSENSIVEL:
+#
+#   PRIOR_GLOBAL:  2 -> 0,7238 | 8 -> 0,7241 | 32 -> 0,7236 | 64 -> 0,7229
+#   PRIOR_ALUNO :  1 -> 0,7239 | 3 -> 0,7241 | 8 -> 0,7240 | 16 -> 0,7237
+#
+# Todos os IC se sobrepoem. A AUC varia na quarta casa de 2 a 32 (global) e de
+# 1 a 16 (aluno). Sao arbitrarios, e medimos que nao importam nessa faixa -
+# o que e diferente de "nao tem base" e diferente de "tem base".
 PRIOR_ALUNO = 3            # encolhimento do acerto no topico
-PRIOR_GLOBAL = 8           # encolhimento do acerto global (mais dados, encolhe menos)
+PRIOR_GLOBAL = 8           # encolhimento do acerto global
 
 # RECALIBRACAO. A media linear de duas probabilidades COMPRIME para o meio:
 # sem correcao, o decil mais baixo previa 0,474 e observava 0,337 (14 pontos de

@@ -60,6 +60,19 @@ from collections import Counter, defaultdict
 from dataclasses import dataclass, field
 
 _TOKEN = re.compile(r'\w{3,}', re.UNICODE)
+# JANELA e DF_STOPWORD foram escolhidos sem medida. Varridos em 2026-09-13,
+# com IC95 por bootstrap agrupado por aluno (300 reamostras):
+#
+#   JANELA=3, df=0,5   Spearman 0,472  [0,426 - 0,516]
+#   JANELA=4, df=0,5   Spearman 0,483  [0,440 - 0,526]   <- padrao
+#   JANELA=4, df=0,4   Spearman 0,501  [0,456 - 0,542]
+#   JANELA=5, df=0,5   Spearman 0,477  [0,435 - 0,517]
+#   JANELA=8, df=0,5   Spearman 0,388  [0,343 - 0,438]   <- unico pior de fato
+#
+# De 3 a 5 na janela, e de 0,3 a 0,6 no df, os IC se sobrepoem inteiramente:
+# sao indistinguiveis com 1.167 respostas. Trocar 0,483 por 0,501 seria
+# ajustar a ruido. O que o dado sustenta e a FRONTEIRA: a partir de janela 8 a
+# qualidade cai fora do intervalo, e acima de df 0,7 tambem (0,463 e 0,429).
 JANELA = 4            # coocorrencia: palavras a ate 4 posicoes formam aresta
 MIN_DOCS = 10         # abaixo disso nao da para estimar stopword por frequencia
 DF_STOPWORD = 0.5     # aparece em mais da metade dos documentos -> stopword

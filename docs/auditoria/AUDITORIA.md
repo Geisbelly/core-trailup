@@ -343,6 +343,35 @@ A distinção que faltava: **5 serve para o ritmo e não serve para o tempo.** C
 
 Entra `tempo.precisao(n)`, que devolve o erro típico daquela estimativa, e o comentário passa a dizer o que a curva mostra: para ±10%, exija ~15 respostas; para ±8%, ~30.
 
+### As que são arbitrárias e **não importam**
+
+`dominio.PRIOR_ALUNO = 3` e `PRIOR_GLOBAL = 8` foram escolhidos sem medida. Varridos sobre 120.000 previsões, com IC95:
+
+| `PRIOR_GLOBAL` | AUC | | `PRIOR_ALUNO` | AUC |
+|---|---|---|---|---|
+| 2 | 0,7238 | | 1 | 0,7239 |
+| **8** | **0,7241** | | **3** | **0,7241** |
+| 32 | 0,7236 | | 8 | 0,7240 |
+| 64 | 0,7229 | | 16 | 0,7237 |
+
+**A AUC varia na quarta casa** e todos os intervalos se sobrepõem. São arbitrários, e está medido que não importam nessa faixa — o que é diferente de "não tem base" e diferente de "tem base".
+
+### As que têm um platô, e onde ele termina
+
+`pre_avaliacao.JANELA = 4` e `DF_STOPWORD = 0,5`, com IC95 por bootstrap agrupado por aluno:
+
+| configuração | Spearman | IC 95% |
+|---|---|---|
+| JANELA=3 | 0,472 | [0,426 – 0,516] |
+| **JANELA=4 (padrão)** | **0,483** | [0,440 – 0,526] |
+| JANELA=4, df=0,4 | 0,501 | [0,456 – 0,542] |
+| JANELA=5 | 0,477 | [0,435 – 0,517] |
+| **JANELA=8** | **0,388** | **[0,343 – 0,438]** |
+
+> **Não mexi.** De 3 a 5 na janela, e de 0,3 a 0,6 no `df`, os intervalos se sobrepõem inteiramente — são indistinguíveis com 1.167 respostas. Trocar 0,483 por 0,501 seria ajustar a ruído, que é exatamente o erro que esta auditoria existe para não cometer.
+>
+> O que o dado **sustenta** é a fronteira: a partir de janela 8 a qualidade cai fora do intervalo.
+
 ---
 
 ## Verificação de consistência, sem dataset
