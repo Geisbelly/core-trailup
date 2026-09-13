@@ -103,6 +103,8 @@ e.retencao_esperada     # None enquanto a calibração não for confiável
 e.alertas()             # ['recencia'] quando há o que fazer
 ```
 
+`trajetoria([dias_j1, dias_j2, dias_j3])` devolve `'caiu' | 'estavel' | 'subiu'` — **descrição, não predição**: ela não acrescenta ao score (+0,003), mas explica o risco. Só compare alunos de **mesmo total de atividade**; comparando por recência o sinal se inverte e o alerta marca os mais engajados.
+
 Sem calibração, o módulo entrega **só a recência** — o único eixo cujos cortes são contagem, não escala — e `ordenar()` levanta erro em vez de devolver um número sem sentido.
 
 ### Acurácia não é a métrica aqui

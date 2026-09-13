@@ -295,7 +295,98 @@ A recência funciona sem calibração porque seus cortes são **contagem de dias
 
 ---
 
-## 14. Limites
+## 15. Trajetória: "caiu / estável / subiu"
+
+A pergunta natural depois de medir o nível: a **forma** da atividade importa? Dois alunos com o mesmo esforço, um crescendo e outro despencando, terminam igual?
+
+**Desenho.** A janela de 30 dias dividida em três sub-janelas de 10. Trajetória = inclinação dos dias ativos entre a primeira e a última. O limiar de 0,25 dia por janela é estrito — `[5, 5, 4]` já conta como "caiu".
+
+### Para o modelo, ela não acrescenta
+
+| modelo (AUC fora do treino) | EdNet | OULAD |
+|---|---|---|
+| só recência | 0,815 | 0,854 |
+| recência + frequência | 0,843 | 0,861 |
+| recência + tendência | 0,833 | 0,855 |
+| **recência + frequência + tendência** | **0,846** | **0,864** |
+
+**+0,003 nas duas bases.** Recência e frequência já contêm a trajetória: saber quanto o aluno fez no total e quanto fez ultimamente **determina** a forma. Não é feature nova, é a mesma informação.
+
+### Mas como explicação ela é forte — se comparada do jeito certo
+
+Fixando o **total de dias ativos** na janela:
+
+| total de dias | caiu | estável | subiu |
+|---|---|---|---|
+| **EdNet** | | | |
+| 3 a 6 | **18,6%** | 43,5% | **60,0%** |
+| 7 a 12 | 38,5% | 71,9% | 81,6% |
+| 13 a 20 | 59,4% | 83,8% | 89,1% |
+| **OULAD** | | | |
+| 3 a 6 | **74,3%** | 87,2% | **91,6%** |
+| 7 a 12 | 89,9% | 96,4% | 97,7% |
+| 13 a 20 | 96,9% | 99,0% | 99,4% |
+
+Monotônico nos **seis estratos, nas duas bases**, com até **41 pontos** de diferença. Mesmo esforço total, formas diferentes, destinos diferentes.
+
+---
+
+## 16. O controle errado inverte o sinal
+
+Este é o achado que mais importa para quem for construir o alerta.
+
+Fixando a **recência** em vez do total, a mesma tabela dá o contrário:
+
+| recência | caiu | estável | subiu |
+|---|---|---|---|
+| EdNet, 1–3 dias | **55,4%** | **46,8%** | 57,6% |
+| OULAD, 1–3 dias | **93,4%** | **91,9%** | 92,3% |
+
+**"Caiu" aparece com retenção maior que "estável"** — o oposto da intuição.
+
+O mecanismo é aritmético. `tendência = (j3 − j1) / 2`. Fixando j3, "caiu" só pode significar **j1 alto**:
+
+| recência 1–3 dias (EdNet) | dias ativos na 1ª janela | total na janela | retenção |
+|---|---|---|---|
+| caiu | **5,1** | 9,4 | 55,4% |
+| estável | 1,6 | 4,4 | 46,8% |
+| subiu | 1,2 | 5,0 | 57,6% |
+
+Entre alunos **igualmente ativos agora**, quem "caiu" é quem era **muito mais ativo antes** — e atividade acumulada prediz retenção.
+
+> **Consequência prática:** um alerta de "engajamento caiu" que compare alunos pela atividade recente marca justamente os **mais engajados** da coorte. Para funcionar, a comparação tem de ser entre alunos de **mesmo total de atividade**.
+
+As duas tabelas não se contradizem — respondem a perguntas diferentes. *"Entre alunos igualmente ativos hoje, o passado importa?"* Não, e um pouco ao contrário. *"Entre alunos de mesmo esforço total, a forma importa?"* Enormemente.
+
+---
+
+## 17. Contra o abandono formal (OULAD)
+
+O OULAD registra **desmatrícula**, não só ausência de cliques. Contra esse alvo (3,5% da base):
+
+| medida | AUC |
+|---|---|
+| recência | 0,618 |
+| profundidade | **0,611** |
+| frequência | 0,604 |
+| tendência | 0,553 |
+| instabilidade | 0,424 *(invertida: instável → mais abandono)* |
+
+Tudo **muito mais fraco** que contra atividade (0,863). E a ordem muda: a profundidade quase empata com a recência, enquanto no alvo de atividade ela era a mais fraca das três.
+
+**Parar de clicar e cancelar a matrícula são fenômenos diferentes.** O módulo prediz o primeiro; nada aqui autoriza usá-lo para o segundo.
+
+---
+
+## 18. O que isso muda no módulo
+
+Entra [`trajetoria()`](../../trailup_core/engajamento.py) — **descrição, não predição**. Devolve `'caiu' | 'estavel' | 'subiu'` e está documentada como não-somável ao score, com um teste que verifica que `ordenar()` não a usa.
+
+Serve para dizer ao professor **por que** o aluno está em risco, numa forma sobre a qual ele consegue agir — e o risco em si continua saindo de recência + frequência.
+
+---
+
+## 19. Limites
 
 - **O volume por sessão foi removido.** Ele tinha o sinal mais interessante do estudo (AUC 0,400 no EdNet, efeito sobrevivendo dentro de cada quintil de frequência) e **virou ruído no OULAD** (0,522, IC quase tocando o acaso), com a correlação com frequência invertendo de sinal (−0,30 → +0,23). Duas explicações possíveis e indistinguíveis com este dado: a tradução não é equivalente (respostas por sessão ≠ cliques por dia), ou o efeito é do EdNet. Nos dois casos o eixo sai — um sinal forte que some ao mudar de plataforma é propriedade de uma base, não medida de engajamento.
 - **Duas bases não provam generalização.** O volume caiu na segunda; não há garantia de que recência e frequência sobrevivam a uma terceira com contexto muito diferente.
@@ -308,6 +399,10 @@ A recência funciona sem calibração porque seus cortes são **contagem de dias
 - **Tudo observacional.** "Recência alta prevê retenção" não autoriza concluir que *fazer* o aluno aparecer o faria ficar. Para isso é preciso experimento.
 
 ---
+
+- **A trajetória foi medida com limiar estrito** (0,25 dia por sub-janela). Isso deixa "estável" como faixa estreita — no EdNet, 633 alunos contra 2.640 em "caiu" dentro do mesmo estrato de recência. Um limiar mais folgado muda os tamanhos dos grupos e provavelmente atenua os contrastes.
+- **Três sub-janelas de 10 dias é uma escolha.** Uma trajetória em escala semanal, ou por sessão, não foi testada.
+- **O alvo de desmatrícula só existe no OULAD**, então o achado da §17 não foi replicado.
 
 ## Apêndice — o que mudou, e por quê
 

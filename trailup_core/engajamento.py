@@ -87,6 +87,33 @@ ONDE NAO FUNCIONOU
     compulsoria e quase todo mundo volta, nao ha variacao a prever. Este modulo
     pressupoe continuacao VOLUNTARIA.
 
+TRAJETORIA: "caiu / estavel / subiu"
+    A tendencia da atividade nao acrescenta ao modelo - recencia + frequencia
+    ja a contem (saber quanto o aluno fez no total e quanto fez ultimamente
+    determina a forma). Somar tendencia rende +0,003 de AUC nas duas bases.
+
+    Mas como EXPLICACAO ela e forte, desde que comparada do jeito certo.
+    Fixando o TOTAL de dias ativos na janela:
+
+        total de dias    caiu    estavel   subiu     (retencao, EdNet)
+             3 a 6      18,6%     43,5%    60,0%
+             7 a 12     38,5%     71,9%    81,6%
+            13 a 20     59,4%     83,8%    89,1%
+
+        total de dias    caiu    estavel   subiu     (retencao, OULAD)
+             3 a 6      74,3%     87,2%    91,6%
+             7 a 12     89,9%     96,4%    97,7%
+            13 a 20     96,9%     99,0%    99,4%
+
+    Monotonico nos seis estratos, nas duas bases, com ate 41 pontos de
+    diferenca. Mesmo esforco total, formas diferentes, destinos diferentes.
+
+    O CONTROLE ERRADO INVERTE O SINAL - e este e o alerta. Fixando a RECENCIA
+    em vez do total, "caiu" aparece com retencao MAIOR que "estavel" (55,4%
+    contra 46,8% no EdNet), porque entre alunos igualmente ativos agora, quem
+    "caiu" e quem era mais ativo antes (5,1 contra 1,6 dias na 1a janela).
+    Alertar sobre queda sem fixar o total marca justamente os mais engajados.
+
 A PROFUNDIDADE FICA FORA DO ORDENADOR
     Ela ajuda dentro de uma base, mas atrapalha no modelo unico (EdNet cai de
     0,856 para 0,848), porque significa coisas diferentes em cada plataforma -
@@ -185,6 +212,32 @@ def sessoes(instantes_seg, gap: int = GAP_SESSAO_SEG) -> int:
     if not t:
         return 0
     return 1 + sum(1 for a, b in zip(t, t[1:]) if b - a > gap)
+
+
+def trajetoria(dias_por_janela, limiar: float = 0.25) -> str:
+    """Forma da atividade: 'caiu', 'estavel' ou 'subiu'.
+
+    `dias_por_janela` = dias ativos em cada sub-janela, da mais antiga para a
+    mais recente (ex.: [dias 0-9, dias 10-19, dias 20-29]).
+
+    E DESCRICAO, NAO PREDICAO. Nao somar ao score: recencia + frequencia ja
+    contem esta informacao (+0,003 de AUC). Serve para dizer ao professor
+    POR QUE o aluno esta em risco, numa forma que ele possa agir.
+
+    So faz sentido comparada entre alunos de MESMO TOTAL de atividade. Entre
+    alunos de mesma recencia ela se inverte - ver o cabecalho do modulo.
+
+    O limiar de 0,25 dia por janela e ESTRITO: [5, 5, 4] ja e "caiu". E a regra
+    exata sob a qual os numeros do cabecalho foram medidos, e por isso ela e o
+    padrao - mas "estavel" fica sendo uma faixa estreita (no EdNet, 633 alunos
+    contra 2.640 em "caiu" dentro da mesma recencia). Se a sua janela for
+    menor, afrouxe `limiar` e remeca.
+    """
+    j = [float(x) for x in dias_por_janela]
+    if len(j) < 2:
+        raise ValueError('precisa de ao menos duas sub-janelas')
+    incl = (j[-1] - j[0]) / (len(j) - 1)
+    return 'caiu' if incl < -limiar else ('subiu' if incl > limiar else 'estavel')
 
 
 def _faixa_por_corte(valor: float, cortes) -> str:

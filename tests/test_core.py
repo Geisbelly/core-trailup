@@ -182,3 +182,24 @@ def test_z_neutraliza_escala_entre_coortes():
     assert abs(ca.z('recencia', ca.media['recencia'])) < 1e-9
     assert abs(cb.z('recencia', cb.media['recencia'])) < 1e-9
     assert cb.media['recencia'] > ca.media['recencia'] + 4
+
+
+# ---------------- engajamento: trajetoria ----------------
+def test_trajetoria_rotula_a_forma():
+    assert engajamento.trajetoria([8, 4, 1]) == 'caiu'
+    assert engajamento.trajetoria([2, 2, 2]) == 'estavel'
+    assert engajamento.trajetoria([1, 3, 7]) == 'subiu'
+
+def test_trajetoria_limiar_afrouxavel():
+    """[5,5,4] e 'caiu' no limiar medido; com limiar folgado vira 'estavel'."""
+    assert engajamento.trajetoria([5, 5, 4]) == 'caiu'
+    assert engajamento.trajetoria([5, 5, 4], limiar=1.0) == 'estavel'
+
+def test_trajetoria_exige_duas_janelas():
+    with pytest.raises(ValueError):
+        engajamento.trajetoria([3])
+
+def test_trajetoria_nao_entra_no_score():
+    """A trajetoria e descricao. ordenar() nao pode aceita-la como feature."""
+    import inspect
+    assert 'trajetoria' not in inspect.getsource(engajamento.ordenar)
