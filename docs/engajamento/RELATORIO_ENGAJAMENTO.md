@@ -170,6 +170,9 @@ Com valores absolutos as bases são quase perfeitamente separáveis: o modelo n�
 | EdNet | **0,856** | 0,854 |
 | OULAD | **0,862** | 0,862 |
 
+> **Correção de 2026-09-13.** Os valores 0,856 e 0,862 vinham de **uma** partição (semente 7). Em 12 partições independentes a média é **0,846 ± 0,006** no EdNet e **0,868 ± 0,004** no OULAD — o 0,856 fica **1,8 desvios acima** da média, era uma semente sortuda. Os pesos, esses, são indiferentes: a média das 12 dá a mesma AUC na quarta casa.
+
+
 E ordena bem numa base que nunca viu: **EdNet → OULAD 0,865**, **OULAD → EdNet 0,842**.
 
 Os pesos, sobre z da própria coorte:
@@ -433,7 +436,7 @@ O estudo teve três rodadas. As duas primeiras publicaram números que as seguin
 | | rodada 1 | final |
 |---|---|---|
 | eixos | frequência, volume, profundidade | recência, frequência, profundidade |
-| AUC | 0,802 (uma base) | 0,856 / 0,862 (duas bases, um modelo) |
+| AUC | 0,802 (uma base) | **0,846 / 0,868** (duas bases, um modelo, média de 12 partições) |
 | ECE | 0,031 | 0,015 / 0,008 |
 | cortes | absolutos, do EdNet, embutidos | por coorte, via `calibrar()` |
 | sem calibração | três faixas + retenção esperada | só recência; `None` na probabilidade |

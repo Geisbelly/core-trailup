@@ -367,7 +367,7 @@ Oito medidas passaram sem ajuste: `perfil_chute` (p90 0,0196 contra 0,020 declar
 
 ### Uma melhoria que teria piorado o sistema
 
-`JANELA_RECENTE = 10` parecia sub-ótimo: o eixo isolado vai de 0,810 para **0,824** com 14 dias. Recomputei tudo para trocar — e o **modelo compartilhado desabou** de 0,856 para 0,812, com o peso da frequência ficando **negativo**. Otimizar a parte degradava o todo em 0,044. Mantido em 10, agora com base medida.
+`JANELA_RECENTE = 10` parecia sub-ótimo: o eixo isolado vai de 0,810 para **0,824** com 14 dias. Recomputei tudo para trocar — e o **modelo compartilhado desabou** de 0,856 para 0,812 (ambos na mesma partição, então a comparação vale), com o peso da frequência ficando **negativo**. Otimizar a parte degradava o todo em 0,044. Mantido em 10, agora com base medida.
 
 ### Os cinco verificadores permanentes
 

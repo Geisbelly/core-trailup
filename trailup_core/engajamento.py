@@ -53,11 +53,22 @@ UM MODELO SO, TREINADO NAS DUAS BASES JUNTAS
         prever a base, z dentro da coorte    AUC 0,508   <- indistinguivel
 
     Com isso, um modelo unico treinado nas duas empata com o modelo especifico
-    de cada uma:
+    de cada uma. Os numeros abaixo sao a MEDIA DE 12 PARTICOES, com o desvio -
+    nao uma particao so:
 
-        base     modelo unico   so aquela base
-        EdNet       0,856           0,854
-        OULAD       0,862           0,862
+        base     modelo unico                    so aquela base
+        EdNet    0,846 +- 0,006 (amplitude 0,018)   ~0,85
+        OULAD    0,868 +- 0,004 (amplitude 0,013)   ~0,87
+
+    CORRECAO: as versoes anteriores deste cabecalho diziam 0,856 e 0,862, que
+    vinham de UMA particao (semente 7). O 0,856 do EdNet fica 1,8 desvios
+    ACIMA da media de 12 - era uma semente sortuda, e eu repeti esse numero em
+    todos os documentos por varias rodadas.
+
+    Os PESOS, por outro lado, sao indiferentes: substituir os de uma particao
+    pela media das 12 muda a AUC na quarta casa (0,8432 contra 0,8432). O que
+    vale em todas as 12 e o que os testes fixam - o peso da frequencia nunca
+    fica negativo, e a recencia sempre pesa mais de 4x que ela.
 
     E ele ordena bem ate numa base que nunca viu:
         treinado no EdNet, ordenando o OULAD    AUC 0,865

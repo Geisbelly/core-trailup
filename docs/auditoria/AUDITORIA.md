@@ -10,7 +10,7 @@ Base: EdNet KT3, 6.504.124 respostas, acerto global 0,6677, split por aluno 70/3
 
 ## Resultado das 7 partes
 
-**106 verificações. 50 defeitos encontrados**, todos da mesma família: uma saída afirmando uma escala que ninguém mediu. Nenhum apareceria olhando AUC.
+**118 verificações. 51 defeitos encontrados**, todos da mesma família: uma saída afirmando uma escala que ninguém mediu. Nenhum apareceria olhando AUC.
 
 | onde | o que afirmava | o que era |
 |---|---|---|
@@ -45,6 +45,7 @@ Base: EdNet KT3, 6.504.124 respostas, acerto global 0,6677, split por aluno 70/3
 | `dominio.dominio` | parâmetro "dificuldade" | recebia facilidade — invertia |
 | README | 133 testes | eram 135 |
 | `DF_STOPWORD` | 0,5 é indistinguível de 0,4 | rejeitei com teste inválido |
+| `engajamento` AUC | 0,856 / 0,862 | 0,846 / 0,868 (média de 12) |
 
 E oito que **conferiram**: `cobertura` (+0,462) e `conceitos_faltando` (−0,410) do `pre_avaliacao`, `gate.MIN_RESPOSTAS = 5` (é o cotovelo exato: 0,534 abaixo dele, 0,660 nele), a aproximação normal do `dificuldade` (cobertura 75,3% contra 74,8% do Beta), `perfil_chute` (p90 e p99), a tabela `REFERENCIA` do engajamento (diferença 0,000), o limite de 3× do `demorando`, e `ritmo.FRONTEIRA_SEG` — cujo 40 s é praticamente o corte ótimo por Otsu (39,8 s), com d de Cohen **maior** que o documentado (4,18 contra 3,30).
 
@@ -114,7 +115,7 @@ Três testes novos fixam isso: a confiança nunca chega a 1,0 em nenhum `n`, cre
 | verificação | afirmado | medido | |
 |---|---|---|---|
 | `pre_avaliacao`: Spearman **ponta a ponta** | 0,463 | **0,483** | ✅ melhor |
-| `engajamento`: `ordenar()` no EdNet | 0,856 | **0,843** | ✅ |
+| `engajamento`: `ordenar()` no EdNet | 0,856 | **0,843** | ⚠️ ver Parte 16 |
 | `engajamento`: `ordenar()` no OULAD | 0,862 | **0,869** | ✅ |
 | `engajamento`: tabela `REFERENCIA` vs observado | — | **diferença 0,000** | ✅ |
 | `dominio`: calibração do `p` | — | **ECE 0,056** | ❌ corrigido |
@@ -770,6 +771,36 @@ Refazendo **pareado**:
 > A ironia é o ponto: eu escrevi *"trocar 0,483 por 0,501 seria ajustar a ruído, que é exatamente o erro que esta auditoria existe para não cometer"* — e o erro que cometi foi o oposto, **descartar sinal usando um teste que não distingue sinal de ruído**.
 
 A `JANELA` continua em 4: de 3 a 5 a diferença pareada não exclui zero, e a fronteira real é em 8.
+
+---
+
+## Parte 16: o 0,856 do engajamento era uma semente sortuda
+
+A Parte 14 checou estabilidade só no `dominio`. O engajamento afirma 0,856 / 0,862 e **veio de uma partição**.
+
+Doze partições independentes:
+
+| | média | desvio | amplitude | afirmado | distância |
+|---|---|---|---|---|---|
+| EdNet | **0,8455** | 0,0059 | 0,0180 | 0,856 | **1,8 desvios** |
+| OULAD | **0,8676** | 0,0043 | 0,0126 | 0,862 | 1,3 desvios |
+| peso da recência | 0,8586 | 0,0162 | 0,0519 | 0,8285 | 1,9 desvios |
+| peso da frequência | 0,1242 | 0,0164 | 0,0552 | 0,1358 | 0,7 desvios |
+
+**O 0,856 do EdNet fica 1,8 desvios acima da média** — era uma partição favorável, e eu repeti esse número em todos os documentos por várias rodadas. Os valores honestos são **0,846 ± 0,006** e **0,868 ± 0,004**.
+
+Compare com o `dominio`, que tinha desvio de 0,0016 e amplitude de 0,0039 em cinco sementes: o engajamento é **quase quatro vezes** mais sensível à partição. Faz sentido — são 18 mil alunos contra 6,5 milhões de respostas.
+
+### Os pesos, esses, são indiferentes
+
+| conjunto de pesos | EdNet | OULAD |
+|---|---|---|
+| publicado (semente 7) | 0,8432 | 0,8690 |
+| média das 12 partições | 0,8432 | 0,8691 |
+
+Idênticos na quarta casa. Não valia trocar — e o que **vale em todas as 12** é exatamente o que os testes já fixavam: o peso da frequência nunca fica negativo, e a recência sempre pesa mais de 4× que ela.
+
+> A lição prática: **checar estabilidade de semente custa minutos e deveria ser a primeira coisa**, não a décima-quarta rodada. Se eu tivesse feito antes, não teria publicado 0,856 como se fosse o número.
 
 ---
 

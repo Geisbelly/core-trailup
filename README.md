@@ -30,7 +30,7 @@ python3 docs/auditoria/scripts/82_monotonia.py      # direção quebrada no dom�
 | [`revisao`](trailup_core/revisao.py) | quando trazer de volta? | AUC 0,669 / ECE 0,015 em 752 mil reencontros | nenhum |
 | [`discriminacao`](trailup_core/discriminacao.py) | esta questão está quebrada? | 25% de precisão (lift 7,1×) com `confirmar()` | 40 respostas |
 | [`gate`](trailup_core/gate.py) | vale abrir a LLM agora? | AUC 0,732 (regra atual: 0,687) | 5 respostas no tópico |
-| [`engajamento`](trailup_core/engajamento.py) | o aluno vai continuar? | AUC 0,856 / 0,862 — **um modelo, duas bases** | 30 eventos |
+| [`engajamento`](trailup_core/engajamento.py) | o aluno vai continuar? | AUC 0,846 / 0,868 — **um modelo, duas bases** | 30 eventos |
 | [`pre_avaliacao`](trailup_core/pre_avaliacao.py) | esta resposta aberta está boa? | Spearman 0,501 (teto ≈0,88) | nenhum |
 | [`sql/evasao.sql`](sql/evasao.sql) | quem está em risco de abandonar? | AUC 0,783 / ECE 0,006; lift 4,1× no top 10% | semanas de uso |
 
@@ -92,10 +92,10 @@ Juntar as duas bases cruas **não funciona**: com os valores absolutos, prever *
 
 Padronizando **dentro de cada coorte** antes de juntar, a identificabilidade cai para **0,508** — indistinguível de cara ou coroa. E aí um modelo único empata com os específicos:
 
-| base de teste | modelo único | modelo só daquela base |
-|---|---|---|
-| EdNet | **0,856** | 0,854 |
-| OULAD | **0,862** | 0,862 |
+| base de teste | modelo único (média de 12 partições) |
+|---|---|
+| EdNet | **0,846** ± 0,006 |
+| OULAD | **0,868** ± 0,004 |
 
 **A ordem transfere; o nível não.** Exportando o modelo de uma base para a outra sem recalibrar, o AUC se mantém (0,832–0,869) mas o ECE vai a **0,36–0,57**. O mesmo ordenador precisa de limiares de 0,440 e 0,582 para alertar os mesmos 10%.
 
