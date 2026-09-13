@@ -8,7 +8,7 @@ O TrailUp hoje dispara de 8 a 14 chamadas ao Gemini por lote de telemetria de 60
 
 ```bash
 python3 exemplos/exemplo.py     # os módulos trabalhando juntos
-python3 -m pytest tests/ -q     # 67 testes de invariante
+python3 -m pytest tests/ -q     # 71 testes de invariante
 ```
 
 ---
@@ -42,6 +42,8 @@ Todo número dos cabeçalhos foi **reconferido chamando o código** — ver [`do
 **Categoria no que é discreto, intervalo no que é contínuo.** O ritmo vira rótulo porque o dado separa (d de Cohen 3,30). A dificuldade vira intervalo porque é contínua, e cravar um corte ali inventaria uma fronteira que não existe.
 
 **Persistir a ação, não o diagnóstico.** `precisa_reforco()` devolve um booleano acionável; `evasao.sql` devolve faixa, não score. Dos 9 `IAMentalStateKind` que o app define, ele age sobre 2 — guardar os outros 7 é coletar dado sensível de menor para nada.
+
+> ⚠️ **Quem já usava `dominio`:** a recalibração de 2026-09-13 mudou a escala do `p`. `precisa_reforco(limiar=0,45)` passa a disparar em **12,2%** das decisões, contra 2,3% antes — cinco vezes mais chamadas de reforço. Para manter o volume antigo use `limiar=0,28`; para manter o significado, dimensione a operação para 12%. Detalhes em [`docs/auditoria/`](docs/auditoria/AUDITORIA.md).
 
 **Calibrar com dado próprio antes de usar.** Todas as constantes vêm de corpora estrangeiros. O que transfere é a **forma** do achado — quais sinais importam, em que direção, quanta evidência cada um exige. Os valores, não. Veja [Calibração](#calibração).
 

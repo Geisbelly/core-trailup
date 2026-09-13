@@ -84,7 +84,25 @@ def demorando(segundos: float, esp: Esperado, limite: float = LIMITE_LENTO) -> b
     """Esta muito acima do esperado PARA ESTA QUESTAO?
 
     Nao e inferencia de estado: e comparacao com a distribuicao da propria
-    questao. No EdNet, acima de 3x o acerto cai de 67% para 54%.
+    questao.
+
+    Curva completa, medida em 300.000 respostas do EdNet (split por aluno):
+
+        lentidao      acerto     respostas
+        0 a 0,5x      73,6%        30.056
+        0,5 a 1x      72,7%       119.999
+        1 a 2x        62,7%       125.431     <- a queda acontece AQUI
+        2 a 3x        54,0%        16.667
+        3 a 5x        53,8%         5.957
+        5 a 10x       53,2%         1.573
+
+    Acima de 3x: 53,8% contra 67,4% abaixo - confere o que o modulo afirmava.
+
+    MAS 3x E CONSERVADOR. A queda se da entre 1x e 2x (72,7% -> 62,7%) e o
+    acerto ja esta em 54% na faixa de 2 a 3x; acima disso e plano. Com o
+    padrao de 3x, so 2,6% das respostas sao marcadas. Baixar para 2,0 marca
+    ~8% com praticamente a mesma separacao. E escolha de operacao: quantos
+    casos voce quer olhar.
     """
     return esp.confiavel and quao_lento(segundos, esp) >= limite
 

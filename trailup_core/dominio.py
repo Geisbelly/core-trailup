@@ -137,5 +137,27 @@ def dominio(dificuldade_questao: float, acertos_no_topico: int, respostas_no_top
 
 
 def precisa_reforco(d: Dominio, limiar: float = 0.45, conf_minima: float = 0.70) -> bool:
-    """So afirma quando ha evidencia. A regra atual dispara sem olhar confianca."""
+    """So afirma quando ha evidencia. A regra atual dispara sem olhar confianca.
+
+    ATENCAO - A RECALIBRACAO MUDOU QUANTO ISTO DISPARA. Com o `p` comprimido,
+    `limiar=0,45` disparava em 2,3% das decisoes; com o `p` calibrado, dispara
+    em 12,2%. CINCO VEZES MAIS chamadas de reforco no mesmo limiar.
+
+    Nao e regressao: e o limiar passando a significar o que diz. Medido, o
+    acerto de quem dispara fica abaixo do limiar em toda a faixa:
+
+        limiar   dispara em   acerto observado
+         0,30       3,3%           25,9%
+         0,35       5,5%           29,7%
+         0,40       8,3%           33,2%
+         0,45      12,2%           36,8%     <- padrao
+         0,50      17,2%           40,5%
+
+    Antes, "p < 0,45" selecionava so os 2,3% mais extremos, porque quase tudo
+    estava espremido em torno de 0,65.
+
+    PARA MANTER O VOLUME ANTIGO de disparos, use `limiar=0,28`. Para manter o
+    SIGNIFICADO ("reforcar quem tende a acertar menos de 45%"), mantenha 0,45 e
+    dimensione a operacao para 12%.
+    """
     return d.p < limiar and d.confianca >= conf_minima

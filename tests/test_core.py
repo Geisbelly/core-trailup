@@ -436,3 +436,27 @@ def test_sql_semanas_sem_acesso_nao_reduz_o_risco():
     """Era o sinal invertido: -0,081 fazia sumir baixar o risco."""
     v = [_risco_sql(5, 40, k, 10, 60, 3, 1, 0.75, 0) for k in (0, 2, 4)]
     assert v[-1] >= v[0] - 1e-3, f'sumir reduz o risco: {v}'
+
+
+# ---------------- limiares a jusante da recalibração ----------------
+def test_precisa_reforco_exige_confianca():
+    from trailup_core.dominio import Dominio
+    baixo = Dominio(p=0.20, confianca=0.50, tendencia='estavel', respostas_topico=2)
+    assert not dominio.precisa_reforco(baixo), 'p baixo sem evidência não dispara'
+
+def test_precisa_reforco_limiar_mais_baixo_dispara_menos():
+    from trailup_core.dominio import Dominio
+    d = Dominio(p=0.35, confianca=0.80, tendencia='estavel', respostas_topico=20)
+    assert dominio.precisa_reforco(d, limiar=0.45)
+    assert not dominio.precisa_reforco(d, limiar=0.28), 'limiar de equivalência antiga'
+
+def test_demorando_usa_a_distribuicao_da_questao():
+    """Não é limiar absoluto de segundos: é razão contra a mediana da questão."""
+    rapida = tempo.esperado(latencia_mediana=10.0, respostas=50)
+    lenta = tempo.esperado(latencia_mediana=120.0, respostas=50)
+    assert tempo.demorando(40.0, rapida), '40s numa questão de 10s é 4x'
+    assert not tempo.demorando(40.0, lenta), '40s numa questão de 120s é rápido'
+
+def test_demorando_nao_opina_sem_corpus():
+    frouxo = tempo.esperado(latencia_mediana=10.0, respostas=2)
+    assert not tempo.demorando(1000.0, frouxo), 'sem corpus não afirma'

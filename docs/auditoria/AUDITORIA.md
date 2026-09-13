@@ -187,6 +187,47 @@ O `\|p−y\|` não encolhe porque é dominado pelo **ruído de Bernoulli do resu
 
 ---
 
+## Parte 5: o que depende dos limiares mudou junto
+
+Recalibrar o `p` muda a **escala**. Tudo que corta nela precisava ser reconferido — e não estava.
+
+### `precisa_reforco` passa a disparar 5× mais
+
+| | dispara em | acerto de quem dispara |
+|---|---|---|
+| `p` comprimido (antes) | **2,3%** | 23,7% |
+| `p` calibrado (agora) | **12,2%** | 36,8% |
+
+**Não é regressão — é o limiar passando a significar o que diz.** Varrendo:
+
+| limiar | dispara em | acerto observado | o limiar descreve? |
+|---|---|---|---|
+| 0,30 | 3,3% | 25,9% | sim |
+| 0,40 | 8,3% | 33,2% | sim |
+| **0,45** | **12,2%** | **36,8%** | sim |
+| 0,50 | 17,2% | 40,5% | sim |
+
+Em toda a faixa, quem dispara com `p < L` de fato acerta menos de `L`. Antes, `p < 0,45` selecionava só os 2,3% mais extremos porque tudo estava espremido em torno de 0,65.
+
+> **Consequência de produto, e é grande:** quem atualizar o módulo e mantiver `limiar=0,45` recebe **cinco vezes mais** chamadas de reforço. Para manter o volume antigo, `limiar=0,28`. Para manter o significado, mantenha 0,45 e dimensione para 12%. Está no docstring da função.
+
+### `tempo.demorando`: o limite de 3× confere, mas é conservador
+
+| lentidão | acerto | respostas |
+|---|---|---|
+| 0 – 0,5× | 73,6% | 30.056 |
+| 0,5 – 1× | 72,7% | 119.999 |
+| **1 – 2×** | **62,7%** | 125.431 |
+| 2 – 3× | 54,0% | 16.667 |
+| 3 – 5× | 53,8% | 5.957 |
+| 5 – 10× | 53,2% | 1.573 |
+
+Acima de 3×: **53,8% contra 67,4%** abaixo — confirma o que o módulo afirmava.
+
+Mas **a queda acontece entre 1× e 2×** (72,7% → 62,7%), já está em 54% na faixa de 2–3×, e acima disso é plano. Com 3× só **2,6%** das respostas são marcadas; baixar para 2,0 marca ~8% com praticamente a mesma separação. É escolha de operação, e agora está documentada.
+
+---
+
 ## O que a auditoria **não** cobre
 
 - **A transferência para o TrailUp.** Continua sem medida: o banco está vazio.
