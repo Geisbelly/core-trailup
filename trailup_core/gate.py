@@ -31,6 +31,20 @@ ONDE ELA NAO CHEGA: o boosting continua 0,047 de AUC acima, e no ponto de
 operacao de 10% a diferenca e de 41,7% contra 33,9% de precisao. Se a API
 puder carregar sklearn, use o modelo. Isto aqui e o melhor sem dependencia.
 
+E O GAP NAO E DE NAO-LINEARIDADE. Testado (2026-09-13): exportar a interacao
+entre as quatro features como TABELA de consulta - 1.646 celulas sobre
+acerto no topico x acerto global x dificuldade x n de respostas:
+
+    so o acumulado, linear                    AUC 0,746
+    tabela de 1.646 celulas                   AUC 0,746
+    tabela + linear                           AUC 0,748
+    boosting com 30 features                  AUC 0,779
+
+A tabela captura toda interacao possivel entre essas quatro variaveis e nao
+ganha nada. O que separa 0,748 de 0,779 sao as OUTRAS 26 features, nao a forma
+da funcao. Fechar o gap exige instrumentacao nova, nao aritmetica mais
+esperta.
+
 Sem dependencia externa.
 """
 from __future__ import annotations

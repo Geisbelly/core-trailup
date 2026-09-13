@@ -73,6 +73,19 @@ Testadas 14 combinações. O global sozinho não ajuda; junto com o tópico, sim
 
 O módulo mantém **dois conjuntos de pesos**, porque os ótimos diferem: sem histórico global, 0,70/0,30; com ele, 0,60/0,15/0,25.
 
+**E o gap para o boosting não é de não-linearidade.** Testado exportando a interação entre as quatro features como **tabela de consulta** (1.646 células):
+
+| | AUC |
+|---|---|
+| só o acumulado, linear | 0,746 |
+| tabela de 1.646 células | **0,746** |
+| tabela + linear | 0,748 |
+| boosting com 30 features | **0,779** |
+
+A tabela captura toda interação possível entre essas quatro variáveis e **não ganha nada**. O que separa 0,748 de 0,779 são as outras 26 features — não a forma da função. Fechar o gap exige instrumentação nova, não aritmética mais esperta.
+
+É a **quinta aposta de engenharia de feature que não paga**, depois das 189 tags (+0,001), latência e hesitação (+0,003), janela recente (+0,007) e tipo de recurso na evasão (+0,003).
+
 **Lacuna fechada em 2026-09-13: o gate não estava no módulo.** Era o modelo mais relevante para o produto — a decisão de quando abrir a LLM — e só existia como boosting. Medido em 1.721.188 pontos de decisão (taxa base 12,2%):
 
 | critério | AUC | prec@5% | prec@10% | lift@10% |
