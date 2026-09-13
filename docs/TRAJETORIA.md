@@ -207,6 +207,28 @@ A curva de esquecimento foi medida em 594 mil reencontros desde o início, mas *
 
 Bate os dois componentes isolados, e **somar a dificuldade da questão piora** — tanto a ordenação quanto a calibração. A curva já carrega o que precisa.
 
+**Melhoria de 2026-09-13 — a proporção, não o último resultado.** Em vez de escolher entre as duas tabelas pelo último acerto, interpolar entre elas pela **fração dos encontros anteriores em que o aluno acertou**:
+
+| variante | AUC | ECE |
+|---|---|---|
+| só o último resultado (binário) | 0,665 | 0,021 |
+| **interpolado pela proporção** | **0,669** | **0,015** |
+
+Melhora ordenação **e** calibração sem tabela nova. Só faz diferença a partir do terceiro encontro.
+
+**E o efeito de espaçamento não aparece como a literatura prevê.** Média de acerto de quem acertou no encontro anterior, por número do reencontro:
+
+| intervalo | k=1 | k=2 | k=3 | k=4 |
+|---|---|---|---|---|
+| <1h | 0,901 | 0,939 | 0,943 | 0,937 |
+| 7d | 0,859 | 0,812 | 0,865 | 0,897 |
+| **60d** | **0,819** | **0,745** | **0,749** | **0,725** |
+| **60d+** | **0,831** | **0,733** | **0,739** | **0,708** |
+
+Em intervalo curto a curva achata, como esperado. Em intervalo longo **a direção inverte**. A explicação provável é **seleção, não memória**: questão reencontrada pela quarta vez depois de 60 dias é questão que o aluno vem errando, ou que o sistema insiste em trazer de volta.
+
+Por isso o número do reencontro **não entra** no módulo: renderia +0,003 e carregaria um viés de seleção que não sei separar.
+
 ---
 
 ## 8c. Chute — o limiar, medido em toda a faixa
@@ -230,6 +252,15 @@ A diferença encolhe **monotonicamente** conforme o limiar afrouxa — o constru
 AUC 0,748 com split **por coorte** (treina em 2013B/2013J/2014B, testa em 2014J) — mais severo que o split aleatório da literatura. **Não bateu a meta** que eu mesmo pus (0,80 na semana 4; obtive 0,746).
 
 A semana 2 dá 0,638 — o alerta não funciona no início do curso, que é quando mais se quereria. Alertando os 10%: precisão 12,3% contra base 3,6%, **lift 3,4×**. Sem gap de cobertura por `disability`.
+
+**Minha explicação para o resultado fraco estava errada.** Eu escrevi que a causa provável era *"conjunto de features magro — cliques agregados, sem quebra por tipo de recurso"*. Testado (2026-09-13), quebrando os cliques em conteúdo / social / prova / navegação / apoio, mais a diversidade de recursos tocados:
+
+| conjunto | AUC | AP | lift@10% |
+|---|---|---|---|
+| magro (cliques agregados) | 0,763 | 0,100 | 3,6× |
+| **rico (+ tipo de recurso)** | **0,766** | 0,100 | 3,6× |
+
+**+0,003.** A quebra por tipo de recurso não explica o teto. É a quarta aposta de engenharia de feature que não paga, depois das 189 tags de habilidade (+0,001), da latência e hesitação (+0,003) e da janela recente (+0,007).
 
 **Armadilha de métrica registrada.** O alvo "evade em algum momento" tem AP 0,279 contra 0,106 — parece melhor, mas a taxa base é 15,1% contra 3,6%. **AP não compara entre alvos de prevalência diferente.** O AUC mostra o contrário: 0,701 contra 0,748.
 

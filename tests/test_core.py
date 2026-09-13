@@ -285,3 +285,25 @@ def test_triar_poe_a_mais_fraca_primeiro():
                  'banco central controla elevando os juros']
     ordem = [i for i, _ in pre_avaliacao.triar(respostas, ref)]
     assert ordem[0] == 0, 'a resposta vazia tem de vir primeiro'
+
+
+# ---------------- revisao: interpolacao pela proporcao ----------------
+def test_retencao_proporcao_interpola_entre_as_duas_curvas():
+    for dias in (1, 7, 60):
+        baixo = revisao.retencao(dias, acertou_antes=False)
+        alto = revisao.retencao(dias, acertou_antes=True)
+        meio = revisao.retencao(dias, acertou_antes=True, proporcao_acertos=0.5)
+        assert baixo < meio < alto
+
+def test_retencao_proporcao_nos_extremos_bate_as_tabelas():
+    for dias in (0.5, 3, 21, 200):
+        assert revisao.retencao(dias, True, 1.0) == pytest.approx(revisao.retencao(dias, True))
+        assert revisao.retencao(dias, False, 0.0) == pytest.approx(revisao.retencao(dias, False))
+
+def test_retencao_rejeita_proporcao_invalida():
+    with pytest.raises(ValueError):
+        revisao.retencao(7, True, proporcao_acertos=1.5)
+
+def test_retencao_cai_com_o_tempo_para_quem_errou():
+    v = [revisao.retencao(d, acertou_antes=False) for d in (1, 3, 7, 21, 60)]
+    assert v == sorted(v, reverse=True)
