@@ -98,8 +98,19 @@ def test_dominio_pesa_mais_a_questao():
     assert dominio.PESO_QUESTAO >= 0.5, 'a questao explica mais que o aluno'
 
 def test_confianca_cresce_e_satura():
-    c = [dominio.confianca(n) for n in (0, 5, 20, 100, 1000)]
-    assert c == sorted(c) and c[-1] <= 0.92
+    c = [dominio.confianca(n, int(n * 0.7)) for n in (1, 5, 20, 100, 1000)]
+    assert c == sorted(c)
+    assert c[-1] <= 0.95, 'o teto honesto é 0,95 — a incerteza nunca zera'
+    assert c[-1] < 1.0
+
+def test_incerteza_encolhe_com_n():
+    v = [dominio.incerteza(n, int(n * 0.7)) for n in (2, 10, 50, 500)]
+    assert v == sorted(v, reverse=True)
+
+def test_incerteza_nunca_zera_no_extremo():
+    """Com n=2 e taxa 0 ou 1, o desvio binomial daria zero. O posterior não."""
+    assert dominio.incerteza(2, 0) > 0.05
+    assert dominio.incerteza(2, 2) > 0.05
 
 
 # ---------------- chute ----------------
@@ -245,10 +256,26 @@ def test_dominio_dois_pesos_distintos():
     assert dominio.PESO_QUESTAO + dominio.PESO_TOPICO + dominio.PESO_GLOBAL == pytest.approx(1.0)
 
 def test_dominio_sem_global_usa_a_formula_de_dois_termos():
-    d = dominio.dominio(0.45, 3, 8)
+    d = dominio.dominio(0.45, 3, 8, recalibrar=False)
     esperado = dominio.PESO_QUESTAO_2 * 0.45 + (1 - dominio.PESO_QUESTAO_2) * (
         (3 + 0.67 * dominio.PRIOR_ALUNO) / (8 + dominio.PRIOR_ALUNO))
     assert d.p == pytest.approx(round(esperado, 3))
+
+def test_recalibracao_expande_em_torno_da_taxa_base():
+    """A média linear comprime; a recalibração desfaz — mas o ponto fixo é a
+    taxa base (~0,65), não 0,5. O corpus acerta 67%, não metade."""
+    fixo = 0.646
+    for p in (0.25, 0.40, 0.80, 0.90):
+        rec = dominio._recalibrar(p)
+        assert abs(rec - fixo) > abs(p - fixo), f'p={p} não foi afastado da base'
+
+def test_recalibracao_tem_ponto_fixo_na_taxa_base():
+    assert dominio._recalibrar(0.646) == pytest.approx(0.646, abs=0.01)
+
+def test_recalibracao_preserva_a_ordem():
+    crus = [dominio.dominio(q, 5, 10, recalibrar=False).p for q in (0.2, 0.4, 0.6, 0.8)]
+    recs = [dominio.dominio(q, 5, 10, recalibrar=True).p for q in (0.2, 0.4, 0.6, 0.8)]
+    assert crus == sorted(crus) and recs == sorted(recs)
 
 def test_dominio_global_puxa_na_direcao_certa():
     fraco = dominio.dominio(0.45, 3, 8, acertos_totais=40, respostas_totais=150)

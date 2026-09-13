@@ -8,7 +8,7 @@ O TrailUp hoje dispara de 8 a 14 chamadas ao Gemini por lote de telemetria de 60
 
 ```bash
 python3 exemplos/exemplo.py     # os módulos trabalhando juntos
-python3 -m pytest tests/ -q     # 62 testes de invariante
+python3 -m pytest tests/ -q     # 67 testes de invariante
 ```
 
 ---
@@ -20,7 +20,7 @@ python3 -m pytest tests/ -q     # 62 testes de invariante
 | [`dificuldade`](trailup_core/dificuldade.py) | quão difícil é esta questão? | cobertura 88–91%; `prever_turma()` para a pergunta do professor | 30 alunos |
 | [`ritmo`](trailup_core/ritmo.py) | é de reconhecimento ou de elaboração? | 97,3% de acerto | **5 alunos** |
 | [`tempo`](trailup_core/tempo.py) | quanto deve demorar? | R² 0,578 | 5 alunos |
-| [`dominio`](trailup_core/dominio.py) | o aluno acerta a próxima? | AUC 0,727 (regra atual: 0,587) | histórico do aluno |
+| [`dominio`](trailup_core/dominio.py) | o aluno acerta a próxima? | AUC 0,727 / ECE 0,008 (regra atual: 0,587) | histórico do aluno |
 | [`chute`](trailup_core/chute.py) | não sabe, ou não tentou? | traço com +0,922 de confiabilidade | 50 respostas na questão |
 | [`revisao`](trailup_core/revisao.py) | quando trazer de volta? | AUC 0,669 / ECE 0,015 em 752 mil reencontros | nenhum |
 | [`discriminacao`](trailup_core/discriminacao.py) | esta questão está quebrada? | 25% de precisão (lift 7,1×) com `confirmar()` | 40 respostas |

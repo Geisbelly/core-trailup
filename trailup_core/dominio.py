@@ -13,6 +13,10 @@ Formula medida (EdNet, split por aluno):
     0,60 questao + 0,15 topico + 0,25 GLOBAL      AUC 0,727   <- esta
     modelo de boosting com 25 features            AUC 0,754
 
+CALIBRACAO (auditoria de 2026-09-13): o `p` devolvido E probabilidade, com
+ECE 0,0083 apos a recalibracao. Antes dela o ECE era 0,0564 e o erro por decil
+chegava a 14 pontos - o numero afirmava ser probabilidade sem ser.
+
 Uma linha de aritmetica captura 95% do ganho do modelo sobre a regra.
 
 O TERCEIRO TERMO, E POR QUE ELE PESA MAIS QUE O TOPICO: o acerto do aluno em
@@ -36,6 +40,15 @@ PESO_GLOBAL = 0.25         # historico do aluno em tudo - mais estavel
 PRIOR_ALUNO = 3            # encolhimento do acerto no topico
 PRIOR_GLOBAL = 8           # encolhimento do acerto global (mais dados, encolhe menos)
 
+# RECALIBRACAO. A media linear de duas probabilidades COMPRIME para o meio:
+# sem correcao, o decil mais baixo previa 0,474 e observava 0,337 (14 pontos de
+# erro), e o mais alto previa 0,825 contra 0,937. ECE 0,0564.
+# Correcao de Platt em dois parametros, ajustada no treino e medida no teste:
+#   ECE 0,0564 -> 0,0083   |   AUC inalterado (0,725)   |   faixa 0,21-0,95 -> 0,04-1,00
+# b ~ 2 diz o tamanho da compressao: a media linear encolhe o logito pela metade.
+RECAL_A = -0.578273
+RECAL_B = +1.995671
+
 
 @dataclass(frozen=True)
 class Dominio:
@@ -48,14 +61,55 @@ class Dominio:
                 f'| {self.tendencia} (n={self.respostas_topico})')
 
 
-def confianca(respostas: int) -> float:
-    """Substitui o 0,66 fixo: cresce com observacao e satura em 0,92."""
-    return round(min(0.92, 0.35 + 0.57 * (1 - exp(-respostas / 8))), 2)
+def incerteza(respostas: int, acertos: int = 0) -> float:
+    """Desvio-padrao posterior da taxa do aluno no topico. E o que ENCOLHE com n.
+
+    Medido no EdNet, por faixa de n no topico:
+
+        n         erro |p-y|   desvio da taxa do aluno
+        4-7         0,385              0,169
+        9-19        0,377              0,121
+        21-49       0,378              0,080
+        51-199      0,378              0,046
+        201+        0,382              0,022
+
+    A versao anterior de `confianca` era a formula 0,35 + 0,57*(1-exp(-n/8)),
+    que ia de 0,48 a 0,92 - mas o erro real |p - y| e PLANO em 0,41. Ela
+    afirmava que a estimativa fica muito mais confiavel com n, e nao fica: o
+    |p-y| e dominado pelo ruido de Bernoulli do resultado, nao pelo erro da
+    estimativa. O que de fato encolhe e a incerteza sobre a TAXA do aluno, e e
+    isso que estas funcoes reportam agora.
+
+    Usa o posterior Beta para nao devolver zero quando o aluno acertou tudo ou
+    errou tudo (com n=2 e taxa 0 ou 1, o desvio binomial daria 0).
+    """
+    a = acertos + PRIOR_ALUNO * 0.67
+    b = (respostas - acertos) + PRIOR_ALUNO * 0.33
+    if b < 0:
+        raise ValueError(f'acertos={acertos} incompativel com respostas={respostas}')
+    return sqrt(a * b / ((a + b) ** 2 * (a + b + 1)))
+
+
+def confianca(respostas: int, acertos: int = 0) -> float:
+    """1 menos duas vezes a incerteza da taxa do aluno, limitado a [0, 0,95].
+
+    Nunca chega a 1: com 201+ respostas a incerteza ainda e 0,022, e o teto
+    honesto fica em 0,95.
+    """
+    return round(min(0.95, max(0.0, 1 - 2 * incerteza(respostas, acertos))), 3)
+
+
+def _recalibrar(p: float) -> float:
+    from math import exp, log
+    p = min(max(p, 1e-4), 1 - 1e-4)
+    z = RECAL_A + RECAL_B * log(p / (1 - p))
+    return 1.0 / (1.0 + exp(-max(-30.0, min(30.0, z))))
 
 
 def dominio(dificuldade_questao: float, acertos_no_topico: int, respostas_no_topico: int,
             media_global: float = 0.67, p_anteriores: list[float] | None = None,
-            acertos_totais: int | None = None, respostas_totais: int | None = None) -> Dominio:
+            acertos_totais: int | None = None, respostas_totais: int | None = None,
+            recalibrar: bool = True) -> Dominio:
     """`dificuldade_questao` = taxa de acerto da questao (use dificuldade.estimar).
 
     `acertos_totais` / `respostas_totais` = historico do aluno em TODOS os
@@ -73,11 +127,13 @@ def dominio(dificuldade_questao: float, acertos_no_topico: int, respostas_no_top
         glob = (acertos_totais + media_global * PRIOR_GLOBAL) / (respostas_totais + PRIOR_GLOBAL)
         p = (PESO_QUESTAO * dificuldade_questao + PESO_TOPICO * aluno
              + PESO_GLOBAL * glob)
+    if recalibrar:
+        p = _recalibrar(p)
     tend = 'estavel'
     if p_anteriores and len(p_anteriores) >= 3:
         d = p - p_anteriores[-3]
         tend = 'subindo' if d > 0.03 else ('caindo' if d < -0.03 else 'estavel')
-    return Dominio(round(p, 3), confianca(n), tend, n)
+    return Dominio(round(p, 3), confianca(n, acertos_no_topico), tend, n)
 
 
 def precisa_reforco(d: Dominio, limiar: float = 0.45, conf_minima: float = 0.70) -> bool:

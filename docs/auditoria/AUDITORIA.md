@@ -75,6 +75,8 @@ Três testes novos fixam isso: a confiança nunca chega a 1,0 em nenhum `n`, cre
 | `engajamento`: `ordenar()` no EdNet | 0,856 | **0,843** | ✅ |
 | `engajamento`: `ordenar()` no OULAD | 0,862 | **0,869** | ✅ |
 | `engajamento`: tabela `REFERENCIA` vs observado | — | **diferença 0,000** | ✅ |
+| `dominio`: calibração do `p` | — | **ECE 0,056** | ❌ corrigido |
+| `dominio`: `confianca` mede algo? | — | **não** | ❌ corrigido |
 
 **`pre_avaliacao` ficou melhor chamando o módulo.** Os 0,463 vinham de features extraídas pelo pipeline sklearn que gerou os pesos. Chamando `preparar()`/`avaliar()` sobre os textos crus: **0,483**. As duas implementações do grafo diferem — o pipeline usa as 60 palavras mais frequentes como stopword, o módulo deriva por frequência de documento (no classEx, apenas 5). O número que descreve o que o código faz é 0,483.
 
@@ -139,6 +141,49 @@ Coeficientes refeitos **sem** `class_weight`, sobre um painel de 564.006 linhas 
 **Nuance sobre `sem_clique`:** o coeficiente correto é ≈**zero** (−0,0008), não positivo. A relação **marginal** é forte e positiva, mas **condicionada aos cliques da semana ela desaparece** — "zero cliques" já codifica "sumiu". O erro do SQL não era só o sinal; era afirmar um efeito condicional que não existe.
 
 **Quatro testes novos leem os coeficientes direto do arquivo `.sql`** e verificam que o aluno típico não recebe risco alto, que entrega perdida aumenta o risco, que mais cliques reduzem, e que sumir nunca reduz. Isso pega drift entre o arquivo e a documentação sem precisar de Postgres.
+
+---
+
+## Parte 4: `dominio` afirmava probabilidade sem ser
+
+Mesma família dos defeitos do SQL. `dominio.dominio` devolve `p` como *"probabilidade de acertar a próxima"*, e só o AUC tinha sido medido.
+
+### O `p` estava comprimido para o meio
+
+| decil | previsto | observado | |
+|---|---|---|---|
+| 1 | 0,474 | **0,337** | −14 pts |
+| 2 | 0,554 | 0,478 | −8 pts |
+| 5 | 0,655 | 0,661 | ok |
+| 9 | 0,769 | 0,860 | +9 pts |
+| 10 | 0,825 | **0,937** | +11 pts |
+
+**ECE 0,0564.** É o efeito conhecido de tirar média linear de duas probabilidades: comprime para o centro.
+
+**Conserto:** correção de Platt em dois parâmetros, ajustada no treino e medida no teste.
+
+| | AUC | ECE | faixa |
+|---|---|---|---|
+| antes | 0,725 | 0,0564 | 0,21 – 0,95 |
+| **recalibrado** | 0,725 | **0,0083** | 0,04 – 1,00 |
+
+Sete vezes melhor, AUC intacto. O `b ≈ 2` mede a compressão: a média linear encolhia o logito pela metade.
+
+> **O ponto fixo é 0,646, não 0,5** — o corpus acerta 67%, e é em torno da taxa base que a expansão acontece. Um teste fixa isso, porque a intuição errada (expandir em torno de 0,5) passou primeiro.
+
+### E `confianca` não media nada
+
+A fórmula era `0,35 + 0,57·(1−e^(−n/8))`, indo de 0,48 a 0,92 conforme o aluno acumula respostas. Mas o erro real é **plano**:
+
+| n no tópico | erro real \|p−y\| | desvio da taxa do aluno |
+|---|---|---|
+| 4–7 | 0,385 | 0,169 |
+| 21–49 | 0,378 | 0,080 |
+| 201+ | 0,382 | **0,022** |
+
+O `\|p−y\|` não encolhe porque é dominado pelo **ruído de Bernoulli do resultado**, não pelo erro da estimativa. A confiança afirmava que a estimativa melhora muito com n, e não melhora — o que melhora é a certeza sobre a **taxa do aluno**.
+
+`confianca` passa a ser `1 − 2·incerteza`, com `incerteza` sendo o desvio posterior da taxa. Teto honesto: **0,95**, porque com 201+ respostas a incerteza ainda é 0,022. E usa o posterior Beta para não devolver zero quando o aluno acertou ou errou tudo.
 
 ---
 
