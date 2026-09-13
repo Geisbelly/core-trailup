@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Quem vai parar de estudar?</title>
+<link rel="stylesheet" href="estilo.css">
+</head>
+<body>
+<main>
+  <h1>Quem vai parar de estudar?</h1>
+  <p class="sub">Um modelo de duas variáveis, treinado em duas bases de
+  realidades opostas — autoestudo voluntário coreano e EAD universitário
+  britânico. Protótipo do seminário; roda inteiro no navegador.</p>
+
+  <p id="erro" class="aviso" hidden></p>
+
+  <section>
+    <h2 style="margin-top:0">Simule um aluno</h2>
+    <div class="campos">
+      <div>
+        <label for="coorte">Coorte (define a calibração)</label>
+        <select id="coorte"></select>
+      </div>
+      <div>
+        <label for="recentes">Dias ativos nos últimos 10</label>
+        <div class="valor" id="vr" style="margin-bottom:4px"></div>
+        <input type="range" id="recentes" min="0" max="10" value="2">
+      </div>
+      <div>
+        <label for="ativos">Dias ativos nos 30</label>
+        <div class="valor" id="va" style="margin-bottom:4px"></div>
+        <input type="range" id="ativos" min="0" max="30" value="12">
+      </div>
+    </div>
+
+    <div class="saida">
+      <div class="cartao">
+        <div class="rot">Risco de não voltar</div>
+        <div class="num" id="risco">—</div>
+        <div class="barra"><i id="barra"></i></div>
+      </div>
+      <div class="cartao">
+        <div class="rot">Faixa nesta coorte</div>
+        <div class="num" id="faixa">—</div>
+        <div class="nota" id="faixaTxt" style="margin-top:2px"></div>
+      </div>
+      <div class="cartao">
+        <div class="rot">Observado, só pela recência</div>
+        <div class="num" id="obs">—</div>
+        <div class="nota" id="obsN" style="margin-top:2px"></div>
+      </div>
+      <div class="cartao">
+        <div class="rot">Base da coorte</div>
+        <div class="num" id="retencao">—</div>
+        <div class="nota" style="margin-top:2px">não voltam, no geral</div>
+      </div>
+    </div>
+
+    <p class="nota"><strong>Os dois números do meio não são a mesma conta.</strong>
+    O previsto usa os dois eixos; o observado é a contagem bruta de todos os
+    alunos com aquela recência, qualquer que seja a frequência. Eles se
+    aproximam quando a frequência está perto da típica, e se afastam de
+    propósito nos extremos — é aí que o segundo eixo está fazendo trabalho.</p>
+    <p class="nota"><strong>Agora troque a coorte</strong> mantendo os mesmos
+    controles. O risco muda muito, com a atividade idêntica: <em>a mesma
+    atividade significa coisas diferentes em plataformas diferentes</em>. É o
+    resultado central deste trabalho, e dá para sentir no dedo.</p>
+  </section>
+
+  <section>
+    <h2 style="margin-top:0">Retenção observada, sem modelo nenhum</h2>
+    <p class="nota" style="margin-top:0">Fração que <strong>não volta</strong>
+    no mês seguinte, por dias ativos nos últimos 10 dias da janela. Nenhum
+    modelo envolvido — é contagem direta. As duas bases caem na mesma direção e
+    em níveis completamente diferentes.</p>
+    <div class="tabela-rolavel" id="ref"></div>
+  </section>
+
+  <section>
+    <h2 style="margin-top:0">Desempenho, contra a linha de base</h2>
+    <p class="nota" style="margin-top:0">AUC é a chance de ordenar certo um par
+    de alunos, um que voltou e um que não — 0,50 é cara ou coroa. A linha de
+    base é o melhor eixo <em>sozinho</em>, sem modelo. O ganho do modelo é
+    pequeno, e está declarado como tal.</p>
+    <div class="tabela-rolavel" id="desempenho"></div>
+    <p class="nota">Média de 12 partições independentes por aluno, com o desvio.
+    Não é o resultado de uma divisão só — foi justamente uma divisão sortuda que
+    nos fez publicar um número errado na primeira vez.</p>
+  </section>
+
+  <section>
+    <h2 style="margin-top:0">O que este modelo <em>não</em> faz</h2>
+    <p class="nota" style="margin-top:0">
+    Ele prevê <strong>permanência, não aprendizado</strong> — nenhum dos eixos
+    prediz ganho de acerto entre os dois meses. Ele pressupõe continuação
+    <strong>voluntária</strong>: numa base onde a participação é obrigatória,
+    quase todo mundo volta e não há variação a prever. E o nível
+    <strong>não transfere</strong> entre plataformas: a ordem sim, o limiar
+    não — por isso a calibração por coorte é requisito, não enfeite.</p>
+  </section>
+</main>
+<footer>
+  Código, dados e diário de decisões:
+  <a id="repo" href="../">repositório</a>.
+  Bases: EdNet KT3 (CC BY-NC 4.0) e OULAD (CC BY 4.0).
+</footer>
+<script src="app.js"></script>
+</body>
+</html>
