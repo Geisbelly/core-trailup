@@ -1,0 +1,105 @@
+{
+ "test": [
+  {
+   "modelo": "B0 prevalencia (sempre a media)",
+   "AUC": 0.5,
+   "logloss": 0.6833,
+   "brier": 0.2451,
+   "ECE": 0.0073,
+   "acc": 0.5706
+  },
+  {
+   "modelo": "B1 REGRA TrailUp (dominio por part)",
+   "AUC": 0.6116,
+   "logloss": 0.9662,
+   "brier": 0.2935,
+   "ECE": 0.2222,
+   "acc": 0.6141
+  },
+  {
+   "modelo": "B2 dificuldade da questao",
+   "AUC": 0.6675,
+   "logloss": 0.6384,
+   "brier": 0.2242,
+   "ECE": 0.0084,
+   "acc": 0.6275
+  },
+  {
+   "modelo": "B3 acerto acumulado do aluno",
+   "AUC": 0.6133,
+   "logloss": 0.7068,
+   "brier": 0.2366,
+   "ECE": 0.0186,
+   "acc": 0.609
+  },
+  {
+   "modelo": "B4 EWMA do aluno no topico",
+   "AUC": 0.5866,
+   "logloss": 0.7678,
+   "brier": 0.2658,
+   "ECE": 0.1373,
+   "acc": 0.5677
+  },
+  {
+   "modelo": "M2-a regressao logistica (15 feats)",
+   "AUC": 0.7052,
+   "logloss": 0.6177,
+   "brier": 0.2147,
+   "ECE": 0.0115,
+   "acc": 0.6558
+  },
+  {
+   "modelo": "M2-b gradient boosting",
+   "AUC": 0.7546,
+   "logloss": 0.5686,
+   "brier": 0.1954,
+   "ECE": 0.0024,
+   "acc": 0.693
+  }
+ ],
+ "n_users": {
+  "train": 25196,
+  "val": 3150,
+  "test": 3150
+ },
+ "n_rows": {
+  "train": 6925194,
+  "val": 913876,
+  "test": 881597
+ },
+ "saturacao_regra": {
+  "teto": 0.27653224772770324,
+  "piso": 0.0509008084192664,
+  "meio": 0.33796848219764813
+ },
+ "cold_start": [
+  {
+   "n_prev_part": "0-4",
+   "linhas": 49175,
+   "regra": 0.5370149683944285,
+   "logistica": 0.6740998644696792,
+   "boosting": 0.7327671510431089
+  },
+  {
+   "n_prev_part": "5-19",
+   "linhas": 106313,
+   "regra": 0.6015327471123815,
+   "logistica": 0.7123181644434737,
+   "boosting": 0.747541641768942
+  },
+  {
+   "n_prev_part": "20-99",
+   "linhas": 232607,
+   "regra": 0.59223328880361,
+   "logistica": 0.7055991560168805,
+   "boosting": 0.7451173363389648
+  },
+  {
+   "n_prev_part": "100+",
+   "linhas": 493502,
+   "regra": 0.6249286725689811,
+   "logistica": 0.7049970912741762,
+   "boosting": 0.76142089621578
+  }
+ ]
+}

@@ -1,0 +1,30 @@
+[
+ {
+  "criterio": "ALVO DIRETO: treinado em \"vai travar\"",
+  "AUC": 0.8061405511175461,
+  "AP": 0.6814004913040315,
+  "Brier": 0.14514813136134797,
+  "ECE": 0.009001203220098475
+ },
+ {
+  "criterio": "proxy: 1 - p(acerta a proxima)",
+  "AUC": 0.698181355031348,
+  "AP": 0.46144084200007796,
+  "Brier": 0.21261837315442667,
+  "ECE": NaN
+ },
+ {
+  "criterio": "regra do TrailUp (dominio<0.45)",
+  "AUC": 0.7612082320606947,
+  "AP": 0.6037744038874253,
+  "Brier": NaN,
+  "ECE": NaN
+ },
+ {
+  "criterio": "acerto acumulado no topico",
+  "AUC": 0.7721302664575336,
+  "AP": 0.572706259915593,
+  "Brier": NaN,
+  "ECE": NaN
+ }
+]

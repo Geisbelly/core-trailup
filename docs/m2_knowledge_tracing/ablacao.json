@@ -1,0 +1,32 @@
+{
+ "ablacao": [
+  {
+   "conjunto": "completo (comportamento + conteudo)",
+   "n_feats": 15,
+   "AUC": 0.7528056331459374,
+   "logloss": 0.5695727377123951,
+   "brier": 0.19570597910004073
+  },
+  {
+   "conjunto": "SO comportamento (sem dificuldade da questao)",
+   "n_feats": 11,
+   "AUC": 0.6831868334474778,
+   "logloss": 0.6108972837192952,
+   "brier": 0.21384598636957033
+  },
+  {
+   "conjunto": "SO conteudo (so a questao)",
+   "n_feats": 4,
+   "AUC": 0.667149617247873,
+   "logloss": 0.6377972932669276,
+   "brier": 0.22388660211468928
+  },
+  {
+   "conjunto": "MINIMO (6 feats que o TrailUp ja tem hoje)",
+   "n_feats": 6,
+   "AUC": 0.6715300395184232,
+   "logloss": 0.6171339934488429,
+   "brier": 0.21657693027378713
+  }
+ ]
+}
