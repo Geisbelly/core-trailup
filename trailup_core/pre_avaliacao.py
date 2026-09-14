@@ -199,9 +199,29 @@ class PreAvaliacao:
     cobertura: float            # 0 a 1 - quanto do gabarito a resposta toca
     divagacao: float            # 0 a 1; mediana ~0,72 - NAO leia como % de divagacao
     conceitos_faltando: list[str]
+
+    @property
+    def percentual_estimado(self) -> float:
+        """Converte a escala 1--5 para uma faixa de 0--100.
+
+        Isto e uma escala de exibicao, nao uma porcentagem de acerto humano.
+        O alvo do treino foi uma nota de LLM e nao ha dado suficiente para
+        afirmar que ``72%`` significa 72% de conteudo correto.
+        """
+        return round((self.nota - 1.0) / 4.0 * 100.0, 1)
+
+    @property
+    def faixa_percentual(self) -> str:
+        """Faixa ordinal para triagem, menos precisa que o numero exibido."""
+        if self.percentual_estimado < 50.0:
+            return 'baixo'
+        if self.percentual_estimado < 75.0:
+            return 'medio'
+        return 'alto'
+
     def __str__(self):
         falta = (', '.join(self.conceitos_faltando[:4]) or 'nenhum dos centrais')
-        return (f'~{self.nota:.1f}/5 | cobre {self.cobertura:.0%} do gabarito, '
+        return (f'~{self.percentual_estimado:.0f}% (escala) | cobre {self.cobertura:.0%} do gabarito, '
                 f'fora do gabarito {self.divagacao:.0%} (tipico ~72%) | falta: {falta}')
 
 

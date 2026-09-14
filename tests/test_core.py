@@ -141,6 +141,14 @@ def test_pre_avaliacao_ordena_o_obvio():
     assert vazia.divagacao > completa.divagacao
 
 
+def test_pre_avaliacao_expoe_percentual_como_escala_e_faixa():
+    ref = pre_avaliacao.preparar('A demanda agregada depende do consumo e do investimento.')
+    resultado = pre_avaliacao.avaliar('A demanda depende do consumo.', ref)
+    assert 0.0 <= resultado.percentual_estimado <= 100.0
+    assert resultado.faixa_percentual in {'baixo', 'medio', 'alto'}
+    assert 'escala' in str(resultado)
+
+
 # ---------------- engajamento: ordenador comum ----------------
 def _coorte(n=900):
     import random

@@ -178,6 +178,16 @@ O gap não é de dado, nem de representação isolada, nem de estrutura. **É de
 
 ## 10. Posicionamento realista
 
+### Saída usada no produto
+
+O módulo preserva a nota interna de 1 a 5, mas também expõe
+`percentual_estimado` (0–100) e `faixa_percentual` (`baixo`, `medio`, `alto`)
+para a interface. Esse percentual é uma transformação da escala prevista e
+não deve ser apresentado como porcentagem de conteúdo correto: o alvo do
+treino é uma nota gerada por LLM, não uma nota humana. A decisão automática
+continua sendo a triagem das respostas, com os conceitos ausentes como
+explicação.
+
 ### Como pré-filtro de dois lados
 
 Dispensar a LLM nas duas pontas e mandar o meio para ela. Erro = a decisão automática estava errada (ponta baixa marcada como "precisa de feedback" mas a nota era ≥3,5; ponta alta marcada como "adequada" mas era <3,5):
