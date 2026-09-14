@@ -1,0 +1,164 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Vale abrir a LLM para esta resposta?</title>
+<link rel="stylesheet" href="estilo.css">
+<style>
+textarea{width:100%;min-height:120px;padding:11px;border:1px solid var(--linha);
+  border-radius:7px;background:var(--fundo);color:var(--tinta);
+  font:15px/1.55 inherit;resize:vertical}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.chip{font-size:.8rem;padding:3px 9px;border-radius:20px;border:1px solid var(--linha);
+  color:var(--fraco);background:var(--fundo)}
+.exemplos{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.exemplos button{font-size:.82rem;padding:5px 11px;border-radius:6px;cursor:pointer;
+  border:1px solid var(--linha);background:var(--fundo);color:var(--acento)}
+.exemplos button:hover{border-color:var(--acento)}
+nav{margin-bottom:22px;font-size:.9rem}
+nav a{margin-right:16px;text-decoration:none}
+nav a[aria-current]{color:var(--tinta);font-weight:600;text-decoration:underline}
+</style>
+</head>
+<body>
+<main>
+  <nav>
+    <a href="./">Modelo 1 · engajamento</a>
+    <a href="discursivo.html" aria-current="page">Modelo 2 · resposta discursiva</a>
+  </nav>
+
+  <h1>Vale abrir a LLM para esta resposta?</h1>
+  <p class="sub">Compara o grafo de coocorrência da resposta com o do gabarito.
+  Dez features, todas operações de conjunto sobre tokens — sem rede neural, sem
+  embedding, sem chamada de rede. Roda enquanto você digita.</p>
+
+  <section>
+    <h2 style="margin-top:0">Escreva uma resposta</h2>
+    <div style="margin-bottom:16px">
+      <label for="enunciado">Enunciado</label>
+      <textarea id="enunciado" style="min-height:56px"></textarea>
+    </div>
+    <div style="margin-bottom:16px">
+      <label for="gabarito">Gabarito</label>
+      <textarea id="gabarito" style="min-height:80px"></textarea>
+    </div>
+    <div>
+      <label for="resposta">Resposta do aluno</label>
+      <textarea id="resposta"></textarea>
+      <div class="exemplos">
+        <button data-ex="boa">resposta completa</button>
+        <button data-ex="parcial">resposta parcial</button>
+        <button data-ex="vazia">resposta que só enrola</button>
+        <button data-ex="copia">resposta que copia o enunciado</button>
+      </div>
+    </div>
+
+    <div class="saida">
+      <div class="cartao">
+        <div class="rot">Estimativa</div>
+        <div class="num" id="nota">—</div>
+        <div class="nota" style="margin-top:2px">de 1 a 5, ±0,5</div>
+      </div>
+      <div class="cartao">
+        <div class="rot">Faixa</div>
+        <div class="num" id="faixa">—</div>
+        <div class="nota" id="faixaTxt" style="margin-top:2px"></div>
+      </div>
+      <div class="cartao">
+        <div class="rot">Cobertura do gabarito</div>
+        <div class="num" id="cobertura">—</div>
+        <div class="barra"><i id="barraCob"></i></div>
+      </div>
+      <div class="cartao">
+        <div class="rot">Conceitos centrais ausentes</div>
+        <div class="num" id="nFalta">—</div>
+        <div class="chips" id="falta"></div>
+      </div>
+    </div>
+
+    <p class="nota"><strong>Isto não é uma nota.</strong> O erro típico é de
+    meio ponto numa escala de 1 a 5, e o piso efetivo é ~2,3 — o modelo não
+    consegue dizer "muito ruim". O que ele faz bem é <em>ordenar</em>: colocar
+    as respostas fracas no topo de uma fila de revisão.</p>
+    <p class="nota">Repare no botão <em>"resposta que copia o enunciado"</em>.
+    É por isso que o enunciado entra no cálculo: sem ele, repetir a pergunta
+    conta como conceito coberto.</p>
+  </section>
+
+  <section>
+    <h2 style="margin-top:0">Ele ganha de contar palavras?</h2>
+    <p class="nota" style="margin-top:0">Em avaliação automática de texto, o
+    comprimento da resposta é a linha de base que derruba a maioria dos
+    trabalhos. E o teto não é 1,00: é o quanto o próprio LLM concorda consigo
+    mesmo entre execuções independentes.</p>
+    <div class="tabela-rolavel">
+      <table>
+        <thead><tr><th>critério</th><th>Spearman</th><th>do teto</th></tr></thead>
+        <tbody>
+          <tr><td>contar palavras da resposta</td><td>+0,283</td><td>32%</td></tr>
+          <tr><td>contar caracteres</td><td>+0,303</td><td>34%</td></tr>
+          <tr><td>sobreposição crua de tokens com o gabarito</td><td>+0,409</td><td>46%</td></tr>
+          <tr><td>cobertura do gabarito (1 feature)</td><td>+0,463</td><td>52%</td></tr>
+          <tr><td><strong>o módulo inteiro (10 features)</strong></td>
+              <td><strong>+0,495</strong></td><td><strong>56%</strong></td></tr>
+          <tr><td><em>teto: duas execuções do próprio LLM</em></td>
+              <td><em>+0,883</em></td><td><em>100%</em></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="nota">Ganha, mas por pouco — e a distância até o teto é maior que
+    a distância até a linha de base. O ganho sobre a melhor feature sozinha é
+    <strong>+0,033</strong>, IC95 [+0,005; +0,061], positivo em 99% das
+    reamostras por aluno. Estável: 0,495 ± 0,021 em 12 partições.</p>
+  </section>
+
+  <section>
+    <h2 style="margin-top:0">Onde ele realmente paga</h2>
+    <p class="nota" style="margin-top:0">Como <strong>triagem</strong> — ordenar
+    a fila de quem precisa de atenção primeiro:</p>
+    <div class="tabela-rolavel">
+      <table>
+        <thead><tr><th>recorte</th><th>nota real média</th><th>vs geral</th></tr></thead>
+        <tbody>
+          <tr><td>as 5 de menor previsão</td><td>1,80</td><td>−1,70</td></tr>
+          <tr><td>as 10 de menor previsão</td><td>2,03</td><td>−1,46</td></tr>
+          <tr><td>as 20 de menor previsão</td><td>2,13</td><td>−1,36</td></tr>
+          <tr><td>as 50 de menor previsão</td><td>2,46</td><td>−1,04</td></tr>
+          <tr><td><em>geral</em></td><td><em>3,50</em></td><td><em>—</em></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="nota"><strong>Ordenar exige muito menos que pontuar.</strong> É por
+    isso que um Spearman de 0,50 ainda serve para triagem e não serve para dar
+    nota.</p>
+    <p class="nota">Como <strong>pré-filtro</strong>, decidindo sozinho nas
+    pontas: cortando em 10%/90%, 20% das respostas deixam de ir para a LLM, ao
+    custo de errar 14% na ponta baixa e 10% na alta. Isso é decisão de produto —
+    depende de quanto custa cada tipo de erro.</p>
+    <p class="nota">E o custo dele: <strong>167 microssegundos por resposta</strong>,
+    sem rede e sem GPU, contra 1 a 3 segundos de uma chamada de LLM. Ele não
+    substitui a LLM — decide quem precisa dela, e dá um retorno provisório
+    enquanto ela trabalha.</p>
+  </section>
+
+  <section>
+    <h2 style="margin-top:0">O que este modelo <em>não</em> faz</h2>
+    <p class="nota" style="margin-top:0">
+    O alvo do treino é uma <strong>nota de LLM, não humana</strong> — ele aprende
+    a concordar com o GPT-4, não a avaliar. Os pesos foram ajustados em texto
+    <strong>alemão</strong>, de macroeconomia: as features são agnósticas de
+    idioma, os pesos não. Até haver ~100 respostas em português com nota humana,
+    use só para <strong>ordenar</strong>. E 87% das notas do corpus são 3 ou 4,
+    o que comprime qualquer correlação medida contra elas.</p>
+  </section>
+</main>
+<footer>
+  Geisbelly · Victória · Maria Antonia — seminário. Código, dados e diário no
+  <a href="https://github.com/Geisbelly/core-trailup/tree/main/seminario">repositório</a>.
+  Corpus classEx (CC BY).
+</footer>
+<script src="discursivo.js"></script>
+<script src="discursivo-ui.js"></script>
+</body>
+</html>

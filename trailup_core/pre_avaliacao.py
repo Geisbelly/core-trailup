@@ -180,6 +180,20 @@ def preparar(gabarito: str, enunciado: str = '', stop: set[str] | None = None,
     `stop`: passe `stopwords(materiais_do_topico)`. Sem ele o grafo inclui
     palavras funcionais, o que dilui um pouco a cobertura mas nao quebra nada -
     ao contrario de usar stopwords mal estimadas.
+
+    CHAMAR SO COM O GABARITO CUSTA CARO, E EM SILENCIO. Medido no classEx
+    (1.167 respostas, alvo = media de 3 execucoes do LLM):
+
+        preparar(gabarito, enunciado=q, stop=stopwords(corpus))  0,495
+        preparar(gabarito)                                       0,429
+
+    Sao 0,066 de Spearman - mais que o ganho de TODAS as 9 features sobre a
+    `cobertura` sozinha (+0,033). Sem o enunciado, o que o aluno repetiu da
+    pergunta conta como conceito coberto; sem as stopwords, palavra funcional
+    vira no do grafo. Os dois erros inflam a cobertura de quem escreveu muito.
+
+    A assinatura permite omitir os dois porque ha casos sem corpus, mas o
+    caminho padrao de quem usa a API deve ser passar os dois.
     """
     # sem corpus nao ha como estimar stopword; vazio e o padrao seguro
     st = stop if stop is not None else set()

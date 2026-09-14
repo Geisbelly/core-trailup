@@ -218,12 +218,86 @@ erros que estavam escondidos no código anterior:
 
 ---
 
-## 13/09 — o que fica, e o que não fica
+## 14/09 — um segundo modelo entra, e ele quase foi descartado por erro nosso
 
-**Fica:** dois eixos (recência e frequência), padronizados por coorte, um modelo
-logístico único, calibração obrigatória por coorte, e um protótipo web que roda
-o modelo inteiro no navegador — porque duas variáveis e uma logística cabem num
-JSON.
+Decisão: o trabalho leva **dois modelos**, não um. O segundo avalia resposta
+discursiva — compara o grafo de coocorrência da resposta com o do gabarito.
+O que une os dois é a mesma pergunta de produto: **onde gastar uma chamada
+cara**. Um decide em quem vale intervir; o outro, qual resposta precisa mesmo
+de correção por LLM.
+
+Antes de aceitar o modelo, a linha de base que importa em texto: **contar
+palavras**. Resposta longa costuma ganhar nota maior, e isso derruba a maioria
+dos trabalhos de avaliação automática.
+
+Primeira medição: módulo **0,429**, `cobertura` sozinha **0,463**. Ou seja, o
+modelo de dez features era *pior que uma de suas próprias features*. Chegamos a
+escrever a conclusão: as nove features extras não pagam.
+
+**Estava errado, e o erro era de uso da API.** Chamávamos `preparar(gabarito)`
+sem passar o enunciado e sem as stopwords derivadas do corpus. Do jeito
+documentado, o número é **0,495** — e a conclusão inverte: o módulo ganha da
+melhor feature sozinha por +0,033, IC95 [+0,005; +0,061], positivo em 99% das
+reamostras por aluno.
+
+A diferença de **0,066** é maior que o ganho de todas as nove features extras
+somadas. Sem o enunciado, o que o aluno repetiu da pergunta conta como conceito
+coberto; sem as stopwords, palavra funcional vira nó do grafo. Os dois erros
+inflam a nota de quem escreveu muito.
+
+Lição, e ela é sobre biblioteca e não sobre modelo: **uma API que deixa omitir o
+parâmetro importante em silêncio produz resultado plausível e errado.** O
+defeito foi documentado no módulo, com os dois números lado a lado.
+
+## 14/09 — o teto não é 1,00
+
+O corpus tem **três avaliações independentes do mesmo LLM** para cada resposta.
+Isso permite medir uma coisa que quase nenhum trabalho mede: **o teto**.
+
+Comparando as execuções entre si: 0,871, 0,883, 0,897. Média **0,883**. Nenhum
+modelo treinado contra esse rótulo pode passar disso, porque o próprio rótulo
+não é estável acima disso.
+
+Muda completamente como se lê o 0,495: não é "metade do caminho até a
+perfeição", é **56% do máximo alcançável**. E deixa claro o que o modelo é —
+ele não avalia resposta, ele ordena e tria.
+
+Medimos também onde ele paga de verdade:
+
+- **triagem**: as 5 de menor previsão têm nota real média 1,80 contra 3,50 do
+  geral. Ordenar exige muito menos que pontuar.
+- **pré-filtro**: cortando em 10%/90%, 20% das respostas deixam de ir para a
+  LLM, errando 14% na ponta baixa e 10% na alta.
+- **custo**: 167 microssegundos por resposta, sem rede e sem GPU, contra 1 a 3
+  segundos de uma chamada de LLM.
+
+## 14/09 — o protótipo em JavaScript podia mentir
+
+O modelo 2 foi reimplementado em JavaScript para rodar no navegador sem
+servidor. Duas implementações da mesma coisa **divergem em silêncio** —
+tokenização, ordenação de aresta, arredondamento.
+
+Escrevemos o `09_conferir_port.py`: roda Python e JavaScript sobre as mesmas
+200 respostas e falha se discordarem. Batem até a 15ª casa decimal (1,8e-15,
+que é erro de ponto flutuante e nada mais).
+
+Não é zelo excessivo. Sem esse teste, a página poderia mostrar um número que o
+repositório não produz, e ninguém perceberia.
+
+## 14/09 — o que fica, e o que não fica
+
+**Modelo 1 — fica:** dois eixos (recência e frequência), padronizados por
+coorte, um modelo logístico único, calibração obrigatória por coorte, e um
+protótipo web que roda o modelo inteiro no navegador — porque duas variáveis e
+uma logística cabem num JSON.
+
+**Modelo 2 — fica:** dez features sobre grafo de coocorrência, usadas para
+**ordenar** e para dizer quais conceitos faltaram. Não para dar nota. Spearman
+0,495 contra um teto de 0,883, estável em 12 partições.
+
+**Modelo 2 — não fica:** dar nota, e qualquer leitura do valor absoluto. Os
+pesos foram ajustados em alemão; até haver ~100 respostas em português com nota
+humana, só a ordem se sustenta.
 
 **Não fica:** volume, profundidade, percentil como conserto de escala, e a
 pretensão de que isso mede aprendizado. Mede **permanência**. Nenhum eixo

@@ -1,17 +1,25 @@
-# Quem vai parar de estudar?
+# Dois modelos para gastar LLM só onde vale
 
-Prever, a partir do comportamento das primeiras 4 semanas, se um aluno ainda
-vai estar estudando no mês seguinte — e testar a mesma pergunta em **duas
-realidades opostas** de ensino a distância.
+Dois problemas reais de uma plataforma de estudo, cada um com dado real,
+linha de base e protótipo funcionando:
+
+| | pergunta | métrica | protótipo |
+|---|---|---|---|
+| **1. engajamento** | este aluno vai parar de estudar? | AUC 0,873 / 0,885 contra linha de base 0,858 / 0,879 | [abrir](https://geisbelly.github.io/core-trailup/seminario/) |
+| **2. resposta discursiva** | vale abrir a LLM para esta resposta? | Spearman 0,495 ± 0,021, teto medido 0,883 | [abrir](https://geisbelly.github.io/core-trailup/seminario/discursivo.html) |
+
+O que une os dois: **decidir onde gastar uma chamada cara**. Um decide em quem
+vale intervir; o outro, qual resposta precisa mesmo de correção por LLM.
 
 **Grupo:** Geisbelly · Victória · Maria Antonia
 
-**Protótipo web:** https://geisbelly.github.io/core-trailup/seminario/
 **Diário de decisões:** [`DIARIO.md`](DIARIO.md) — é onde está o caminho.
 
 ---
 
 ## 1. Qual o problema, e por que ele importa
+
+### Modelo 1 — engajamento
 
 Plataformas de estudo perdem a maior parte dos alunos em silêncio. Ninguém
 cancela, ninguém avisa — a pessoa simplesmente para de aparecer. Quando o
@@ -27,6 +35,18 @@ que **a resposta provavelmente não é a mesma em plataformas diferentes**. Num
 curso obrigatório, quase todo mundo volta. Num app de autoestudo, quase ninguém.
 Um modelo que só foi visto numa realidade não tem como saber qual dos dois casos
 ele aprendeu.
+
+### Modelo 2 — resposta discursiva
+
+Corrigir texto aberto é caro. Mandar toda resposta para uma LLM custa dinheiro
+e segundos; não mandar nenhuma significa não corrigir. A pergunta é se dá para
+**decidir sozinho nas pontas óbvias** — a resposta claramente vazia e a
+claramente completa — e mandar para a LLM só o meio, que é onde a decisão é
+difícil.
+
+Também importa o caso em que a LLM já está trabalhando: enquanto ela não
+responde, o aluno pode receber um retorno provisório dizendo **quais conceitos
+do gabarito faltaram**.
 
 ---
 
@@ -50,6 +70,16 @@ funcione só numa está descrevendo aquela plataforma.
 Os dados **não estão no repositório** (o EdNet sozinho tem 4,2 GB). Os links
 acima e o [`dados/README.md`](dados/README.md) dizem como baixar; os scripts
 avisam com instrução exata se não encontrarem os arquivos.
+
+**Para o modelo 2**, o corpus **classEx**: 1.167 respostas discursivas de
+macroeconomia, de 249 alunos em 8 tarefas, em **alemão**. Cada resposta tem
+três avaliações independentes do GPT-4 — e são essas três que tornam o trabalho
+possível, porque permitem medir **o teto**: o quanto o próprio LLM concorda
+consigo mesmo. Esse arquivo cabe no repositório (3,3 MB) e está em
+`dados/classex.parquet`, então o modelo 2 reproduz sem baixar nada.
+
+O rótulo é nota de **LLM, não humana**. É a limitação mais séria do modelo 2, e
+está no item 7.
 
 ---
 
@@ -78,6 +108,8 @@ dias 30–59. Sai direto do dado, sem julgamento nosso e sem anotação humana.
 
 ## 4. Que modelos foram testados
 
+### Modelo 1 — engajamento
+
 Antes de qualquer modelo, **cada eixo foi medido sozinho, nas duas bases**, e só
 entrou quem passou nas duas:
 
@@ -101,6 +133,18 @@ A escolha por logística de duas variáveis não é falta de ambição: é que o
 inteiro precisa caber num JSON e rodar no navegador, sem servidor. E, como o
 item 5 mostra, o ganho de qualquer coisa mais sofisticada seria medido contra
 uma linha de base que já é alta.
+
+### Modelo 2 — resposta discursiva
+
+Compara o **grafo de coocorrência** da resposta com o do gabarito: quais
+conceitos aparecem, quais ligações entre conceitos, o que falta. Dez features,
+todas operações de conjunto sobre tokens — sem rede neural, sem embedding, sem
+chamada de rede.
+
+Foram testadas e descartadas: enriquecer a referência com corpus do domínio
+(**piora**), camada semântica por LSA (**não acrescenta nada**), boosting sobre
+as mesmas features (pior que a logística), e um encoder multilíngue pré-treinado
+(+0,057 ao custo de ~900 MB de dependência).
 
 ---
 
@@ -135,6 +179,39 @@ de maior risco de cada coorte, o limiar é 0,541 no EdNet e 0,708 no OULAD.
 Exportar um limiar de uma base para a outra troca completamente quem é alertado
 — por isso a calibração por coorte é requisito, não enfeite.
 
+### Modelo 2 — e aqui a linha de base é o comprimento do texto
+
+Em avaliação automática de texto, **contar palavras** derruba a maioria dos
+trabalhos: resposta longa costuma ganhar nota maior. Se contar palavras chega
+perto, o resto não está fazendo nada.
+
+E o **teto não é 1,00**. Como cada resposta tem três avaliações independentes do
+mesmo LLM, dá para medir quanto ele concorda consigo mesmo: **0,883**. Nenhum
+modelo treinado contra esse rótulo pode passar disso.
+
+| critério | Spearman | do teto |
+|---|---|---|
+| contar palavras da resposta | +0,283 | 32% |
+| contar caracteres | +0,303 | 34% |
+| sobreposição crua de tokens com o gabarito | +0,409 | 46% |
+| cobertura do gabarito (1 feature) | +0,463 | 52% |
+| **o módulo inteiro (10 features)** | **+0,495** | **56%** |
+| *teto: duas execuções do próprio LLM* | *+0,883* | *100%* |
+
+Ganha, mas **por pouco** — e a distância até o teto é maior que a distância até
+a linha de base. O ganho sobre a melhor feature sozinha é **+0,033**, IC95
+[+0,005; +0,061], positivo em 99% das reamostras por aluno. Estável:
+**0,495 ± 0,021** em 12 partições.
+
+**Onde ele de fato paga.** Como triagem, as 5 respostas de menor previsão têm
+nota real média **1,80 contra 3,50 do geral**. Ordenar exige muito menos que
+pontuar — é por isso que um Spearman de 0,50 serve para triagem e não serve para
+dar nota.
+
+Como pré-filtro, cortando em 10%/90%, **20% das respostas deixam de ir para a
+LLM**, errando 14% na ponta baixa e 10% na alta. E custa **167 microssegundos
+por resposta**, contra 1 a 3 segundos de uma chamada de LLM.
+
 ---
 
 ## 6. O que não funcionou
@@ -168,6 +245,18 @@ não pelo motivo que tínhamos escrito antes.
 **obrigatória**, a AUC fica entre 0,49 e 0,57. Não é defeito: com 87,7%
 voltando por obrigação, não há variação a prever.
 
+**E no modelo 2, um erro nosso que quase virou conclusão publicada.** A primeira
+medição chamava `preparar(gabarito)` sem o enunciado e sem as stopwords do
+corpus — e deu Spearman **0,429**, *abaixo* da `cobertura` sozinha (0,463).
+Íamos concluir que as dez features não valiam nada. Chamando a API do jeito
+documentado, o número é **0,495** e a conclusão inverte. A diferença de **0,066**
+é maior que o ganho de todas as nove features extras.
+
+Sem o enunciado, o que o aluno repetiu da pergunta conta como conceito coberto;
+sem as stopwords, palavra funcional vira nó do grafo. Os dois erros inflam a
+nota de quem escreveu muito. O defeito real é da **API**, que permite omitir os
+dois em silêncio — está documentado no módulo agora.
+
 ---
 
 ## 7. Uma limitação honesta
@@ -182,6 +271,18 @@ conveniência e não testamos alternativas; e as duas bases são estrangeiras, d
 adultos, em contextos que não são o de uma escola brasileira. **A ordem
 transfere entre plataformas; o nível não transfere de jeito nenhum** — qualquer
 uso novo exige recalibrar com dado próprio antes de acreditar no número.
+
+**No modelo 2: o alvo do treino é uma nota de LLM, não humana.** Ele aprende a
+concordar com o GPT-4 — e o GPT-4 pode estar errado de forma sistemática, sem
+que nada nesta medição consiga perceber. Não há nota humana no corpus para
+comparar.
+
+E os pesos foram ajustados em texto **alemão**, de uma única disciplina. As
+features são agnósticas de idioma — são operações de conjunto sobre tokens — mas
+os pesos não são. Até haver ~100 respostas em português com nota humana, o uso
+defensável é só **ordenar**. O protótipo mostra um exemplo em português
+justamente para deixar isso visível: ele ordena de forma plausível, e o valor
+absoluto não tem validação nenhuma nesse idioma.
 
 ---
 
@@ -198,8 +299,13 @@ python3 scripts/05_calibrar.py    # ponto de operação e calibração
 python3 scripts/06_exportar.py    # gera docs/modelo.json do protótipo
 ```
 
-Cada script imprime o que mede e o que aquilo quer dizer. Rodar do 01 ao 06
+Cada script imprime o que mede e o que aquilo quer dizer. Rodar do 01 ao 09
 reproduz todos os números deste README.
+
+O `09_conferir_port.py` merece nota: o protótipo reimplementa o modelo 2 em
+JavaScript para rodar sem servidor, e **duas implementações da mesma coisa
+divergem em silêncio**. Ele roda as duas sobre 200 respostas e falha se
+discordarem. Hoje batem até a 15ª casa decimal.
 
 Os scripts rodam de dentro de `seminario/scripts/`. Para ver o protótipo
 localmente, a partir da raiz do repositório:
@@ -223,8 +329,9 @@ não dependem de nada do resto do repositório.
 README.md            este arquivo
 DIARIO.md            o registro do processo — é o documento principal
 requirements.txt     pandas, numpy, scikit-learn
-scripts/             as seis etapas, na ordem
-dados/README.md      como baixar as bases (elas não cabem aqui)
+scripts/             as nove etapas, na ordem (01-06 modelo 1, 07-09 modelo 2)
+dados/README.md      como baixar as bases do modelo 1 (não cabem aqui)
+dados/classex.parquet  o corpus do modelo 2 (3,3 MB, cabe)
 saida/               o que os scripts produzem (fora do versionamento)
 
 ../docs/seminario/   o protótipo web, publicado no GitHub Pages

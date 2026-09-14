@@ -18,6 +18,21 @@ aqui, ou aponte a variável `DADOS` para onde você os colocou.
 - Descompacte os CSV em `dados/oulad/`.
 - Os scripts usam apenas `studentVle.csv`.
 
+## classEx — o corpus do modelo 2
+
+Este **está** no repositório: `dados/classex.parquet`, 3,3 MB. O modelo 2
+reproduz sem baixar nada.
+
+- 1.167 respostas discursivas de macroeconomia, em alemão
+- 249 alunos, 8 tarefas
+- três avaliações independentes do GPT-4 por resposta — é o que permite medir
+  o teto (o quanto o LLM concorda consigo mesmo)
+- licença **CC BY**
+
+Colunas usadas: `q` (enunciado), `gab` (gabarito), `resp` (resposta),
+`Color (Pseudonym)` (id do aluno), `Task` (id da tarefa) e as três
+`RunN_Content_AI Evaluation`.
+
 ## Rodar com outro caminho
 
 ```bash
