@@ -4,10 +4,24 @@ Medido no EdNet (6,5 M respostas, split por aluno): R2 entre 0,56 e 0,58 sobre
 o log da latencia, usando APENAS a estatistica da questao.
 
     media global                                  R2 -0,045
-    mediana bruta da questao                      R2  0,574
-    MEDIA DO LOG da questao (esperado_de_amostra) R2  0,578
-    mediana encolhida para a global (k=5)         R2  0,575
+    mediana bruta da questao                      R2  0,558 +- 0,011
+    MEDIA DO LOG da questao (esperado_de_amostra) R2  0,562 +- 0,010
     boosting com 14 features                      R2  0,651
+
+    Os desvios sao entre 20 particoes por aluno. As versoes anteriores deste
+    cabecalho diziam 0,574 e 0,578, de UMA particao - ficam ~1,5 desvios acima
+    da media, dentro do ruido mas otimistas.
+
+    O GANHO DA MEDIA DO LOG SOBRE A MEDIANA E REAL, e a demonstracao vale mais
+    que o ganho. Comparando as medias soltas, +0,004 some no desvio de 0,011 e
+    pareceria ruido. PAREADO, nas mesmas particoes:
+
+        diferenca pareada  +0,0043 +- 0,0007
+        positiva em 100% das 20 particoes | IC95 [+0,0027, +0,0055]
+
+    O desvio da DIFERENCA e 15x menor que o desvio de cada medida isolada:
+    as duas estimativas sobem e descem juntas com a particao, e so a diferenca
+    isola o efeito. Comparar medias soltas nao responde a pergunta.
 
 Encolher para a media global nao ajuda: a mediana da questao ja e estavel com
 poucas respostas. O teto do boosting nao e alcancavel por formula fechada.

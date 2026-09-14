@@ -24,7 +24,7 @@ python3 docs/auditoria/scripts/82_monotonia.py      # direção quebrada no dom�
 |---|---|---|---|
 | [`dificuldade`](trailup_core/dificuldade.py) | quão difícil é esta questão? | cobertura 88–91%; `prever_turma()` para a pergunta do professor | 30 alunos |
 | [`ritmo`](trailup_core/ritmo.py) | é de reconhecimento ou de elaboração? | 97,3% de acerto | **5 alunos** |
-| [`tempo`](trailup_core/tempo.py) | quanto deve demorar? | R² 0,578 | 5 alunos |
+| [`tempo`](trailup_core/tempo.py) | quanto deve demorar? | R² 0,562 ± 0,010 | 5 alunos |
 | [`dominio`](trailup_core/dominio.py) | o aluno acerta a próxima? | AUC 0,727 / ECE 0,008 (regra atual: 0,587) | histórico do aluno |
 | [`chute`](trailup_core/chute.py) | não sabe, ou não tentou? | traço com +0,922 de confiabilidade | 50 respostas na questão |
 | [`revisao`](trailup_core/revisao.py) | quando trazer de volta? | AUC 0,669 / ECE 0,015 em 752 mil reencontros | nenhum |
@@ -127,7 +127,7 @@ Por isso `risco()` recebe **taxa de alerta**, não limiar: alertar os 10% de mai
 
 ## Como isto foi verificado
 
-> **Todo número de capa foi checado sob reamostragem.** Três vieram de partição favorável e foram corrigidos: o engajamento no EdNet (0,856 → **0,846 ± 0,006**), o acumulado linear do gate (0,746 → **0,732 ± 0,003**) e o 0,862 do OULAD (→ **0,868 ± 0,004**). Os demais confirmam dentro de 1,3 desvios.
+> **Todo número de capa foi checado sob reamostragem.** Três vieram de partição favorável e foram corrigidos: o engajamento no EdNet (0,856 → **0,846 ± 0,006**), o acumulado linear do gate (0,746 → **0,732 ± 0,003**), o R² do tempo (0,578 → **0,562 ± 0,010**) e o 0,862 do OULAD (→ **0,868 ± 0,004**). Os demais confirmam dentro de 1,3 desvios.
 
 O pacote passou por uma auditoria de **13 rodadas**: cada número dos cabeçalhos remedido chamando o próprio código, depois fuzzing com entrada hostil, monotonicidade ao longo do domínio inteiro, cobertura símbolo a símbolo da API e consistência entre documentos.
 

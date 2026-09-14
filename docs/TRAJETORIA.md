@@ -304,8 +304,8 @@ A semana 2 dá 0,638 — o alerta não funciona no início do curso, que é quan
 | variante | R² |
 |---|---|
 | média global | −0,045 |
-| mediana bruta da questão | 0,574 |
-| **média do log da questão** | **0,578** |
+| mediana bruta da questão | 0,558 ± 0,011 |
+| **média do log da questão** | **0,562 ± 0,010** |
 | mediana encolhida para a global (k=5) | 0,575 |
 | boosting com 14 features | 0,651 |
 

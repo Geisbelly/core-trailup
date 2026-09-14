@@ -14,7 +14,7 @@ Implementações em [`modulo/`](../README.md), sem dependência.
 |---|---|---|
 | dificuldade da questão (intervalo) | cobertura nominal; ±11 pts com 30 respostas | 30 alunos |
 | ritmo da questão | 97,3% de acerto | 5 alunos |
-| tempo esperado de resposta | R² 0,578 | 5 alunos |
+| tempo esperado de resposta | R² 0,562 ± 0,010 | 5 alunos |
 | domínio no tópico | AUC 0,727 / ECE 0,008 (regra atual 0,587) | histórico |
 | detecção de chute | traço, +0,922 | 50 respostas |
 | curva de esquecimento / revisão | AUC 0,669 / ECE 0,015 | nenhum |

@@ -10,7 +10,7 @@ Base: EdNet KT3, 6.504.124 respostas, acerto global 0,6677, split por aluno 70/3
 
 ## Resultado das 7 partes
 
-**125 verificações. 52 defeitos encontrados**, todos da mesma família: uma saída afirmando uma escala que ninguém mediu. Nenhum apareceria olhando AUC.
+**128 verificações. 53 defeitos encontrados**, todos da mesma família: uma saída afirmando uma escala que ninguém mediu. Nenhum apareceria olhando AUC.
 
 | onde | o que afirmava | o que era |
 |---|---|---|
@@ -47,6 +47,7 @@ Base: EdNet KT3, 6.504.124 respostas, acerto global 0,6677, split por aluno 70/3
 | `DF_STOPWORD` | 0,5 é indistinguível de 0,4 | rejeitei com teste inválido |
 | `engajamento` AUC | 0,856 / 0,862 | 0,846 / 0,868 (média de 12) |
 | `gate` acumulado linear | 0,746 | 0,732 ± 0,003 (média de 6) |
+| `tempo` R² | 0,574 / 0,578 | 0,558 / 0,562 ± 0,011 (média de 20) |
 
 E oito que **conferiram**: `cobertura` (+0,462) e `conceitos_faltando` (−0,410) do `pre_avaliacao`, `gate.MIN_RESPOSTAS = 5` (é o cotovelo exato: 0,534 abaixo dele, 0,660 nele), a aproximação normal do `dificuldade` (cobertura 75,3% contra 74,8% do Beta), `perfil_chute` (p90 e p99), a tabela `REFERENCIA` do engajamento (diferença 0,000), o limite de 3× do `demorando`, e `ritmo.FRONTEIRA_SEG` — cujo 40 s é praticamente o corte ótimo por Otsu (39,8 s), com d de Cohen **maior** que o documentado (4,18 contra 3,30).
 
@@ -842,6 +843,33 @@ O que não vale é citar **0,746 como o nível** da forma linear. O nível é **
 | `chute` | **0,0088** | 128 mil casos |
 
 Quem agrega **por questão ou por aluno** é cinco vezes mais sensível que quem agrega por resposta. Qualquer melhoria abaixo de 0,02 no `tempo` ou no `chute` precisa de teste pareado para ser afirmada.
+
+---
+
+## Parte 18: o ganho do `tempo` sobrevive — e mostra por que o pareamento importa
+
+A Parte 17 expôs que o ruído de partição do `tempo` é **0,012**, três vezes o ganho de **+0,004** que eu tinha afirmado sem teste pareado. Resolvendo:
+
+| | média | desvio | mín | máx |
+|---|---|---|---|---|
+| mediana bruta | 0,5580 | 0,0109 | 0,5354 | 0,5762 |
+| média do log | 0,5622 | 0,0104 | 0,5404 | 0,5784 |
+| **diferença pareada** | **+0,0043** | **0,0007** | +0,0022 | +0,0058 |
+
+**Positiva em 100% das 20 partições**, IC95 [+0,0027; +0,0055]. O ganho é real.
+
+### A demonstração vale mais que o ganho
+
+| | desvio |
+|---|---|
+| de cada medida isolada | 0,0109 |
+| **da diferença pareada** | **0,0007** |
+
+**Quinze vezes menor.** As duas estimativas sobem e descem **juntas** com a partição — dividem os mesmos alunos de treino, as mesmas questões, o mesmo teste. Só a diferença isola o efeito.
+
+É a forma mais limpa do erro da Parte 15: comparar médias soltas (ou IC sobrepostos) de medidas correlacionadas não responde à pergunta. Aqui, o mesmo dado diz "ruído" pelo método errado e "+0,0043 com 100% de consistência" pelo certo.
+
+> Os valores absolutos do cabeçalho também foram corrigidos: 0,574 e 0,578 vinham de uma partição e ficam ~1,5 desvios acima da média. Agora estão como **0,558 ± 0,011** e **0,562 ± 0,010**.
 
 ---
 
