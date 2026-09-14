@@ -1,0 +1,48 @@
+:root{
+  --tinta:#16202b; --fraco:#5b6b7c; --linha:#dde5ed; --fundo:#f6f8fa;
+  --papel:#fff; --acento:#1f6feb; --alerta:#b4331f; --ok:#1a7f4b;
+  --max:920px;
+}
+@media (prefers-color-scheme:dark){
+  :root{--tinta:#e6edf3;--fraco:#8b98a5;--linha:#2b3440;--fundo:#0d1117;
+        --papel:#161b22;--acento:#58a6ff;--alerta:#f0714f;--ok:#4ec98a;}
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--fundo);color:var(--tinta);
+  font:16px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
+main{max-width:var(--max);margin:0 auto;padding:32px 20px 80px}
+h1{font-size:1.7rem;margin:0 0 4px;letter-spacing:-.02em}
+h2{font-size:1.15rem;margin:40px 0 10px;letter-spacing:-.01em}
+p.sub{color:var(--fraco);margin:0 0 28px}
+section{background:var(--papel);border:1px solid var(--linha);border-radius:10px;
+  padding:20px 22px;margin-bottom:18px}
+label{display:block;font-size:.82rem;color:var(--fraco);margin-bottom:6px;
+  text-transform:uppercase;letter-spacing:.04em}
+.campos{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:18px}
+input[type=range]{width:100%;accent-color:var(--acento)}
+.valor{font-variant-numeric:tabular-nums;font-weight:600;font-size:1.05rem}
+select{width:100%;padding:8px;border:1px solid var(--linha);border-radius:6px;
+  background:var(--papel);color:var(--tinta);font-size:.95rem}
+.saida{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));
+  gap:16px;margin-top:22px;padding-top:20px;border-top:1px solid var(--linha)}
+.cartao .rot{font-size:.78rem;color:var(--fraco);text-transform:uppercase;
+  letter-spacing:.04em}
+.cartao .num{font-size:1.6rem;font-weight:650;font-variant-numeric:tabular-nums;
+  letter-spacing:-.02em}
+.alerta{color:var(--alerta)} .ok{color:var(--ok)}
+table{width:100%;border-collapse:collapse;font-size:.9rem;
+  font-variant-numeric:tabular-nums}
+th,td{text-align:right;padding:7px 8px;border-bottom:1px solid var(--linha)}
+th:first-child,td:first-child{text-align:left}
+th{font-weight:600;color:var(--fraco);font-size:.8rem;text-transform:uppercase;
+  letter-spacing:.03em}
+.tabela-rolavel{overflow-x:auto}
+.nota{font-size:.88rem;color:var(--fraco);margin-top:14px}
+.barra{height:9px;background:var(--linha);border-radius:5px;overflow:hidden;margin-top:5px}
+.barra i{display:block;height:100%;background:var(--acento)}
+code{background:var(--fundo);padding:2px 5px;border-radius:4px;font-size:.87em}
+.aviso{border-left:3px solid var(--alerta);padding-left:14px;margin:18px 0;
+  font-size:.92rem;color:var(--fraco)}
+footer{max-width:var(--max);margin:0 auto;padding:0 20px 50px;
+  color:var(--fraco);font-size:.85rem}
+a{color:var(--acento)}
