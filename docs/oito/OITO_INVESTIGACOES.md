@@ -10,7 +10,7 @@ Oito hipóteses testadas com o mesmo protocolo: **split que respeita a unidade d
 | 2 | Questão defeituosa | fenômeno raro no corpus; marcação imprecisa | método pronto, corpus errado |
 | 3 | Detecção de chute | validado; traço +0,922 | **sim** |
 | 4 | Curva de esquecimento | queda de 26 pontos em 6 meses | **sim** |
-| 5 | Risco de evasão | AUC 0,748 → **0,783** após o conserto do SQL | **sim**, abaixo da meta |
+| 5 | Risco de evasão | AUC 0,748 → **0,767 ± 0,012** entre coortes, após o conserto do SQL | **sim**, abaixo da meta |
 | 6 | Avaliador de resposta aberta | Spearman 0,532 (teto ≈0,88) | parcial |
 | 7 | Roteador de intenção do chat | **38% contra 60% de chutar** | **não** |
 | 8 | Dificuldade pelo texto | r = −0,929 com n=8 | inconclusivo |
@@ -119,7 +119,7 @@ As questões de intervalo longo são **mais fáceis**, não mais difíceis. A co
 
 ## 5. Risco de evasão — útil, mas abaixo da meta que eu mesmo pus
 
-> **Os números desta seção são da versão anterior ao conserto de `evasao.sql`.** A auditoria encontrou dois defeitos nos coeficientes publicados — probabilidade 11× superestimada e um sinal invertido — e o refit levou o AUC de 0,748 a **0,783**, com lift de 3,4× para **4,1×** no top 10%. Ver [a auditoria](../auditoria/AUDITORIA.md). O que segue descreve a investigação original, que continua válida como método.
+> **Os números desta seção são da versão anterior ao conserto de `evasao.sql`.** A auditoria encontrou dois defeitos nos coeficientes publicados — probabilidade 11× superestimada e um sinal invertido — e o refit levou o AUC de 0,748 a **0,767 ± 0,012** entre coortes (0,783 na coorte 2014J, a melhor das quatro), com lift de 3,4× a **4,1×** no top 10%. Ver [a auditoria](../auditoria/AUDITORIA.md). O que segue descreve a investigação original, que continua válida como método.
 
 **Dado:** OULAD, painel **aluno × semana**, **523.386 linhas**, 171.047 entregas com data.
 

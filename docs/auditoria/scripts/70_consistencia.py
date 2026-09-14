@@ -18,12 +18,15 @@ CHAVES = {
     # engajamento tem varios 0,8xx legitimos lado a lado (modelo unico, por
     # base, e a variante de janela 14 que foi rejeitada) - fora do escopo deste
     # verificador, que compara um numero por conceito.
-    'lift da evasao no top 10%':     r'lift\s*(\d,\d)×?\s*(?:no top 10%|$)',
+    # A faixa 3,4-4,1x cobre as quatro coortes; o verificador ancora no teto,
+    # que e o numero que alguem seria tentado a citar sozinho.
+    'lift da evasao no top 10%':     r'lift\s*(?:de\s*)?(?:\d,\d[–-])?(\d,\d)×\s*no top 10%',
     'numero de testes':              r'(\d{2,3}) testes de invariante',
 }
 # valores que convivem de proposito (progressao historica, variantes do modelo)
 PERMITIDOS = {
-    'evasao, AUC': {'748'},          # valor anterior ao conserto, anotado no historico
+    'evasao, AUC': {'748', '783', '770', '759', '757'},  # 748 = pre-conserto; os demais
+                                     # sao coortes individuais. O valor vigente e 767.
     'pre_avaliacao, Spearman': {'447', '451', '463', '429', '482', '532', '871', '897'},
     'dominio, AUC': {'703', '719', '721', '722', '725', '727', '753', '754', '755', '780'},
     'gate, AUC da forma fechada': {'725', '732', '738', '740', '746', '748', '779'},

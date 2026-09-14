@@ -10,7 +10,7 @@ Base: EdNet KT3, 6.504.124 respostas, acerto global 0,6677, split por aluno 70/3
 
 ## Resultado das 7 partes
 
-**128 verificações. 53 defeitos encontrados**, todos da mesma família: uma saída afirmando uma escala que ninguém mediu. Nenhum apareceria olhando AUC.
+**136 verificações. 54 defeitos encontrados**, todos da mesma família: uma saída afirmando uma escala que ninguém mediu. Nenhum apareceria olhando AUC.
 
 | onde | o que afirmava | o que era |
 |---|---|---|
@@ -49,7 +49,7 @@ Base: EdNet KT3, 6.504.124 respostas, acerto global 0,6677, split por aluno 70/3
 | `gate` acumulado linear | 0,746 | 0,732 ± 0,003 (média de 6) |
 | `tempo` R² | 0,574 / 0,578 | 0,558 / 0,562 ± 0,011 (média de 20) |
 
-E oito que **conferiram**: `cobertura` (+0,462) e `conceitos_faltando` (−0,410) do `pre_avaliacao`, `gate.MIN_RESPOSTAS = 5` (é o cotovelo exato: 0,534 abaixo dele, 0,660 nele), a aproximação normal do `dificuldade` (cobertura 75,3% contra 74,8% do Beta), `perfil_chute` (p90 e p99), a tabela `REFERENCIA` do engajamento (diferença 0,000), o limite de 3× do `demorando`, e `ritmo.FRONTEIRA_SEG` — cujo 40 s é praticamente o corte ótimo por Otsu (39,8 s), com d de Cohen **maior** que o documentado (4,18 contra 3,30).
+E doze que **conferiram**: a recalibração inteira do `dominio` (`RECAL_A`, `RECAL_B`, ponto fixo e ECE, todos dentro de 1 desvio em 8 partições, com melhora em 8/8), `cobertura` (+0,462) e `conceitos_faltando` (−0,410) do `pre_avaliacao`, `gate.MIN_RESPOSTAS = 5` (é o cotovelo exato: 0,534 abaixo dele, 0,660 nele), a aproximação normal do `dificuldade` (cobertura 75,3% contra 74,8% do Beta), `perfil_chute` (p90 e p99), a tabela `REFERENCIA` do engajamento (diferença 0,000), o limite de 3× do `demorando`, e `ritmo.FRONTEIRA_SEG` — cujo 40 s é praticamente o corte ótimo por Otsu (39,8 s), com d de Cohen **maior** que o documentado (4,18 contra 3,30).
 
 ---
 
@@ -873,6 +873,40 @@ A Parte 17 expôs que o ruído de partição do `tempo` é **0,012**, três veze
 
 ---
 
+## Parte 19: a recalibração é estável — e o `b ≈ 2` não era coincidência
+
+`RECAL_A` e `RECAL_B` foram ajustados numa partição e afetam **todo `p`** que o módulo devolve. Oito partições independentes:
+
+| | média | desvio | publicado | distância |
+|---|---|---|---|---|
+| `RECAL_A` | −0,5738 | 0,0050 | −0,5783 | 0,9 ✅ |
+| `RECAL_B` | **+1,9906** | 0,0105 | +1,9957 | 0,5 ✅ |
+| ponto fixo | 0,6409 | 0,0012 | 0,6412 | 0,3 ✅ |
+| ECE final | 0,0091 | 0,0013 | 0,0083 | 0,7 ✅ |
+
+**E melhora o ECE em 8 de 8 partições** — 0,0579 cru para 0,0091 recalibrado.
+
+O `b` fica em **1,99 em todas as oito**, com desvio de 0,01. A "compressão pela metade no logito" não era coincidência de partição: é propriedade da média linear de duas probabilidades, e a estabilidade do coeficiente é a evidência disso.
+
+É o contraste com as Partes 16 e 17: os números que mediam **desempenho** (AUC) vieram de partição favorável em três casos; os que descrevem **a forma da distorção** não se movem. Faz sentido — o primeiro depende de quais alunos caíram no teste, o segundo é geometria.
+
+### O `0,783` da evasão é a melhor das quatro coortes
+
+Mesmo teste, agora no SQL. Treinando em três apresentações da OULAD e testando na quarta:
+
+| coorte de teste | linhas | evasão | AUC | lift@10% |
+|---|---|---|---|---|
+| 2013B | 86.278 | 2,42% | 0,770 | 3,9× |
+| 2013J | 158.769 | 1,78% | 0,759 | 3,5× |
+| 2014B | 123.162 | 2,66% | 0,757 | 3,4× |
+| **2014J** | 195.797 | 2,63% | **0,783** | 4,1× |
+
+Média **0,767 ± 0,012**. O 0,783 publicado está a 1,3 desvios — não é partição sortuda no sentido grosseiro das Partes 16 e 17, mas é **o maior dos quatro**, e publicar o maior como se fosse a expectativa é a mesma classe de erro em versão branda. `README.md`, `CANDIDATOS.md`, `OITO_INVESTIGACOES.md` e o cabeçalho do `evasao.sql` passam a dizer 0,767 ± 0,012, e o lift vira a faixa 3,4–4,1× em vez do 4,1× do melhor caso.
+
+O que **não** se move: a ordenação funciona em todas as quatro coortes, com anos e semestres diferentes.
+
+---
+
 ## Mapa de cobertura da API, sem dataset
 
 ```bash
@@ -898,7 +932,7 @@ Compara o mesmo número citado em arquivos diferentes e falha se divergirem. Nã
 | | módulo dizia | documento dizia |
 |---|---|---|
 | `ritmo`, acerto com 5 | 97,3% | 96,4% (a primeira remedição, superada) |
-| `evasao`, AUC | 0,783 (refeito) | 0,748 (anterior ao conserto) |
+| `evasao`, AUC | 0,767 ± 0,012 entre coortes (refeito) | 0,748 (anterior ao conserto); 0,783 é a coorte 2014J isolada |
 | `pre_avaliacao`, Spearman | 0,483 | 0,447 (versão de 8 features) |
 
 Todas corrigidas. O valor antigo da evasão fica anotado de propósito no relatório histórico, e o verificador o conhece como exceção.

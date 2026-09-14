@@ -32,7 +32,7 @@ python3 docs/auditoria/scripts/82_monotonia.py      # direção quebrada no dom�
 | [`gate`](trailup_core/gate.py) | vale abrir a LLM agora? | AUC 0,732 (regra atual: 0,687) | 5 respostas no tópico |
 | [`engajamento`](trailup_core/engajamento.py) | o aluno vai continuar? | AUC 0,846 / 0,868 — **um modelo, duas bases** | 30 eventos |
 | [`pre_avaliacao`](trailup_core/pre_avaliacao.py) | esta resposta aberta está boa? | Spearman 0,501 (teto ≈0,88) | nenhum |
-| [`sql/evasao.sql`](sql/evasao.sql) | quem está em risco de abandonar? | AUC 0,783 / ECE 0,006; lift 4,1× no top 10% | semanas de uso |
+| [`sql/evasao.sql`](sql/evasao.sql) | quem está em risco de abandonar? | AUC 0,767 ± 0,012 entre coortes; ECE 0,006; lift 3,4–4,1× no top 10% | semanas de uso |
 
 Cada arquivo traz **no cabeçalho** os números que o sustentam, o experimento que os produziu, e o que já se provou que **não** adianta tentar.
 

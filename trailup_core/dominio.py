@@ -58,6 +58,16 @@ PRIOR_GLOBAL = 8           # encolhimento do acerto global
 # erro), e o mais alto previa 0,825 contra 0,937. ECE 0,0564.
 # Correcao de Platt em dois parametros, ajustada no treino e medida no teste:
 #   ECE 0,0564 -> 0,0083   |   AUC inalterado (0,725)   |   faixa 0,21-0,95 -> 0,04-1,00
+#
+# ESTAVEL ENTRE PARTICOES (8 particoes independentes por aluno):
+#   RECAL_A      media -0,5738 +- 0,0050   (aqui: -0,5783, 0,9 desvios)
+#   RECAL_B      media +1,9906 +- 0,0105   (aqui: +1,9957, 0,5 desvios)
+#   ponto fixo   media  0,6409 +- 0,0012   (afirmado 0,6412, 0,3 desvios)
+#   ECE final    media  0,0091 +- 0,0013   (afirmado 0,0083, 0,7 desvios)
+#
+# E melhora o ECE em 8 de 8 particoes (0,0579 medio para 0,0091). O b fica em
+# 1,99 em TODAS - a compressao pela metade no logito nao e coincidencia da
+# particao, e propriedade da media linear de duas probabilidades.
 # b ~ 2 diz o tamanho da compressao: a media linear encolhe o logito pela metade.
 #
 # PONTO FIXO = 0,6412, resolvendo a/(1-b) no logito. NAO e a taxa base do

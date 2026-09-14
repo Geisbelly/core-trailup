@@ -22,6 +22,11 @@
 -- Painel aluno x semana do OULAD (CC BY 4.0), 564.006 linhas, split por coorte
 -- (treina 2013B/2013J/2014B, testa 2014J em 195.797 linhas):
 --   AUC 0,783 | ECE 0,006 | media prevista 0,021 contra 0,026 real
+--
+-- ENTRE COORTES (treina em tres, testa na quarta):
+--   2013B 0,770 | 2013J 0,759 | 2014B 0,757 | 2014J 0,783
+--   media 0,767 +- 0,012. O 0,783 acima e a coorte 2014J, que e a MELHOR das
+--   quatro. Espere 0,767, nao 0,783. O lift no top 10% vai de 3,4x a 4,1x.
 --   alertando o top 10%: precisao 10,9%, lift 4,1x
 --   alertando o top  5%: precisao 14,7%, lift 5,6x
 --   equidade: cobertura 40% (disability=N) x 45% (Y) - sem gap contra o grupo

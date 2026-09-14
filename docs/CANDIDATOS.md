@@ -20,7 +20,7 @@ Implementações em [`modulo/`](../README.md), sem dependência.
 | curva de esquecimento / revisão | AUC 0,669 / ECE 0,015 | nenhum |
 | discriminação (questão quebrada) | 25% de precisão (lift 7,1×) com `confirmar()` | 40 respostas |
 | gate (quando abrir a LLM) | AUC 0,732 (regra atual 0,687) | 5 respostas |
-| risco de evasão (SQL) | AUC 0,783; lift 4,1× no top 10% | semanas |
+| risco de evasão (SQL) | AUC 0,767 ± 0,012 entre coortes; lift 3,4–4,1× no top 10% | semanas |
 | engajamento (recência + frequência) | AUC 0,846 / 0,868 em duas bases | 30 eventos |
 | pré-avaliação rápida de resposta | Spearman 0,501 (teto ≈0,88) | nenhum |
 
