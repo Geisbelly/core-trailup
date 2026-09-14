@@ -4,6 +4,16 @@
 
 ---
 
+> **Este módulo não chama LLM.** Os únicos imports são `re`, `collections`,
+> `dataclasses` e `math` — biblioteca padrão. Ele compara conjuntos de palavras:
+> monta um grafo de coocorrência da resposta e outro do gabarito e mede a
+> sobreposição. Custa 167 µs por resposta e roda até dentro de um navegador.
+>
+> A LLM entra em dois lugares que **não** são a execução: produziu o *rótulo*
+> contra o qual os pesos foram ajustados, e é *o que este módulo decide se vale
+> chamar*. Ele aprendeu a concordar com o GPT-4 sem precisar perguntar a ele — e
+> é daí que vem a limitação da §12.
+
 ## 1. Pergunta de negócio
 
 Toda resposta aberta do TrailUp hoje vai para a LLM — é a chamada mais frequente do fluxo. A pergunta é se dá para evitar parte disso:
@@ -119,9 +129,13 @@ Testado sem raspar nada: usar as respostas **bem avaliadas de outros alunos** da
 | + 40 melhores | 0,428 | 0,333 |
 | + todas as do treino | 0,396 | 0,361 |
 
-**Enriquecer piora**, e o modo de falhar é estrutural: quanto mais texto entra na referência, mais **genérica** ela fica — qualquer resposta cobre parte dela, e a cobertura perde poder discriminativo.
+**Enriquecer piora**, e a degradação é ordenada: passadas as primeiras poucas respostas, cada bloco novo de texto derruba mais — até 0,396, **abaixo de onde começou**. Quanto mais o modelo "sabia", menos ele sabia.
 
-**O gabarito funciona por ser preciso, não por ser rico.**
+O modo de falhar é **estrutural, não um ajuste mal feito**: quanto mais texto entra na referência, mais **genérica** ela fica. Com um corpus grande, qualquer resposta cobre alguma parte dele — inclusive a resposta ruim. A cobertura para de separar quem sabe de quem não sabe, porque tudo passa a estar "coberto".
+
+**O gabarito funciona por ser preciso, não por ser rico.** É esta tentativa que define a forma final do módulo: comparar a resposta com o gabarito e só com ele não é simplificação por preguiça — é a versão que sobreviveu ao teste. A referência tem de ser aquilo que a resposta *deveria* dizer, e nada além disso.
+
+Vale além deste modelo: **mais dado nem sempre é mais sinal.** Aqui, mais dado na referência foi literalmente menos sinal, de forma ordenada e reproduzível.
 
 ---
 

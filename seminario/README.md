@@ -136,15 +136,70 @@ uma linha de base que já é alta.
 
 ### Modelo 2 — resposta discursiva
 
-Compara o **grafo de coocorrência** da resposta com o do gabarito: quais
-conceitos aparecem, quais ligações entre conceitos, o que falta. Dez features,
-todas operações de conjunto sobre tokens — sem rede neural, sem embedding, sem
-chamada de rede.
+**Ele não chama LLM nenhuma.** Vale dizer isso primeiro, porque o nome do
+problema sugere o contrário. Os únicos imports do módulo são `re`,
+`collections`, `dataclasses` e `math` — biblioteca padrão do Python. Não há
+`requests`, não há `openai`, não há socket.
 
-Foram testadas e descartadas: enriquecer a referência com corpus do domínio
-(**piora**), camada semântica por LSA (**não acrescenta nada**), boosting sobre
-as mesmas features (pior que a logística), e um encoder multilíngue pré-treinado
-(+0,057 ao custo de ~900 MB de dependência).
+O que ele faz é **comparar dois conjuntos de palavras**. Pega os tokens da
+resposta e os do gabarito, monta de cada um um **grafo de coocorrência**
+(palavras a até 4 posições de distância viram uma aresta) e mede a
+sobreposição: quantos conceitos do gabarito aparecem, quantas ligações entre
+conceitos, quanto ficou de fora. São dez contagens desse tipo, combinadas por
+uma soma ponderada de pesos fixos. É aritmética sobre conjuntos.
+
+Por isso ele custa 167 microssegundos e roda inteiro dentro do navegador na
+página do protótipo — não haveria como, se dependesse de chamada externa.
+
+**Onde a LLM entra, e onde não entra:**
+
+| momento | chama LLM? |
+|---|---|
+| ajuste dos pesos | **indiretamente** — o *rótulo* que ele aprendeu a imitar é nota de GPT-4 |
+| rodar o modelo numa resposta | **não, nunca** |
+| depois da decisão | é a LLM que ele decide se vale a pena chamar |
+
+Ou seja: ele aprendeu a **concordar com o GPT-4**, mas para fazer isso não
+precisa perguntar nada a ele. É essa exatamente a função — decidir barato quem
+precisa da chamada cara.
+
+#### Por que o grafo sai do gabarito, e não de um corpus treinado
+
+Não foi assim que começamos. A primeira ideia era a intuitiva: **alimentar o
+modelo com mais texto do domínio** para que ele "soubesse mais" de
+macroeconomia e julgasse melhor. O gabarito é curto (mediana de 466
+caracteres), e parecia pobre demais para servir de referência.
+
+Testamos enriquecer a referência com as respostas **bem avaliadas de outros
+alunos** da mesma tarefa — sem raspar nada da internet, e com o aluno avaliado
+nunca entrando na própria referência:
+
+| o que forma a referência | Spearman | QWK |
+|---|---|---|
+| **só o gabarito** | **0,486** | **0,415** |
+| + as 5 melhores respostas | 0,497 | 0,390 |
+| + as 15 melhores | 0,490 | 0,407 |
+| + as 40 melhores | 0,428 | 0,333 |
+| + todas as do treino | **0,396** | 0,361 |
+
+**Quanto mais ele sabia, menos ele sabia.** A degradação é ordenada: passadas as
+primeiras poucas respostas, cada bloco de texto novo piora o resultado, até
+0,396 — abaixo de onde tinha começado.
+
+E o modo de falhar é **estrutural, não um ajuste mal feito**: quanto mais texto
+entra na referência, mais **genérica** ela fica. Com um corpus grande, qualquer
+resposta cobre alguma parte dele — inclusive a resposta ruim. A cobertura para
+de separar quem sabe de quem não sabe, porque tudo passa a estar "coberto".
+
+Daí a forma final do modelo: **o gabarito funciona por ser preciso, não por ser
+rico.** A referência tem de ser aquilo que a resposta *deveria* dizer, e nada
+além disso. Comparar a resposta com o gabarito e só com ele não é simplificação
+por preguiça — é a versão que sobreviveu ao teste.
+
+Também foram testadas e descartadas: camada semântica por LSA (**não acrescenta
+nada** — 0,459 sem ela contra 0,458 com ela), boosting sobre as mesmas features
+(pior que a logística) e um encoder multilíngue pré-treinado (+0,057 ao custo de
+~900 MB de dependência).
 
 ---
 
@@ -216,6 +271,13 @@ por resposta**, contra 1 a 3 segundos de uma chamada de LLM.
 
 ## 6. O que não funcionou
 
+**Treinar o modelo 2 com um corpus do domínio — a primeira ideia, e a que mais
+demorou a morrer.** Alimentar a referência com mais texto piorou de forma
+ordenada, de 0,486 com só o gabarito a **0,396** com todas as respostas do
+treino. Quanto mais ele sabia, menos ele sabia: referência grande fica genérica,
+qualquer resposta cobre parte dela, e a cobertura perde o poder de separar. O
+detalhe e a tabela estão no item 4.
+
 **O volume, que era o achado mais bonito.** "Eventos por sessão" tinha sinal
 forte no EdNet. Ao levar para o OULAD, descobrimos algo pior que um resultado
 fraco: **não dá para calcular lá**, porque a base registra o dia e não a hora.
@@ -272,10 +334,11 @@ adultos, em contextos que não são o de uma escola brasileira. **A ordem
 transfere entre plataformas; o nível não transfere de jeito nenhum** — qualquer
 uso novo exige recalibrar com dado próprio antes de acreditar no número.
 
-**No modelo 2: o alvo do treino é uma nota de LLM, não humana.** Ele aprende a
-concordar com o GPT-4 — e o GPT-4 pode estar errado de forma sistemática, sem
-que nada nesta medição consiga perceber. Não há nota humana no corpus para
-comparar.
+**No modelo 2: o alvo do treino é uma nota de LLM, não humana.** O modelo não
+chama LLM para funcionar, mas foi ajustado para **concordar com o GPT-4** — e o
+GPT-4 pode estar errado de forma sistemática, sem que nada nesta medição consiga
+perceber. Não há nota humana no corpus para comparar. É a limitação que nenhum
+número deste trabalho consegue contornar.
 
 E os pesos foram ajustados em texto **alemão**, de uma única disciplina. As
 features são agnósticas de idioma — são operações de conjunto sobre tokens — mas

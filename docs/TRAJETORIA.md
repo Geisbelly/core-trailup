@@ -68,7 +68,7 @@ Esse padrão não foi hipótese inicial. Foi o que sobrou.
 
 1. Regra medida: AUC 0,587, **ECE 0,201**, e **0,486 nas 5 primeiras respostas** — IC inteiro abaixo de 0,50, ou seja anti-informativa justo onde o TrailUp opera. Satura: o ponto de equilíbrio é 46,7% de acerto.
 2. Boosting com 25 features: 0,753.
-3. **Erro de alvo.** Eu usava `1 − p(acerta a próxima)` como sinal do gate. Medido contra o alvo real ("vai travar no tópico"), o proxy dá 0,698 **contra 0,761 da regra que ia substituir**. Teria ido a produção piorando o gate. Viraram dois modelos.
+3. **Erro de alvo.** Usávamos `1 − p(acerta a próxima)` como sinal do gate. Medido contra o alvo real ("vai travar no tópico"), o proxy dá 0,698 **contra 0,761 da regra que ia substituir**. Teria ido a produção piorando o gate. Viraram dois modelos.
 4. **Rótulo contaminado.** 21,7% das linhas eram tentativas intermediárias contadas como resposta final. Acurácia medida 0,577, real 0,668. A contaminação **inflava o comportamento**, porque tentativa intermediária *é* comportamento. Corrigido, a leitura inverte: só-comportamento cai de 0,683 para 0,641, e a questão sozinha sobe de 0,667 para 0,706.
 5. **Vazamento por aspas de shell.** `for a in "proxima base"` fazia `ALVO="proxima base"`, o guard nunca disparava, e latência da própria questão entrava para prever aquela resposta. AUC 0,764, contaminado. Blindado com lista `POSTERIOR` e `assert`.
 6. Três apostas de feature renderam quase nada: 189 tags de habilidade +0,001, latência e hesitação +0,003, janela recente +0,007.
@@ -216,9 +216,9 @@ Dividir os alunos em duas metades e exigir que a **média** seja negativa quase 
 4. **Reencontro quebra independência.** 11,6% das respostas do EdNet são reencontro; passar `alunos` corrige de 88,9% para 90,1% em n=100.
 5. `k=4` imposto às questões → HDBSCAN, DP-GMM e Mean Shift encontram **2 grupos**, separados pelo **tempo** (d de Cohen 3,30 entre os grupos; 4,18 no corte de 40 s, que é o ótimo por Otsu), e o eixo do acerto é contínuo. Daí a regra de desenho: **categoria no que é discreto, intervalo no que é contínuo**.
 
-**Revisão de 2026-09-13.** O relatório afirmava que a cobertura degradava em n alto (77,6% em n=200). **Estava errado, e o erro era meu de novo:** o alvo da validação (taxa numa amostra de validação) tem ruído próprio comparável à largura do intervalo. Contabilizando esse ruído, a cobertura é **88 a 91% de n=50 a n=400+** — estável. O estimador estava certo.
+**Revisão de 2026-09-13.** O relatório afirmava que a cobertura degradava em n alto (77,6% em n=200). **Estava errado, e o erro era nosso de novo:** o alvo da validação (taxa numa amostra de validação) tem ruído próprio comparável à largura do intervalo. Contabilizando esse ruído, a cobertura é **88 a 91% de n=50 a n=400+** — estável. O estimador estava certo.
 
-**O defeito real, esse sim.** O intervalo de `estimar()` responde *"qual é a dificuldade desta questão"*. A pergunta do professor é *"quanto a minha turma de 30 vai acertar"* — e para essa, o intervalo cobre **39,7%** das turmas.
+**O defeito real, esse sim.** O intervalo de `estimar()` responde *"qual é a dificuldade desta questão"*. A pergunta do professor é *"quanto a minha turma de 30 vai acertar"* (a dele, não a nossa) — e para essa, o intervalo cobre **39,7%** das turmas.
 
 | turma | `estimar()` | `prever_turma()` |
 |---|---|---|
@@ -382,7 +382,7 @@ AUC 0,748 com split **por coorte** (treina em 2013B/2013J/2014B, testa em 2014J)
 
 A semana 2 dá 0,638 — o alerta não funciona no início do curso, que é quando mais se quereria. Alertando os 10%: precisão 12,3% contra base 3,6%, **lift 3,4×**. Sem gap de cobertura por `disability`.
 
-**Minha explicação para o resultado fraco estava errada.** Eu escrevi que a causa provável era *"conjunto de features magro — cliques agregados, sem quebra por tipo de recurso"*. Testado (2026-09-13), quebrando os cliques em conteúdo / social / prova / navegação / apoio, mais a diversidade de recursos tocados:
+**Nossa explicação para o resultado fraco estava errada.** Tínhamos escrito que a causa provável era *"conjunto de features magro — cliques agregados, sem quebra por tipo de recurso"*. Testado (2026-09-13), quebrando os cliques em conteúdo / social / prova / navegação / apoio, mais a diversidade de recursos tocados:
 
 | conjunto | AUC | AP | lift@10% |
 |---|---|---|---|
@@ -453,7 +453,7 @@ Depois das melhorias, veio uma auditoria em **19 rodadas**. Cada número dos cab
 
 **2. Consertar uma escala deixa órfão quem corta nela.** Aconteceu **três vezes**: `precisa_reforco` (2,3% → 12,2% de disparo), o limiar de `tendencia` (passaria a disparar com metade da evidência) e as faixas do `evasao.sql` (que ficaram pegando **0,27%** dos casos — precisão alta, cobertura nula).
 
-**3. Corrigir um sintoma sem varrer os vizinhos.** O parâmetro com nome invertido apareceu no `gate`; eu corrigi e **não olhei o `dominio`**, que tinha o mesmo defeito no parâmetro principal. Passar 0,9 como "questão difícil" devolvia `p = 0,890`. A raiz era uma convenção do pacote inteiro — dificuldade é sempre **taxa de acerto** — agora declarada no `__init__.py`.
+**3. Corrigir um sintoma sem varrer os vizinhos.** O parâmetro com nome invertido apareceu no `gate`; corrigimos e **não olhamos o `dominio`**, que tinha o mesmo defeito no parâmetro principal. Passar 0,9 como "questão difícil" devolvia `p = 0,890`. A raiz era uma convenção do pacote inteiro — dificuldade é sempre **taxa de acerto** — agora declarada no `__init__.py`.
 
 **4b. Usar um teste que não testa.** Rejeitei uma melhoria real do `pre_avaliacao` porque os intervalos de confiança se sobrepunham — o que não é um teste para medidas correlacionadas. A diferença **pareada** era +0,019, positiva em 100% das reamostras. Descartei sinal achando que estava sendo rigoroso.
 

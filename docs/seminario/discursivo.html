@@ -30,8 +30,10 @@ nav a[aria-current]{color:var(--tinta);font-weight:600;text-decoration:underline
 
   <h1>Vale abrir a LLM para esta resposta?</h1>
   <p class="sub">Compara o grafo de coocorrência da resposta com o do gabarito.
-  Dez features, todas operações de conjunto sobre tokens — sem rede neural, sem
-  embedding, sem chamada de rede. Roda enquanto você digita.</p>
+  Dez features, todas operações de conjunto sobre tokens — <strong>sem rede
+  neural, sem embedding e sem chamar LLM nenhuma</strong>. É aritmética sobre
+  conjuntos de palavras, e é por isso que roda inteiro aqui no seu navegador,
+  enquanto você digita.</p>
 
   <section>
     <h2 style="margin-top:0">Escreva uma resposta</h2>
@@ -143,10 +145,40 @@ nav a[aria-current]{color:var(--tinta);font-weight:600;text-decoration:underline
   </section>
 
   <section>
+    <h2 style="margin-top:0">Por que a referência é só o gabarito</h2>
+    <p class="nota" style="margin-top:0">Não foi assim que começamos. A primeira
+    ideia era alimentar o modelo com mais texto do domínio, para que ele
+    "soubesse mais". Enriquecemos a referência com as respostas bem avaliadas de
+    outros alunos da mesma tarefa:</p>
+    <div class="tabela-rolavel">
+      <table>
+        <thead><tr><th>o que forma a referência</th><th>Spearman</th></tr></thead>
+        <tbody>
+          <tr><td><strong>só o gabarito</strong></td><td><strong>0,486</strong></td></tr>
+          <tr><td>+ as 5 melhores respostas</td><td>0,497</td></tr>
+          <tr><td>+ as 15 melhores</td><td>0,490</td></tr>
+          <tr><td>+ as 40 melhores</td><td>0,428</td></tr>
+          <tr><td>+ todas as do treino</td><td><strong>0,396</strong></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="nota"><strong>Quanto mais ele sabia, menos ele sabia.</strong> E o
+    modo de falhar é estrutural: quanto mais texto entra na referência, mais
+    <em>genérica</em> ela fica — com um corpus grande, qualquer resposta cobre
+    alguma parte dele, inclusive a ruim, e a cobertura para de separar quem sabe
+    de quem não sabe.</p>
+    <p class="nota">O gabarito funciona por ser <strong>preciso</strong>, não por
+    ser rico. Comparar só com ele não é simplificação por preguiça — é a versão
+    que sobreviveu ao teste.</p>
+  </section>
+
+  <section>
     <h2 style="margin-top:0">O que este modelo <em>não</em> faz</h2>
     <p class="nota" style="margin-top:0">
-    O alvo do treino é uma <strong>nota de LLM, não humana</strong> — ele aprende
-    a concordar com o GPT-4, não a avaliar. Os pesos foram ajustados em texto
+    O alvo do treino é uma <strong>nota de LLM, não humana</strong> — ele foi
+    ajustado para concordar com o GPT-4, não para avaliar. Se o GPT-4 erra de
+    forma sistemática, ele aprende a errar junto, e nada nesta medição consegue
+    perceber. Os pesos foram ajustados em texto
     <strong>alemão</strong>, de macroeconomia: as features são agnósticas de
     idioma, os pesos não. Até haver ~100 respostas em português com nota humana,
     use só para <strong>ordenar</strong>. E 87% das notas do corpus são 3 ou 4,

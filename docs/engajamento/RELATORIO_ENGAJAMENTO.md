@@ -447,7 +447,7 @@ O estudo teve três rodadas. As duas primeiras publicaram números que as seguin
 
 **A recência apareceu.** Ganho de +4,1 e +4,6 pontos de AUC sobre o desenho de três eixos, nas duas bases.
 
-**Uma hipótese minha, errada.** Eu esperava que usar **percentil** em vez de valor absoluto consertasse a transferência entre bases. Testei: AUC praticamente igual (0,866 / 0,844) e **ECE ainda pior** (0,596 / 0,655). Normalizar a *feature* não conserta uma diferença que está na *prevalência do desfecho*.
+**Uma hipótese nossa, errada.** Esperávamos que usar **percentil** em vez de valor absoluto consertasse a transferência entre bases. Testamos: AUC praticamente igual (0,866 / 0,844) e **ECE ainda pior** (0,596 / 0,655). Normalizar a *feature* não conserta uma diferença que está na *prevalência do desfecho*.
 
 **AUC e calibração andaram em direções opostas.** A logística linear sobre os novos eixos ganhou AUC e **piorou o ECE** (0,049 contra 0,031 do desenho anterior) — a relação entre dias recentes e retenção não é linear no logito. Tratar a recência como **categoria** recuperou: ECE 0,015. Otimizar só AUC teria piorado o produto, porque o número exibido é o que o professor lê.
 

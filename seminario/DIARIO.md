@@ -249,6 +249,63 @@ Lição, e ela é sobre biblioteca e não sobre modelo: **uma API que deixa omit
 parâmetro importante em silêncio produz resultado plausível e errado.** O
 defeito foi documentado no módulo, com os dois números lado a lado.
 
+## 14/09 — a primeira ideia para o modelo 2, e por que ela morreu
+
+Antes de chegar na forma final, tentamos o caminho que parecia óbvio:
+**alimentar o modelo com um corpus do domínio** para que ele "soubesse mais" de
+macroeconomia. O gabarito é curto — mediana de 466 caracteres — e parecia pobre
+demais para servir sozinho de referência.
+
+Enriquecemos a referência com as respostas bem avaliadas de outros alunos da
+mesma tarefa. Sem raspar nada da internet, e com o cuidado de o aluno avaliado
+nunca entrar na própria referência:
+
+| referência | Spearman |
+|---|---|
+| só o gabarito | **0,486** |
+| + as 5 melhores respostas | 0,497 |
+| + as 15 melhores | 0,490 |
+| + as 40 melhores | 0,428 |
+| + todas as do treino | **0,396** |
+
+**Quanto mais ele sabia, menos ele sabia.** As primeiras cinco respostas até dão
+um ganho pequeno, e depois disso cada bloco de texto novo piora — até 0,396,
+abaixo de onde tinha começado.
+
+Passamos um tempo achando que era erro de ajuste. Não era. O modo de falhar é
+**estrutural**: quanto mais texto entra na referência, mais **genérica** ela
+fica. Com um corpus grande, qualquer resposta cobre alguma parte dele —
+inclusive a resposta ruim. A cobertura para de separar quem sabe de quem não
+sabe, porque tudo passa a estar "coberto".
+
+Foi isso que definiu a forma final: **comparar a resposta com o gabarito, e só
+com ele.** Não é simplificação por preguiça — é a versão que sobreviveu. O
+gabarito funciona por ser **preciso**, não por ser rico. A referência tem de ser
+aquilo que a resposta deveria dizer, e nada além.
+
+Lição que vale além deste modelo: **mais dado nem sempre é mais sinal.** Aqui,
+mais dado na referência foi literalmente menos sinal, de forma ordenada e
+reproduzível.
+
+## 14/09 — deixando claro: o modelo não chama LLM
+
+Uma pergunta que apareceu e que vale registrar, porque a banca vai fazer: esse
+modelo chama LLM?
+
+**Não. Ele não chama nada.** Conferimos nos imports do módulo: `re`,
+`collections`, `dataclasses` e `math` — tudo biblioteca padrão. Zero ocorrências
+de `requests`, `openai`, `urllib` ou socket. É aritmética sobre conjuntos de
+palavras, e é por isso que ele custa 167 microssegundos e roda dentro do
+navegador na página do protótipo.
+
+A LLM aparece em dois lugares que não são a execução: ela produziu o **rótulo**
+contra o qual os pesos foram ajustados, e ela é **o que o modelo decide se vale
+chamar**. Ou seja, ele aprendeu a concordar com o GPT-4 sem precisar perguntar
+nada a ele.
+
+Escrito no README porque a distinção é fácil de errar, e porque a parte
+"aprendeu a concordar com o GPT-4" é a limitação mais séria do trabalho.
+
 ## 14/09 — o teto não é 1,00
 
 O corpus tem **três avaliações independentes do mesmo LLM** para cada resposta.
