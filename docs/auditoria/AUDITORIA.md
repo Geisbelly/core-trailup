@@ -10,7 +10,7 @@ Base: EdNet KT3, 6.504.124 respostas, acerto global 0,6677, split por aluno 70/3
 
 ## Resultado das 7 partes
 
-**141 verificações. 58 defeitos encontrados**, todos da mesma família: uma saída afirmando uma escala que ninguém mediu. Nenhum apareceria olhando AUC.
+**149 verificações. 59 defeitos encontrados**, todos da mesma família: uma saída afirmando uma escala que ninguém mediu. Nenhum apareceria olhando AUC.
 
 | onde | o que afirmava | o que era |
 |---|---|---|
@@ -49,7 +49,7 @@ Base: EdNet KT3, 6.504.124 respostas, acerto global 0,6677, split por aluno 70/3
 | `gate` acumulado linear | 0,746 | 0,732 ± 0,003 (média de 6) |
 | `tempo` R² | 0,574 / 0,578 | 0,558 / 0,562 ± 0,011 (média de 20) |
 
-E doze que **conferiram**: a recalibração inteira do `dominio` (`RECAL_A`, `RECAL_B`, ponto fixo e ECE, todos dentro de 1 desvio em 8 partições, com melhora em 8/8), `cobertura` (+0,462) e `conceitos_faltando` (−0,410) do `pre_avaliacao`, `gate.MIN_RESPOSTAS = 5` (é o cotovelo exato: 0,534 abaixo dele, 0,660 nele), a aproximação normal do `dificuldade` (cobertura 75,3% contra 74,8% do Beta), `perfil_chute` (p90 e p99), a tabela `REFERENCIA` do engajamento (diferença 0,000), o limite de 3× do `demorando`, e `ritmo.FRONTEIRA_SEG` — cujo 40 s é praticamente o corte ótimo por Otsu (39,8 s), com d de Cohen **maior** que o documentado (4,18 contra 3,30).
+E doze que **conferiram**: a recalibração inteira do `dominio` (`RECAL_A`, `RECAL_B`, ponto fixo e ECE, todos dentro de 1 desvio em 8 partições, com melhora em 8/8), `cobertura` (+0,462) e `conceitos_faltando` (−0,410) do `pre_avaliacao`, `gate.MIN_RESPOSTAS = 5` (é o cotovelo exato: 0,534 abaixo dele, 0,660 nele), a aproximação normal do `dificuldade` (cobertura 75,3% contra 74,8% do Beta), `perfil_chute` (p90 e p99), a tabela `REFERENCIA` do engajamento (diferença 0,000), o limite de 3× do `demorando`, e `ritmo.FRONTEIRA_SEG` — cujo 40 s é praticamente o corte ótimo por Otsu (39,8 s), com d de Cohen 4,18 nesse corte. Os 4,18 **não corrigem** os 3,30 do cabeçalho: aqueles medem a separação entre os grupos do HDBSCAN, estes a separação no corte de 40 s, e o corte ótimo separa mais que uma fronteira difusa.
 
 ---
 
@@ -344,7 +344,7 @@ Maximizando a separação entre as duas nuvens no log da mediana (critério de O
 
 | | |
 |---|---|
-| d de Cohen no corte de 40 s | **4,18** (o relatório dizia 3,30) |
+| d de Cohen no corte de 40 s | **4,18** (os 3,30 do relatório são entre os grupos do HDBSCAN — outra partição) |
 | questões classificadas "rápidas" | 65% |
 | distribuição das medianas | p25 18 s · **p50 22 s** · **p75 64 s** · p90 95 s |
 
@@ -955,6 +955,39 @@ Então `__str__` passa a mostrar a faixa e a nota com a incerteza (`medio (~3,6/
 Calibrar o viés foi testado antes de descartar — regressão linear com holdout por tarefa. Remove o viés (+5,9 → 0,0) mas **não reduz o erro**: ganho −0,48 pontos, IC95 [−1,34, +0,19], melhora em 3/5 dobras. Trocar um número errado por outro número errado sem ganho medido é ruído, não conserto.
 
 Dois defeitos menores no mesmo bloco: `faixa_percentual` comparava o percentual **arredondado**, de modo que uma nota 3,9999 virava 75,0 e subia de faixa sozinha; e `percentual_estimado` saía de 0–100 se o `PreAvaliacao` fosse construído direto, já que a trava do 1–5 está no `avaliar`, não na classe. Ambos com teste.
+
+---
+
+### `confirmar` reproduz na precisão, mas o `lift 7,1×` não é do método
+
+`discriminacao.confirmar` marca uma questão como suspeita quando a média das discriminações em duas metades de alunos é negativa. Publicado: **25,0% de precisão, lift 7,1×**, medido numa partição só. Refazendo o desenho original (três partições de alunos — duas para marcar, uma nunca vista para conferir) em 8 sementes:
+
+| semente | 7 | 11 | 23 | 42 | 101 | 2026 | 314 | 999 |
+|---|---|---|---|---|---|---|---|---|
+| precisão | 25,0% | 23,0% | 22,9% | 26,7% | 25,0% | 17,5% | 24,7% | 15,5% |
+
+Precisão média **22,5% ± 4,0%** — o 25,0% publicado está a 0,6 desvios. **Confere.**
+
+O lift, no mesmo experimento, dá **2,9× ± 0,6** contra os 7,1× publicados — 7,4 desvios. Parece que uma das duas afirmações está errada. Nenhuma está: **o lift é a precisão dividida por uma base que o arranjo de medição escolhe.**
+
+A base é a fração de questões que saem negativas na partição de conferência, e isso depende de quão ruidosa essa partição é. Variando só o mínimo de respostas por questão, sem tocar na regra:
+
+| mínimo de respostas | base (denominador) | precisão | lift |
+|---|---|---|---|
+| 20 | 10,42% | 20,6% | **2,0×** |
+| 30 | 7,70% | 22,5% | **2,9×** |
+| 60 | 2,88% | 20,0% | **6,9×** |
+| 120 | 0,66% | 0% | **0,0×** |
+
+A regra é a mesma nas quatro linhas. A precisão mal se move entre 20 e 60. O lift vai de 2,0× a 6,9× — e em 60 respostas ele reproduz o 7,1× publicado quase exatamente (0,0 desvios), porque é aí que a base bate com os 3,53% do experimento original.
+
+A última linha é o outro limite, e é operacional: em 120 respostas por questão a regra marca **2 questões** e nenhuma confirma. Exigir evidência demais não deixa o método mais preciso — deixa ele mudo. O `MIN_RESPOSTAS = 40` do módulo fica entre os dois regimes.
+
+**Padrão 6: razão herda a instabilidade do denominador.** Precisão é uma propriedade da regra. Lift é uma propriedade da regra **e** do arranjo — exigir mais respostas por questão limpa o ruído da conferência, derruba a base, e infla o lift sem que nada tenha melhorado. Citar `lift 7,1×` sozinho promete um ganho que some quando outra pessoa usa outro limiar.
+
+`README.md` passa a citar **22,5% ± 4,0 de precisão contra 13,8% de uma medida só** — a comparação entre as duas regras, que foi feita no mesmo arranjo e por isso é válida. O cabeçalho do módulo mantém o lift, agora com a base ao lado e a dependência declarada.
+
+E fica valendo o que o módulo já dizia: três em cada quatro marcações são falso positivo. Serve para ordenar fila de revisão humana, não para despublicar questão.
 
 ---
 

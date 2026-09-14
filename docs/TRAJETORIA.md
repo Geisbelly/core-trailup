@@ -2,9 +2,23 @@
 
 Um documento por modelo existe em `docs/`. Este aqui é o caminho: o que foi tentado, o que caiu, e por quê. Serve para não repetir tentativa já refutada, e para auditar de onde vem cada número.
 
-**Estado em 2026-09-13:** 10 módulos em uso, 7 hipóteses descartadas, 1 na fila, 136 testes, 5 verificadores automáticos.
+**Estado em 2026-09-13:** 10 módulos Python + 1 consulta SQL em uso, 7 hipóteses descartadas, 1 na fila, 141 testes, 5 verificadores automáticos.
 
-Este documento tem duas partes: **como cada modelo chegou ao estado atual** (§1 a §10) e **a auditoria que veio depois** — 97 verificações, 49 defeitos, todos corrigidos.
+Este documento tem duas partes: **como cada modelo chegou ao estado atual** (§1 a §10) e **a auditoria que veio depois** — 141 verificações, 58 defeitos, todos corrigidos.
+
+**Como ler cada seção.** Todas seguem a mesma forma, porque todas percorreram as mesmas fases:
+
+| fase | a pergunta | o que a resposta produz |
+|---|---|---|
+| 1. hipótese | o que eu acho que dá para medir? | uma afirmação que pode estar errada |
+| 2. alvo | medir contra **o quê**? | o rótulo — é aqui que mais se erra |
+| 3. partição | quem fica de fora do treino? | por aluno, ou por coorte; nunca por linha |
+| 4. medida | qual número decide? | AUC ordena, ECE calibra, cobertura promete |
+| 5. baseline | ganha de quê? | da regra que já está em produção |
+| 6. replicação | sobrevive noutra realidade? | ou vira escopo declarado |
+| 7. estabilidade | o número se move entre partições? | média ± desvio, nunca um split só |
+
+A fase 2 é a que mais derrubou trabalho aqui: o gate treinado no alvo errado dava 0,698 contra 0,761 da regra que ia substituir. A fase 7 foi a última a existir, e ao ser aplicada retroativamente derrubou **três números já publicados**.
 
 ---
 
@@ -108,6 +122,88 @@ Daí o módulo combinar as duas, meio a meio. E daí a ressalva honesta: o boost
 
 ---
 
+## 2b. Gate — vale abrir a LLM?
+
+É a decisão mais cara do sistema: cada disparo é uma passagem por `agente_conteudo` e, quando `gerar_materiais` abre, por `agente_geracao_midia` — 13 a 29 chamadas de texto, TTS e 10 a 18 imagens por perfil × tópico. Errar para mais queima orçamento; errar para menos deixa o aluno travado.
+
+**Alvo (fase 2).** A taxa de acerto nas **próximas 10 respostas do mesmo tópico** ficar abaixo de 50%. Não é "acerta a próxima": uma questão difícil derruba aquela probabilidade sem que o aluno esteja travado. Treinar no alvo errado dá **0,698 — pior que a regra que ia substituir**. Foi este módulo que produziu a lição da fase 2.
+
+**Caminho.** Medido no EdNet, split por aluno, 1.721.188 pontos de decisão, taxa base 12,2%:
+
+| critério | AUC | prec@5% | prec@10% | lift@10% |
+|---|---|---|---|---|
+| regra do TrailUp | 0,687 | 40,8% | 32,9% | 2,7× |
+| acerto acumulado no tópico | 0,720 | 36,3% | 31,0% | 2,5× |
+| forma fechada (3 termos) | 0,725 | 37,0% | 33,0% | 2,7× |
+| **esta (fechada + regra)** | **0,732** | 40,0% | **33,9%** | **2,8×** |
+| boosting com 30 features | 0,779 | — | 41,7% | 3,4× |
+
+**Por que combinar com a regra, que é pior.** A regra **satura** — 27,7% das estimativas ficam no teto. Como estimativa isso é defeito. Mas no extremo inferior a saturação vira informação: os 0,9% de alunos presos no piso têm **57,3%** de taxa de alvo, contra 12,2% da base. A forma suave não marca esses casos, e é por isso que sozinha ela perde no ponto de 5%. O `sequencial()` reproduz a saturação **de propósito**.
+
+**O gap não é de não-linearidade — isso foi testado, não suposto.** Exportar toda a interação entre as quatro variáveis como tabela de consulta (1.646 células):
+
+| | AUC |
+|---|---|
+| só o acumulado, linear | 0,746 |
+| tabela de 1.646 células | 0,746 |
+| tabela + linear | 0,748 |
+| boosting com 30 features | 0,779 |
+
+A tabela captura **toda** interação possível entre essas quatro variáveis e não ganha nada. O que separa 0,748 de 0,779 são as **outras 26 features**, não a forma da função. Fechar o gap exige instrumentação nova, não aritmética mais esperta.
+
+**Estabilidade (fase 7).** O 0,746 da forma linear é de **uma partição**. Em 6 partições independentes a média é 0,7323 ± 0,0027 — o valor publicado estava **5,1 desvios acima**. A *comparação* entre tabela e linear continua válida, porque as duas foram medidas na mesma partição (teste pareado); o que não vale é citar 0,746 como o nível da forma linear.
+
+**Auditoria.** Chamando `risco()` sobre 1.627.217 pontos de decisão: AUC 0,738, precisão 33,7% no ponto de 10%. Confere. E dois parâmetros chamados `dificuldade` recebiam **facilidade** — passar 0,9 como "muito difícil" devolvia risco baixo. Daí a convenção de sinal declarada no `__init__.py`.
+
+---
+
+## 3b. Ritmo — a única coisa que virou categoria
+
+**Por que existe uma categoria aqui e intervalo em todo o resto.** A forma dos grupos **não foi escolhida**. Três métodos que descobrem a quantidade de grupos rodaram sobre 10.526 questões do EdNet; o único estável (HDBSCAN, ARI 1,000 variando seu parâmetro de 50 a 400) encontrou **dois** grupos, separados quase inteiramente pelo **tempo** — d de Cohen 3,30 na latência contra 0,50 no acerto.
+
+*(Os 3,30 medem a separação entre os grupos que o HDBSCAN achou. O corte fixo de 40 s separa mais — d = 4,18 — porque é o corte ótimo, enquanto a fronteira do agrupamento é difusa nas bordas. Duas partições diferentes, não uma correção da outra.)*
+
+Consequência de desenho, e é a regra do pacote inteiro: **categoria no que é discreto, intervalo no que é contínuo.** O acerto não tem estrutura de grupo, então vai como faixa (`dificuldade.py`). Só o ritmo vira rótulo.
+
+**A fronteira de 40 s não foi escolhida a olho.** Maximizando a separação entre as duas nuvens no log da mediana (critério de Otsu) sobre 11.421 questões, o corte ótimo é **39,8 s** — d de Cohen 4,18. O salto de 22 s (p50) para 64 s (p75) é a bimodalidade que justifica ter duas categorias.
+
+**O defeito que a auditoria achou.** A tabela de confiança dizia `(5, .98), (10, .99), (21, 1.0)` — afirmava **certeza** em n=21, que nunca é verdade. Remedido contra a classificação feita sobre 200+ respostas, 8.673 questões, três reamostragens: o teto real é **0,997**. E o formato `{:.0%}` exibia 0,997 como "100%", o que reintroduzia a mesma mentira no display. Passou a uma casa decimal.
+
+---
+
+## 3c. Discriminação — o módulo que deve valer mais no produto do que no corpus
+
+**Hipótese.** Se os alunos que mais acertam no geral **erram** esta questão, algo está errado: gabarito trocado, enunciado ambíguo, distrator melhor que a resposta.
+
+**O achado que quase matou o módulo.** Medido no EdNet (10.636 questões, duas metades independentes de alunos), discriminação média 0,208:
+
+- negativa numa metade dos alunos: **2,96%** (315 questões)
+- negativa **nas duas** metades: **0,53%** (56 questões)
+
+A queda de 2,96% para 0,53% é o resultado: a maior parte do que aparece como negativo numa metade **não aparece na outra** — é ruído amostral, não defeito. É banco comercial curado; item quebrado não sobrevive ali.
+
+**Por que fica mesmo assim.** No TrailUp as questões são escritas por professor **e geradas por IA**. Item com gabarito errado ou distrator ambíguo é esperado, não excepcional. É um dos poucos métodos que deve valer **mais** no produto do que valeu no corpus de referência — e a única forma honesta de dizer isso é declarar que o número de referência subestima.
+
+**Como marcar (fase 4 e 5).** Três partições de alunos: duas para marcar, uma nunca vista para conferir. Alvo: ser negativa na terceira partição (prevalência 3,53%).
+
+| regra | marca | precisão | lift |
+|---|---|---|---|
+| negativa numa partição | 239 | 13,8% | 3,9× |
+| negativa em p0 **ou** p1 | 549 | 12,2% | 3,5× |
+| **média das duas < 0** | **132** | **25,0%** | **7,1×** |
+| negativa nas **duas** | 39 | 28,2% | 8,0× |
+| média das duas < −0,05 | 27 | 29,6% | 8,4× |
+
+Dividir os alunos em duas metades e exigir que a **média** seja negativa quase dobra a precisão marcando metade das questões. A correlação da discriminação entre partições independentes é de apenas **0,33** — por isso uma medida só erra tanto, e por isso a confirmação ajuda tanto.
+
+**Estabilidade (fase 7).** A precisão confere: **22,5% ± 4,0%** em 8 sementes, contra 25,0% publicado (0,6 desvios). O **lift não** — ver o padrão 6 da auditoria: ele é a precisão dividida por uma base que o mínimo de respostas por questão escolhe, e vai de 2,0× a 6,9× com a mesma regra.
+
+**Precisão de 25% é baixa, e o módulo diz isso.** Três em cada quatro marcações são falso positivo. Serve para **ordenar uma fila de revisão humana**, não para despublicar questão automaticamente.
+
+**Correção da auditoria.** Este cabeçalho afirmava "zero questões com valor negativo". Era bug do script de medição, que comparava contra −1 em vez de 0.
+
+---
+
 ## 3. Dificuldade da questão
 
 **Hipótese inicial (errada).** Classificar questões em categorias de dificuldade.
@@ -118,7 +214,7 @@ Daí o módulo combinar as duas, meio a meio. E daí a ressalva honesta: o boost
 2. **Prior escolhido a olho** (força 15) quebrava a cobertura: o intervalo de 90% cobria 64,5%. `derivar_prior()` por momentos dá Beta(5,07 / 2,08), força **7,0**.
 3. **Validação no objeto errado.** A tabela publicada media a cobertura de um intervalo **preditivo** (sobre a contagem futura), mas `estimar()` devolve um **posterior** (sobre a taxa latente). Objetos diferentes.
 4. **Reencontro quebra independência.** 11,6% das respostas do EdNet são reencontro; passar `alunos` corrige de 88,9% para 90,1% em n=100.
-5. `k=4` imposto às questões → HDBSCAN, DP-GMM e Mean Shift encontram **2 grupos**, separados pelo **tempo** (d de Cohen 3,30), e o eixo do acerto é contínuo. Daí a regra de desenho: **categoria no que é discreto, intervalo no que é contínuo**.
+5. `k=4` imposto às questões → HDBSCAN, DP-GMM e Mean Shift encontram **2 grupos**, separados pelo **tempo** (d de Cohen 3,30 entre os grupos; 4,18 no corte de 40 s, que é o ótimo por Otsu), e o eixo do acerto é contínuo. Daí a regra de desenho: **categoria no que é discreto, intervalo no que é contínuo**.
 
 **Revisão de 2026-09-13.** O relatório afirmava que a cobertura degradava em n alto (77,6% em n=200). **Estava errado, e o erro era meu de novo:** o alvo da validação (taxa numa amostra de validação) tem ruído próprio comparável à largura do intervalo. Contabilizando esse ruído, a cobertura é **88 a 91% de n=50 a n=400+** — estável. O estimador estava certo.
 
@@ -317,9 +413,9 @@ Entra `esperado_de_amostra()` com média do log, +0,004. É menos robusto a outl
 
 ## A auditoria de 2026-09-13
 
-Depois das melhorias, veio uma auditoria em **13 rodadas**. Cada número dos cabeçalhos foi remedido **chamando as funções do módulo**; depois vieram fuzzing, monotonicidade, cobertura de API e consistência entre documentos.
+Depois das melhorias, veio uma auditoria em **19 rodadas**. Cada número dos cabeçalhos foi remedido **chamando as funções do módulo**; depois vieram fuzzing, monotonicidade, cobertura de API, consistência entre documentos e, por último, estabilidade entre partições.
 
-**97 verificações. 49 defeitos.** Nenhum deles apareceria olhando AUC.
+**141 verificações. 58 defeitos.** Nenhum deles apareceria olhando AUC.
 
 ### As rodadas, e o que cada uma atacou
 
@@ -336,6 +432,10 @@ Depois das melhorias, veio uma auditoria em **13 rodadas**. Cada número dos cab
 | 11 | fuzzing com entrada hostil | 21 |
 | 12 | faixas do SQL e monotonicidade no domínio inteiro | 3 |
 | 13 | convenção de sinal do pacote | 2 |
+| 14–15 | órfãos das correções anteriores; documentos desatualizados | 3 |
+| 16–17 | **estabilidade entre partições** dos números publicados | 3 |
+| 18 | constantes de recalibração do `dominio` | 0 (confere) |
+| 19 | intervalos, coortes e o código que entrou depois | 5 |
 
 ### Os quatro padrões
 
@@ -359,13 +459,41 @@ Depois das melhorias, veio uma auditoria em **13 rodadas**. Cada número dos cab
 
 **4. Afirmar cobertura sem enumerar.** Disse três vezes que "está tudo auditado". Nas três, escrever um script que checasse me desmentiu: o mapa de cobertura achou **16 símbolos sem teste**, incluindo `chute.foi_chute`, a função principal daquele módulo.
 
+**5. Um número só é um número de uma partição.** A última fase a existir, e a que mais derrubou trabalho já publicado. Três manchetes vieram de partições favoráveis:
+
+| onde | publicado | real (média ± desvio) | distância |
+|---|---|---|---|
+| engajamento, EdNet | 0,856 | 0,8404 ± 0,0088 | 1,8 desvios |
+| gate, forma linear | 0,746 | 0,7323 ± 0,0027 | **5,1 desvios** |
+| tempo, R² | 0,574 / 0,578 | — | ~1,5 desvios |
+
+E dois casos mais sutis, que não são "sorte" mas são a mesma doença:
+
+- **evasão**: 0,783 é a **melhor das quatro** coortes (média 0,767 ± 0,012). Publicar o maior como se fosse a expectativa.
+- **`prever_turma`**: o 88,8% publicado reproduz (média 87,7% ± 1,0), mas um intervalo de **90%** que cobre 87,7% está a 6,5 erros-padrão do nominal e erra sempre para o mesmo lado. O número era estável **e errado**.
+
+Do outro lado, o que descreve a **forma da distorção** não se move: `RECAL_A`, `RECAL_B`, o ponto fixo e o ECE recalibrado ficam todos dentro de 1 desvio em 8 partições, e o `RECAL_B` dá 1,99 nas oito. Faz sentido — desempenho depende de quais alunos caíram no teste; geometria, não.
+
+**A regra que ficou:** número que vai ao cabeçalho vem de ≥6 partições, citado como média ± desvio. Um split só serve para **comparar** duas opções (teste pareado), nunca para declarar nível.
+
+**6. Razão herda a instabilidade do denominador.** `discriminacao.confirmar` publicava "25,0% de precisão, lift 7,1×". A precisão confere entre partições (22,5% ± 4,0). O lift dá 2,9× — e nenhuma das duas afirmações está errada: **o lift é a precisão dividida por uma base que o arranjo de medição escolhe.**
+
+| mínimo de respostas por questão | base | precisão | lift |
+|---|---|---|---|
+| 20 | 10,42% | 20,6% | 2,0× |
+| 30 | 7,70% | 22,5% | 2,9× |
+| 60 | 2,88% | 20,0% | **6,9×** |
+| 120 | 0,66% | 0% | 0,0× |
+
+Mesma regra nas quatro linhas. Exigir mais respostas limpa o ruído da partição de conferência, derruba a base e infla o lift **sem que nada tenha melhorado** — até o ponto em que a regra marca 2 questões e emudece. Precisão é propriedade da regra; lift é propriedade da regra **e** do arranjo.
+
 ### Os defeitos que só o fuzzing acharia
 
 **21 propagações de NaN e infinito.** A pior: `discriminacao` devolve NaN como sentinela de "não deu para medir" — inclusive quando **todo mundo acertou**, que é comum em dado real. E `NaN < limiar` é `False`, então `confirmar()` classificava a questão não-mensurável como **"não suspeita"**, em silêncio.
 
 ### O que a auditoria confirmou
 
-Oito medidas passaram sem ajuste: `perfil_chute` (p90 0,0196 contra 0,020 declarado), a tabela `REFERENCIA` do engajamento (diferença 0,000), o limite de 3× do `demorando`, `gate.MIN_RESPOSTAS = 5` (é o cotovelo exato), a aproximação normal do `dificuldade` (cobertura 75,3% contra 74,8% do Beta), `cobertura` e `conceitos_faltando` do `pre_avaliacao`, e `ritmo.FRONTEIRA_SEG = 40 s` — que é praticamente o corte ótimo por Otsu (**39,8 s**), com d de Cohen **maior** que o documentado (4,18 contra 3,30).
+Doze medidas passaram sem ajuste. As quatro últimas são a recalibração inteira do `dominio` — `RECAL_A`, `RECAL_B`, o ponto fixo e o ECE final, todos dentro de 1 desvio em 8 partições, e melhorando o ECE em **8/8**. Antes delas: `perfil_chute` (p90 0,0196 contra 0,020 declarado), a tabela `REFERENCIA` do engajamento (diferença 0,000), o limite de 3× do `demorando`, `gate.MIN_RESPOSTAS = 5` (é o cotovelo exato), a aproximação normal do `dificuldade` (cobertura 75,3% contra 74,8% do Beta), `cobertura` e `conceitos_faltando` do `pre_avaliacao`, e `ritmo.FRONTEIRA_SEG = 40 s` — que é praticamente o corte ótimo por Otsu (**39,8 s**), com d de Cohen 4,18 nesse corte — mais que os 3,30 entre os grupos do HDBSCAN, porque o corte ótimo separa mais que uma fronteira difusa.
 
 ### Uma melhoria que teria piorado o sistema
 
@@ -381,7 +509,7 @@ Rodam **sem dataset** e falham se alguém quebrar o contrato:
 | `79_cobertura.py` | símbolo público sem teste |
 | `80_fuzz.py` | NaN ou infinito vazando |
 | `82_monotonia.py` | direção quebrada ao longo do domínio |
-| `pytest` | 136 invariantes |
+| `pytest` | 141 invariantes |
 
 Detalhes em [`auditoria/AUDITORIA.md`](auditoria/AUDITORIA.md).
 

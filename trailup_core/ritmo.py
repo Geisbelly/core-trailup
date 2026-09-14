@@ -4,6 +4,10 @@ A forma dos grupos NAO foi escolhida. Tres metodos que descobrem a quantidade de
 grupos rodaram sobre 10.526 questoes do EdNet; o unico estavel (HDBSCAN, ARI
 1,000 variando seu parametro de 50 a 400) encontrou DOIS grupos, separados
 quase inteiramente pelo TEMPO (d de Cohen 3,30 na latencia, 0,50 no acerto).
+Os 3,30 sao a separacao entre os grupos que o HDBSCAN achou; o corte fixo de
+40 s usado aqui separa MAIS (d = 4,18), porque e o corte otimo e a fronteira
+do HDBSCAN e difusa nas bordas. Duas medidas de particoes diferentes, nao uma
+correcao da outra.
 
 Consequencia de desenho: o acerto NAO tem estrutura de grupo - e continuo, e por
 isso vai como intervalo (ver dificuldade.py). So o ritmo vira categoria.
@@ -24,8 +28,11 @@ from dataclasses import dataclass
 #   distribuicao das medianas   : p25 18 s | p50 22 s | p75 64 s | p90 95 s
 #
 # O salto de 22 s (p50) para 64 s (p75) e a bimodalidade que justifica ter
-# duas categorias aqui, em vez de intervalo. O relatorio original citava
-# d = 3,30; a medida direta da 4,18.
+# duas categorias aqui, em vez de intervalo.
+#
+# Os 4,18 nao contradizem os 3,30 do cabecalho: aqueles medem a separacao
+# entre os GRUPOS DO HDBSCAN, estes medem a separacao no CORTE DE 40 s. O
+# corte otimo separa mais que a fronteira difusa do agrupamento.
 FRONTEIRA_SEG = 40.0
 
 # acerto da classificacao de ritmo por n de respostas, medido no EdNet

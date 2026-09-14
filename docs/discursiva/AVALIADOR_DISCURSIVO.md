@@ -180,13 +180,31 @@ O gap não é de dado, nem de representação isolada, nem de estrutura. **É de
 
 ### Saída usada no produto
 
-O módulo preserva a nota interna de 1 a 5, mas também expõe
-`percentual_estimado` (0–100) e `faixa_percentual` (`baixo`, `medio`, `alto`)
-para a interface. Esse percentual é uma transformação da escala prevista e
-não deve ser apresentado como porcentagem de conteúdo correto: o alvo do
-treino é uma nota gerada por LLM, não uma nota humana. A decisão automática
-continua sendo a triagem das respostas, com os conceitos ausentes como
-explicação.
+O módulo preserva a nota interna de 1 a 5 e expõe duas leituras para a interface — mas **elas não valem a mesma coisa, e a diferença foi medida**.
+
+`percentual_estimado` (0–100) é a escala 1–5 reescrita. Contra a nota de referência na mesma escala, nas 1.167 respostas do classEx:
+
+| | |
+|---|---|
+| erro absoluto médio | **13,0 pontos percentuais** |
+| viés | **+5,9 pontos** (exibe alto) |
+| Spearman | +0,422 |
+
+Treze pontos de erro em cima de um número de dois dígitos. Quem lê `72%` entende uma nota, e a nota real daquela resposta está tipicamente entre 59 e 85. Escrever `(escala)` ao lado não desfaz o que o símbolo `%` promete.
+
+`faixa_percentual` (`baixo`, `medio`, `alto`), por outro lado, **separa de verdade e em ordem**:
+
+| faixa | fatia das respostas | nota real média |
+|---|---|---|
+| baixo | 4,5% | 32,2% |
+| médio | 70,8% | 61,2% |
+| alto | 24,8% | 70,5% |
+
+Por isso `__str__` mostra a **faixa** e a nota com a incerteza (`medio (~3,6/5, ±0,5)`), e não o percentual. O percentual continua acessível como propriedade, com o erro medido no próprio docstring — quem quiser exibi-lo assume o que ele custa.
+
+**Calibrar o viés foi testado antes de ser descartado**, e o teste é o ponto: regressão linear com holdout por tarefa remove o viés (+5,9 → 0,0) mas **não reduz o erro** — ganho de −0,48 pontos, IC95 [−1,34; +0,19], melhora em 3 de 5 dobras. Trocar um número errado por outro número errado sem ganho medido é ruído, não conserto. O viés é real; a correção dele não sobrevive ao holdout porque o erro é dominado por variância, não por deslocamento.
+
+A decisão automática continua sendo a triagem, com os conceitos ausentes como explicação.
 
 ### Como pré-filtro de dois lados
 

@@ -28,7 +28,7 @@ python3 docs/auditoria/scripts/82_monotonia.py      # direção quebrada no dom�
 | [`dominio`](trailup_core/dominio.py) | o aluno acerta a próxima? | AUC 0,727 / ECE 0,008 (regra atual: 0,587) | histórico do aluno |
 | [`chute`](trailup_core/chute.py) | não sabe, ou não tentou? | traço com +0,922 de confiabilidade | 50 respostas na questão |
 | [`revisao`](trailup_core/revisao.py) | quando trazer de volta? | AUC 0,669 / ECE 0,015 em 752 mil reencontros | nenhum |
-| [`discriminacao`](trailup_core/discriminacao.py) | esta questão está quebrada? | 25% de precisão (lift 7,1×) com `confirmar()` | 40 respostas |
+| [`discriminacao`](trailup_core/discriminacao.py) | esta questão está quebrada? | 22,5% ± 4,0 de precisão com `confirmar()`, contra 13,8% de uma medida só | 40 respostas |
 | [`gate`](trailup_core/gate.py) | vale abrir a LLM agora? | AUC 0,732 (regra atual: 0,687) | 5 respostas no tópico |
 | [`engajamento`](trailup_core/engajamento.py) | o aluno vai continuar? | AUC 0,846 / 0,868 — **um modelo, duas bases** | 30 eventos |
 | [`pre_avaliacao`](trailup_core/pre_avaliacao.py) | esta resposta aberta está boa? | Spearman 0,501 (teto ≈0,88) | nenhum |
@@ -44,7 +44,7 @@ Todo número dos cabeçalhos foi **reconferido chamando o código** — ver [`do
 
 ## As três regras de desenho
 
-**Categoria no que é discreto, intervalo no que é contínuo.** O ritmo vira rótulo porque o dado separa (d de Cohen 3,30). A dificuldade vira intervalo porque é contínua, e cravar um corte ali inventaria uma fronteira que não existe.
+**Categoria no que é discreto, intervalo no que é contínuo.** E quem decidiu não fui eu: três métodos que descobrem a quantidade de grupos rodaram sobre 10.526 questões, e o único estável encontrou **dois** — separados pelo tempo, não pelo acerto. O ritmo vira rótulo porque o dado separa (d de Cohen **4,18** na fronteira medida, que por Otsu cai em 39,8 s). A dificuldade vira intervalo porque é contínua, e cravar um corte ali inventaria uma fronteira que não existe.
 
 **Persistir a ação, não o diagnóstico.** `precisa_reforco()` devolve um booleano acionável; `evasao.sql` devolve faixa, não score. Dos 9 `IAMentalStateKind` que o app define, ele age sobre 2 — guardar os outros 7 é coletar dado sensível de menor para nada.
 

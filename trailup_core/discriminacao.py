@@ -36,6 +36,24 @@ terceira particao (prevalencia 3,53%).
     negativa nas DUAS                  39     28,2%           8,0x
     media das duas < -0,05             27     29,6%           8,4x
 
+    Os lifts acima sao sobre uma base de 3,53%. NAO CITE O LIFT SOZINHO: ele e
+    a precisao dividida por essa base, e a base depende do arranjo de medicao,
+    nao da regra. Exigindo um minimo diferente de respostas por questao, com a
+    MESMA regra (8 sementes cada):
+
+        minimo de respostas    base   precisao    lift
+             20               10,42%    20,6%     2,0x
+             30                7,70%    22,5%     2,9x
+             60                2,88%    20,0%     6,9x
+
+    A precisao mal se move; o lift triplica. Exigir mais respostas limpa o
+    ruido da particao de conferencia, derruba a base e infla o lift sem que
+    nada tenha melhorado. O que compara regras e a PRECISAO, medida no mesmo
+    arranjo: 22,5% desta contra 13,8% de marcar por uma medida so.
+
+    ESTABILIDADE (8 particoes): precisao media 22,5% com desvio 4,0% - o 25,0%
+    publicado fica a 0,6 desvios. Confere.
+
 Dividir os alunos em duas metades e exigir que a MEDIA seja negativa quase
 DOBRA a precisao (13,8% -> 25,0%) marcando metade das questoes. E o que
 `confirmar()` faz.
@@ -94,8 +112,17 @@ def confirmar(disc_metade_a: float, disc_metade_b: float,
     calcule a discriminacao em cada uma, e passe as duas aqui.
 
     Medido no EdNet contra uma terceira particao nunca vista: precisao 25,0%
-    (lift 7,1x) contra 13,8% de marcar por uma medida so. Com limiar -0,05 a
-    precisao vai a 29,6%, marcando um quinto das questoes.
+    contra 13,8% de marcar por uma medida so - e a precisao confere entre
+    particoes (22,5% +- 4,0% em 8 sementes). Com limiar -0,05 vai a 29,6%,
+    marcando um quinto das questoes.
+
+    O lift de 7,1x que o cabecalho cita vale PARA AQUELA BASE (3,53%). Ele nao
+    e propriedade da regra - ver a tabela de sensibilidade no cabecalho antes
+    de repetir esse numero em qualquer lugar.
+
+    Precisao de 25% quer dizer que TRES EM CADA QUATRO marcacoes sao falso
+    positivo. Serve para ordenar fila de revisao humana, nao para despublicar
+    questao automaticamente.
 
     A confirmacao importa porque a discriminacao de uma questao correlaciona
     apenas 0,33 entre particoes independentes de alunos - uma medida isolada
