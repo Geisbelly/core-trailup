@@ -1,5 +1,15 @@
 # Relatório do processo — TrailUp Core e avaliação discursiva
 
+> **Onde fica a entrega do seminário.** O que o enunciado pede — README com as
+> sete perguntas, diário de decisões, scripts, dados e `requirements.txt` — está
+> em [`seminario/`](../seminario/README.md), e cobre **dois** modelos:
+> engajamento e avaliação discursiva.
+>
+> Este documento é mais fundo e mais estreito: detalha **só o avaliador
+> discursivo**, com o contexto do núcleo TrailUp inteiro em volta. Use-o para
+> preparar respostas às perguntas da banca sobre esse modelo; use o
+> `seminario/README.md` como o documento da entrega.
+
 ## 1. Objetivo e alcance deste relatório
 
 Este documento serve de apoio à apresentação do seminário: explica o problema,

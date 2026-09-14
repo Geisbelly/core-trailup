@@ -289,8 +289,17 @@ absoluto não tem validação nenhuma nesse idioma.
 ## Como rodar
 
 ```bash
+git clone https://github.com/Geisbelly/core-trailup.git
+cd core-trailup/seminario
 pip install -r requirements.txt
-# baixe as duas bases conforme dados/README.md, depois:
+
+# MODELO 2 roda agora, sem baixar nada (o corpus está no repositório):
+cd scripts
+python3 07_discursivo.py            # contra as linhas de base
+python3 08_discursivo_operacao.py   # pré-filtro, triagem, custo
+python3 09_conferir_port.py         # o JavaScript == o Python? (precisa de Node)
+
+# MODELO 1 exige baixar as duas bases — ver dados/README.md:
 python3 scripts/01_preparar.py    # monta o painel (~6 min)
 python3 scripts/02_eixos.py       # cada eixo, nas duas bases
 python3 scripts/03_vazamento.py   # o teste de adivinhação da base
@@ -319,9 +328,18 @@ python3 -m http.server -d docs/seminario
 ## Onde isto vive
 
 Este seminário é uma pasta dentro do repositório [`core-trailup`](../), que
-reúne os modelos do projeto TrailUp. O trabalho do seminário é
-**auto-contido**: tudo o que o enunciado pede está aqui dentro, e os scripts
-não dependem de nada do resto do repositório.
+reúne os modelos do projeto TrailUp. Tudo o que o enunciado pede está aqui
+dentro — README, diário, scripts, dados e `requirements.txt`.
+
+**Uma dependência do repositório-mãe, e ela é de propósito.** Os scripts do
+modelo 2 importam [`trailup_core.pre_avaliacao`](../trailup_core/pre_avaliacao.py),
+que é o módulo em produção. Poderíamos ter copiado o código para cá, mas aí o
+que este trabalho mede não seria o que roda de verdade — e a primeira medição
+(item 6) mostra exatamente por que isso importa: o erro estava em *como
+chamamos* o módulo, e uma cópia teria escondido isso.
+
+Por isso, clone o repositório inteiro. O modelo 2 roda em seguida, sem baixar
+mais nada.
 
 ## Estrutura
 

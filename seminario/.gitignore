@@ -1,6 +1,10 @@
 dados/EdNet-KT3
 dados/oulad
 dados/*.zip
+# O .gitignore da raiz exclui *.parquet (saida de script). O corpus do modelo 2
+# e ENTRADA, tem 264 KB e precisa estar no repositorio para o trabalho
+# reproduzir sem baixar nada - por isso a excecao explicita.
+!dados/classex.parquet
 saida/
 __pycache__/
 *.pyc
