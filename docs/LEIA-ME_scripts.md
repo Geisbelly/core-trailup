@@ -4,6 +4,12 @@ São os scripts que produziram cada número dos relatórios. Estão aqui para
 auditoria — para conferir *como* uma medida foi obtida, não para rodar
 direto.
 
+**Exceção: os `*_sem_*.py`.** Esses são o pipeline do seminário, e *rodam* —
+mas a partir de [`seminario/scripts/`](../seminario/README.md), que tem a
+ordem, o `requirements.txt` e o diário de decisões. A cópia aqui é para cada
+modelo guardar seu próprio código junto dos demais scripts de auditoria; ela
+tem os caminhos normalizados como os outros e o cabeçalho diz de onde veio.
+
 **Eles não rodam sem os datasets**, que não estão neste repositório por
 licença e por tamanho (EdNet KT3 sozinho tem 10,6 GB). Os caminhos foram
 substituídos por `/caminho/para/os/datasets` e `/caminho/para/os/intermediarios`;

@@ -256,6 +256,40 @@ O uso em que o corpus de domínio **poderia** ajudar é outro: treinar o *encode
 
 ---
 
+---
+
+### Os scripts do seminário
+
+O seminário mediu este modelo contra as linhas de base que costumam derrubar
+trabalhos de avaliação automática de texto, e contra o **teto** — que este
+corpus permite medir porque traz três avaliações independentes do mesmo LLM.
+
+| script | o que mede |
+|---|---|
+| `20_sem_linhas_de_base.py` | contra contar palavras, sobreposição crua e o teto |
+| `21_sem_operacao.py` | pré-filtro, triagem e custo por resposta |
+| `22_sem_port_js.py` | o JavaScript do protótipo bate com o Python? |
+
+| critério | Spearman | do teto |
+|---|---|---|
+| contar palavras da resposta | +0,283 | 32% |
+| sobreposição crua de tokens | +0,409 | 46% |
+| `cobertura` sozinha | +0,463 | 52% |
+| **o módulo inteiro** | **+0,495** | **56%** |
+| *teto: duas execuções do próprio LLM* | *+0,883* | *100%* |
+
+Ganha da melhor feature sozinha por **+0,033**, IC95 [+0,005; +0,061], positivo
+em 99% das reamostras por aluno. Estável em 12 partições: 0,495 ± 0,021.
+
+**A primeira medição deu 0,429 — abaixo da `cobertura` sozinha — porque
+chamávamos `preparar(gabarito)` sem enunciado e sem stopwords.** A diferença de
+0,066 é maior que o ganho de todas as nove features extras. Está documentado no
+docstring de `preparar`.
+
+Pipeline completo, com README e diário: [`seminario/`](../../seminario/README.md).
+
+---
+
 ## Apêndice — o que mudou, e por quê
 
 **O teto de 0,899 estava inflado.** Ele era a concordância de **uma execução do GPT-4 com a média das três** — média que *contém* aquela execução, o que infla a correlação por construção. Entre execuções independentes o teto é **0,871 a 0,897** (§3). Não muda a conclusão (o modelo fica a ~60% do caminho), mas o alvo estava mais perto do que eu dizia.

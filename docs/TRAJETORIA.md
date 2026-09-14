@@ -2,7 +2,7 @@
 
 Um documento por modelo existe em `docs/`. Este aqui é o caminho: o que foi tentado, o que caiu, e por quê. Serve para não repetir tentativa já refutada, e para auditar de onde vem cada número.
 
-**Estado em 2026-09-13:** 10 módulos Python + 1 consulta SQL em uso, 7 hipóteses descartadas, 1 na fila, 141 testes, 5 verificadores automáticos.
+**Estado em 2026-09-13:** 10 módulos Python + 1 consulta SQL em uso, 7 hipóteses descartadas, 1 na fila, 141 testes, 6 verificadores automáticos.
 
 Este documento tem duas partes: **como cada modelo chegou ao estado atual** (§1 a §10) e **a auditoria que veio depois** — 141 verificações, 58 defeitos, todos corrigidos.
 
@@ -499,7 +499,7 @@ Doze medidas passaram sem ajuste. As quatro últimas são a recalibração intei
 
 `JANELA_RECENTE = 10` parecia sub-ótimo: o eixo isolado vai de 0,810 para **0,824** com 14 dias. Recomputei tudo para trocar — e o **modelo compartilhado desabou** de 0,856 para 0,812 (ambos na mesma partição, então a comparação vale), com o peso da frequência ficando **negativo**. Otimizar a parte degradava o todo em 0,044. Mantido em 10, agora com base medida.
 
-### Os cinco verificadores permanentes
+### Os seis verificadores permanentes
 
 Rodam **sem dataset** e falham se alguém quebrar o contrato:
 
@@ -509,6 +509,7 @@ Rodam **sem dataset** e falham se alguém quebrar o contrato:
 | `79_cobertura.py` | símbolo público sem teste |
 | `80_fuzz.py` | NaN ou infinito vazando |
 | `82_monotonia.py` | direção quebrada ao longo do domínio |
+| `94_copias_seminario.py` | cópia de script em `docs/` que divergiu do original |
 | `pytest` | 141 invariantes |
 
 Detalhes em [`auditoria/AUDITORIA.md`](auditoria/AUDITORIA.md).

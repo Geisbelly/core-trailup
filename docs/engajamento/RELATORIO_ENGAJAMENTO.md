@@ -407,6 +407,30 @@ Serve para dizer ao professor **por que** o aluno está em risco, numa forma sob
 - **Três sub-janelas de 10 dias é uma escolha.** Uma trajetória em escala semanal, ou por sessão, não foi testada.
 - **O alvo de desmatrícula só existe no OULAD**, então o achado da §17 não foi replicado.
 
+---
+
+### Os scripts do seminário
+
+O pipeline apresentado no seminário reproduz este modelo do zero, com linha de
+base explícita e 12 partições. Os scripts estão aqui como `4x_sem_*.py`, e o
+pipeline rodável com README e diário de decisões está em
+[`seminario/`](../../seminario/README.md).
+
+| script | o que mede |
+|---|---|
+| `40_sem_painel.py` | painel das duas bases, janela 0–29 mede / 30–59 verifica |
+| `41_sem_eixos.py` | cada eixo separado nas duas bases — só entra quem replica |
+| `42_sem_vazamento.py` | dá para adivinhar de qual base veio a linha? (AUC 0,92 no cru) |
+| `43_sem_treino.py` | modelo em 12 partições contra o melhor eixo sozinho |
+| `44_sem_calibracao.py` | por que acurácia não serve, e o ponto de operação |
+| `45_sem_exporta.py` | recalibração por coorte para o protótipo web |
+
+Números desse pipeline, que usa um recorte próprio do EdNet e por isso não
+coincide com os desta página: **EdNet 0,873 ± 0,004** e **OULAD 0,885 ± 0,006**,
+contra linha de base de 0,858 e 0,879.
+
+---
+
 ## Apêndice — o que mudou, e por quê
 
 O estudo teve três rodadas. As duas primeiras publicaram números que as seguintes derrubaram. Ficam registrados aqui porque o que caiu explica o desenho que ficou.

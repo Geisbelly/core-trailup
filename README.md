@@ -133,7 +133,7 @@ O pacote passou por uma auditoria de **13 rodadas**: cada número dos cabeçalho
 
 **97 verificações, 49 defeitos** — e nenhum deles apareceria olhando AUC. O padrão: **as saídas que só ordenam passaram sem defeito; as que têm unidade prometiam mais do que alguém tinha medido.**
 
-Cinco verificadores rodam **sem dataset** e falham se o contrato quebrar — ver [`docs/auditoria/`](docs/auditoria/AUDITORIA.md) e o [histórico completo](docs/TRAJETORIA.md).
+Seis verificadores rodam **sem dataset** e falham se o contrato quebrar — ver [`docs/auditoria/`](docs/auditoria/AUDITORIA.md) e o [histórico completo](docs/TRAJETORIA.md).
 
 ## O que **não** está aqui, e por quê
 
