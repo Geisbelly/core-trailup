@@ -451,7 +451,7 @@ Contabilizando o ruído do alvo:
 | turma | `estimar()` | `prever_turma()` |
 |---|---|---|
 | 15 alunos | 30,7% | **90,1%** |
-| 30 alunos | 39,7% | **88,8%** |
+| 30 alunos | 39,7% | **90,5%** |
 | 60 alunos | 49,7% | **88,2%** |
 | 120 alunos | 58,4% | **86,4%** |
 
@@ -459,4 +459,6 @@ Entra [`prever_turma()`](../../trailup_core/dificuldade.py). A largura triplica 
 
 ### Variação entre coortes reais
 
-Divisão **aleatória** de alunos dá σ = 0 — como tem de ser, já que não pode criar diferença real. Usando coortes reais (alunos antigos vs recentes no EdNet): **σ = 0,0153**, com correlação 0,953 entre as coortes. Pequena, mas não encolhe com n, e por isso entra no preditivo.
+Divisão **aleatória** de alunos dá σ = 0 — como tem de ser, já que não pode criar diferença real. Usando coortes reais (alunos antigos vs recentes no EdNet): **σ = 0,0153**, com correlação 0,953 entre as coortes. Não encolhe com n, e por isso entra no preditivo.
+
+**O valor em uso, porém, é σ = 0,0400, não 0,0153.** O σ medido deixa o intervalo de 90% cobrir 87,7% ± 1,0 em 8 partições — 6,5 erros-padrão abaixo do nominal, sempre para o mesmo lado. O 0,0400 foi calibrado em 4 partições e validado em 4 que não participaram (90,5%), e acerta também os níveis de 50%, 80% e 95%. A distância entre o medido e o necessário é variação que o modelo de duas componentes não representa.

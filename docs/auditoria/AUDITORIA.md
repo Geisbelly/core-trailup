@@ -10,7 +10,7 @@ Base: EdNet KT3, 6.504.124 respostas, acerto global 0,6677, split por aluno 70/3
 
 ## Resultado das 7 partes
 
-**136 verificações. 54 defeitos encontrados**, todos da mesma família: uma saída afirmando uma escala que ninguém mediu. Nenhum apareceria olhando AUC.
+**141 verificações. 58 defeitos encontrados**, todos da mesma família: uma saída afirmando uma escala que ninguém mediu. Nenhum apareceria olhando AUC.
 
 | onde | o que afirmava | o que era |
 |---|---|---|
@@ -904,6 +904,57 @@ Mesmo teste, agora no SQL. Treinando em três apresentações da OULAD e testand
 Média **0,767 ± 0,012**. O 0,783 publicado está a 1,3 desvios — não é partição sortuda no sentido grosseiro das Partes 16 e 17, mas é **o maior dos quatro**, e publicar o maior como se fosse a expectativa é a mesma classe de erro em versão branda. `README.md`, `CANDIDATOS.md`, `OITO_INVESTIGACOES.md` e o cabeçalho do `evasao.sql` passam a dizer 0,767 ± 0,012, e o lift vira a faixa 3,4–4,1× em vez do 4,1× do melhor caso.
 
 O que **não** se move: a ordenação funciona em todas as quatro coortes, com anos e semestres diferentes.
+
+---
+
+### A cobertura era 88,8% num intervalo de 90%
+
+`prever_turma` devolve um intervalo com nível declarado. Em 8 partições por aluno no EdNet, o intervalo de 90% cobre:
+
+| semente | 7 | 11 | 23 | 42 | 101 | 2026 | 314 | 999 |
+|---|---|---|---|---|---|---|---|---|
+| cobertura | 86,0% | 88,2% | 88,1% | 87,2% | 87,3% | 87,2% | 87,9% | 89,4% |
+
+Média **87,7% ± 1,0%**. O 88,8% publicado está a 1,1 desvios — esse número reproduz. O problema é outro: **87,7% num intervalo de 90% está a 6,5 erros-padrão do nominal, e erra sempre para o mesmo lado**. Um intervalo que promete 90% e entrega 87,7% mente sobre o próprio nível.
+
+A causa é o `SIGMA_COORTE = 0,0153`, que foi **medido** (alunos antigos contra recentes, correlação 0,953) e não calibrado. Medir a variação entre duas coortes capta menos do que existe.
+
+Calibrando em 4 partições e validando em 4 que não participaram:
+
+| σ | ajuste | validação |
+|---|---|---|
+| 0,0153 | 87,4% | 88,0% |
+| 0,0300 | 88,6% | 89,2% |
+| **0,0400** | **89,7%** | **90,5%** |
+| 0,0500 | 90,9% | 91,7% |
+
+E o 0,0400 não serve só ao nível de 90%. Na validação: 50% → 52,9%, 80% → 81,8%, 95% → 94,7%. Os quatro níveis dentro de ~2 pontos.
+
+A distância entre **0,0153 medido** e **0,0400 necessário** é informação, não ruído: há variação que o modelo de duas componentes não representa. Não a explicamos — garantimos que o intervalo não minta sobre o próprio nível.
+
+### O `%` do avaliador discursivo tinha 13 pontos de erro
+
+`percentual_estimado` e `faixa_percentual` entraram no `pre_avaliacao` e `__str__` passou a exibir `~85% (escala)`. Medido no corpus classEx (1.167 respostas), contra a nota de referência na mesma escala:
+
+- erro absoluto médio **13,0 pontos percentuais**
+- viés **+5,9 pontos** (exibe alto)
+- Spearman +0,422
+
+Treze pontos de erro em cima de um número de dois dígitos. Quem lê `72%` entende uma nota; a nota real está tipicamente entre 59 e 85. É o padrão **"unidade é promessa"** outra vez, e o `(escala)` entre parênteses não desfaz o que o símbolo `%` promete.
+
+A **faixa**, porém, separa de verdade e em ordem:
+
+| faixa | fatia | nota real média |
+|---|---|---|
+| baixo | 4,5% | 32,2% |
+| médio | 70,8% | 61,2% |
+| alto | 24,8% | 70,5% |
+
+Então `__str__` passa a mostrar a faixa e a nota com a incerteza (`medio (~3,6/5, ±0,5)`), e o percentual continua acessível como propriedade, com o erro medido no docstring.
+
+Calibrar o viés foi testado antes de descartar — regressão linear com holdout por tarefa. Remove o viés (+5,9 → 0,0) mas **não reduz o erro**: ganho −0,48 pontos, IC95 [−1,34, +0,19], melhora em 3/5 dobras. Trocar um número errado por outro número errado sem ganho medido é ruído, não conserto.
+
+Dois defeitos menores no mesmo bloco: `faixa_percentual` comparava o percentual **arredondado**, de modo que uma nota 3,9999 virava 75,0 e subia de faixa sozinha; e `percentual_estimado` saía de 0–100 se o `PreAvaliacao` fosse construído direto, já que a trava do 1–5 está no `avaliar`, não na classe. Ambos com teste.
 
 ---
 

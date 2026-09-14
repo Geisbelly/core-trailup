@@ -146,7 +146,25 @@ def test_pre_avaliacao_expoe_percentual_como_escala_e_faixa():
     resultado = pre_avaliacao.avaliar('A demanda depende do consumo.', ref)
     assert 0.0 <= resultado.percentual_estimado <= 100.0
     assert resultado.faixa_percentual in {'baixo', 'medio', 'alto'}
-    assert 'escala' in str(resultado)
+    # O texto mostra a FAIXA, que e o que esta validado, e nao o percentual
+    # cru, que tem 13 pontos de erro absoluto medio.
+    assert resultado.faixa_percentual in str(resultado)
+
+
+def test_pre_avaliacao_percentual_nunca_sai_de_0_a_100():
+    for nota in (-3.0, 0.0, 1.0, 3.0, 5.0, 9.0):
+        a = pre_avaliacao.PreAvaliacao(nota, 0.5, 0.5, [])
+        assert 0.0 <= a.percentual_estimado <= 100.0
+
+
+def test_pre_avaliacao_faixa_nao_sobe_por_arredondamento():
+    # 3,9999 vira 74,9975, que arredonda para 75,0. A faixa tem de olhar o
+    # valor cru, senao o arredondamento do display promove a resposta sozinho.
+    assert pre_avaliacao.PreAvaliacao(3.9999, 0.5, 0.5, []).percentual_estimado == 75.0
+    assert pre_avaliacao.PreAvaliacao(3.9999, 0.5, 0.5, []).faixa_percentual == 'medio'
+    assert pre_avaliacao.PreAvaliacao(4.0, 0.5, 0.5, []).faixa_percentual == 'alto'
+    assert pre_avaliacao.PreAvaliacao(3.0, 0.5, 0.5, []).faixa_percentual == 'medio'
+    assert pre_avaliacao.PreAvaliacao(2.9999, 0.5, 0.5, []).faixa_percentual == 'baixo'
 
 
 # ---------------- engajamento: ordenador comum ----------------

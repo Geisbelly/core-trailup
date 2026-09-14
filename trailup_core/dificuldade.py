@@ -23,7 +23,7 @@ DOIS INTERVALOS, DUAS PERGUNTAS - nao confundir:
                  soma o ruido de amostragem daquela turma. E MUITO mais largo,
                  e e o unico honesto para essa pergunta.
 
-    turma de 30   so o posterior: cobre 39,7%  |  preditivo: cobre 88,8%
+    turma de 30   so o posterior: cobre 39,7%  |  preditivo: cobre 90,5%
     turma de 60   so o posterior: cobre 49,7%  |  preditivo: cobre 88,2%
 
   Usar estimar() para responder "quanto minha turma vai acertar" erra em
@@ -146,10 +146,29 @@ def estimar(acertos: int, respostas: int, prior: Prior = Prior(), nivel: float =
                  nivel, alunos if alunos is not None else respostas)
 
 
-# Variacao da taxa de uma questao entre COORTES REAIS (alunos antigos vs
-# recentes no EdNet): sigma = 0,0153, com correlacao 0,953 entre as coortes.
-# E pequena, mas nao encolhe com n - entra no preditivo.
-SIGMA_COORTE = 0.0153
+# Variacao da taxa de uma questao entre coortes, NAO capturada pelo posterior
+# nem pela amostragem da turma. Nao encolhe com n - entra no preditivo.
+#
+# Medida diretamente (alunos antigos contra recentes no EdNet) da 0,0153, com
+# correlacao 0,953 entre as coortes. Mas esse valor deixa o intervalo SUB-COBRIR:
+# com 0,0153 o intervalo de 90% cobre 87,7% +- 1,0 em 8 particoes - 6,5
+# erros-padrao abaixo do nominal, e sempre para baixo.
+#
+# O valor abaixo foi calibrado para a cobertura bater o nominal: ajustado em 4
+# particoes, validado em 4 que nao participaram do ajuste.
+#   sigma   ajuste   validacao
+#   0,0153   87,4%     88,0%
+#   0,0300   88,6%     89,2%
+#   0,0400   89,7%     90,5%   <- escolhido
+#   0,0500   90,9%     91,7%
+# E o ajuste nao serve so ao nivel de 90%. Na validacao:
+#   nivel 50% -> 52,9% | 80% -> 81,8% | 90% -> 90,5% | 95% -> 94,7%
+#
+# A distancia entre 0,0153 medido e 0,0400 necessario e informacao: existe
+# variacao que o modelo de duas componentes nao representa (item que muda de
+# comportamento, ordem de apresentacao, efeito de professor). Nao a explicamos -
+# so garantimos que o intervalo nao mente sobre o proprio nivel.
+SIGMA_COORTE = 0.0400
 
 
 def prever_turma(acertos: int, respostas: int, alunos_na_turma: int,
@@ -159,7 +178,7 @@ def prever_turma(acertos: int, respostas: int, alunos_na_turma: int,
 
     Diferente de `estimar()`, que cobre a taxa latente da questao. Aqui entra
     tambem o sorteio daquela turma especifica - e e ele que domina em turma
-    pequena. Medido no EdNet: cobertura 88,8% numa turma de 30, contra 39,7%
+    pequena. Medido no EdNet: cobertura 90,5% numa turma de 30, contra 39,7%
     do intervalo de `estimar()`.
     """
     if alunos_na_turma < 1:

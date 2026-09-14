@@ -202,26 +202,48 @@ class PreAvaliacao:
 
     @property
     def percentual_estimado(self) -> float:
-        """Converte a escala 1--5 para uma faixa de 0--100.
+        """A escala 1--5 reescrita em 0--100. NAO e porcentagem de acerto.
 
-        Isto e uma escala de exibicao, nao uma porcentagem de acerto humano.
-        O alvo do treino foi uma nota de LLM e nao ha dado suficiente para
-        afirmar que ``72%`` significa 72% de conteudo correto.
+        MEDIDO NO CORPUS classEx (1.167 respostas), contra a nota de referencia
+        na mesma escala:
+            erro absoluto medio   13,0 pontos percentuais
+            vies                  +5,9 pontos (exibe alto)
+            Spearman              +0,422
+
+        Treze pontos de erro medio em cima de um numero de dois digitos: quem le
+        ``72%`` entende uma nota, e a nota real daquela resposta esta tipicamente
+        entre 59 e 85. Por isso ``__str__`` mostra a FAIXA, nao este numero.
+
+        Calibrar o vies foi testado (regressao linear com holdout por tarefa):
+        remove o vies (+5,9 -> 0,0) mas NAO reduz o erro (ganho -0,48 pontos,
+        IC95 [-1,34, +0,19], melhora em 3/5 dobras). Nao foi aplicado - trocar
+        um numero errado por outro numero errado sem ganho medido e ruido.
         """
-        return round((self.nota - 1.0) / 4.0 * 100.0, 1)
+        return round(max(0.0, min(100.0, (self.nota - 1.0) / 4.0 * 100.0)), 1)
 
     @property
     def faixa_percentual(self) -> str:
-        """Faixa ordinal para triagem, menos precisa que o numero exibido."""
-        if self.percentual_estimado < 50.0:
+        """Faixa ordinal para triagem. E o que esta validado para exibicao.
+
+        Cortes em 50 e 75 na escala, ou seja notas 3,0 e 4,0. No corpus classEx
+        as faixas separam de verdade, em ordem e sem cruzar:
+            baixo    4,5% das respostas   nota real media  32,2%
+            medio   70,8%                                  61,2%
+            alto    24,8%                                  70,5%
+
+        Compara a nota CRUA, nao o ``percentual_estimado`` arredondado - senao
+        uma nota de 3,9999 vira 75,0 no arredondamento e sobe de faixa sozinha.
+        """
+        pct = (self.nota - 1.0) / 4.0 * 100.0
+        if pct < 50.0:
             return 'baixo'
-        if self.percentual_estimado < 75.0:
+        if pct < 75.0:
             return 'medio'
         return 'alto'
 
     def __str__(self):
         falta = (', '.join(self.conceitos_faltando[:4]) or 'nenhum dos centrais')
-        return (f'~{self.percentual_estimado:.0f}% (escala) | cobre {self.cobertura:.0%} do gabarito, '
+        return (f'{self.faixa_percentual} (~{self.nota:.1f}/5, +-0,5) | cobre {self.cobertura:.0%} do gabarito, '
                 f'fora do gabarito {self.divagacao:.0%} (tipico ~72%) | falta: {falta}')
 
 

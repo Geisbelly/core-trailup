@@ -22,6 +22,11 @@ CHAVES = {
     # que e o numero que alguem seria tentado a citar sozinho.
     'lift da evasao no top 10%':     r'lift\s*(?:de\s*)?(?:\d,\d[–-])?(\d,\d)×\s*no top 10%',
     'numero de testes':              r'(\d{2,3}) testes de invariante',
+    # Nivel nominal 90%. Ancorado porque ja esteve em 88,8% com sigma medido
+    # em vez de calibrado, e o intervalo mentia sobre o proprio nivel.
+    # So o preditivo de turma. O 90,1% do `estimar` e outro conceito (efeito do
+    # reencontro em n=100) e nao deve entrar na mesma comparacao.
+    'prever_turma, cobertura':       r'(?:preditivo: cobre|turma de 30(?:[^\n]{0,30}?\|){2}\s*\*\*|numa turma de 30, contra|cobertura )(9\d,\d)%',
 }
 # valores que convivem de proposito (progressao historica, variantes do modelo)
 PERMITIDOS = {

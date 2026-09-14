@@ -127,12 +127,12 @@ Daí o módulo combinar as duas, meio a meio. E daí a ressalva honesta: o boost
 | turma | `estimar()` | `prever_turma()` |
 |---|---|---|
 | 15 alunos | 30,7% | **90,1%** |
-| 30 alunos | 39,7% | **88,8%** |
+| 30 alunos | 39,7% | **90,5%** |
 | 60 alunos | 49,7% | **88,2%** |
 
 Entra `prever_turma()`. A largura triplica (0,097 → 0,279 numa turma de 30) porque a incerteza é real.
 
-**Variação entre coortes reais** (alunos antigos vs recentes no EdNet): σ = 0,0153, correlação 0,953 entre coortes. Pequena, mas não encolhe com n — entra no preditivo.
+**Variação entre coortes reais** (alunos antigos vs recentes no EdNet): σ = 0,0153, correlação 0,953 entre coortes. Não encolhe com n — entra no preditivo. Mas esse σ **medido** deixa o intervalo de 90% cobrir só 87,7% ± 1,0 em 8 partições; o valor em uso é **σ = 0,0400**, calibrado em 4 partições e validado em 4 que não participaram, e acerta o nominal em 50%, 80%, 90% e 95%. Ver [a auditoria](auditoria/AUDITORIA.md).
 
 ---
 
