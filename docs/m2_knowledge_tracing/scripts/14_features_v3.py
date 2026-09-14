@@ -2,12 +2,13 @@
 import os, numpy as np, pandas as pd
 from collections import defaultdict, deque
 HERE=os.path.dirname(os.path.abspath(__file__))
+OUT=os.environ.get('TRAILUP_OUTPUT_DIR', HERE)
 A=0.3; CLIP=600.0; GS=1800.0
-BASE='/caminho/para/os/datasets'
+BASE=os.environ.get('TRAILUP_DATA_DIR', '/caminho/para/os/datasets')
 q=pd.read_csv(f'{BASE}/EdNet-Contents/contents/questions.csv')
 q['qidx']=q.question_id.str[1:].astype(np.int32)
 BUN={r.qidx:r.bundle_id for r in q.itertuples()}
-df=pd.read_parquet(f'{HERE}/responses_v3.parquet')
+df=pd.read_parquet(f'{OUT}/responses_v3.parquet')
 print(f'{len(df):,} respostas finais | {df.user.nunique():,} usuarios')
 user=df.user.values; part=df.part.values.astype(np.int64); qidx=df.qidx.values
 ts=df.ts.values; y=df.correct.values.astype(np.float64); n=len(df)
@@ -51,6 +52,6 @@ for col in ['ntags','diagnosis','lat_1a','lat_final','n_trocas','expl_sec','n_au
     out[col]=df[col].values
 out['log_lat']=np.log1p(out.lat_final); out['log_lat1']=np.log1p(out.lat_1a)
 out['log_expl']=np.log1p(out.expl_sec)
-out.to_parquet(f'{HERE}/features_v3.parquet',index=False)
+out.to_parquet(f'{OUT}/features_v3.parquet',index=False)
 print(f'-> features_v3.parquet {out.shape}')
 print(out[['log_lat','lat_rel','n_trocas','trocas_prev','log_expl']].describe().round(3).to_string())

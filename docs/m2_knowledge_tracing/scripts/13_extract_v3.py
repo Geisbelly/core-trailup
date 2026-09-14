@@ -11,7 +11,8 @@ import glob, os, random, sys
 from concurrent.futures import ProcessPoolExecutor
 import numpy as np, pandas as pd
 
-BASE='/caminho/para/os/datasets'; OUT=os.path.dirname(os.path.abspath(__file__))
+BASE=os.environ.get('TRAILUP_DATA_DIR', '/caminho/para/os/datasets')
+OUT=os.environ.get('TRAILUP_OUTPUT_DIR', os.path.dirname(os.path.abspath(__file__)))
 N=int(sys.argv[1]) if len(sys.argv)>1 else 120_000
 MIN_R=20
 q=pd.read_csv(f'{BASE}/EdNet-Contents/contents/questions.csv')
@@ -59,6 +60,8 @@ def one(path):
 
 if __name__=='__main__':
     fs=sorted(glob.glob(f'{BASE}/EdNet-KT3/KT3/u*.csv'))
+    if not fs:
+        raise SystemExit('EdNet KT3 nao encontrado; defina TRAILUP_DATA_DIR')
     random.Random(20260912).shuffle(fs); fs=fs[:N]
     print(f'lendo {len(fs):,} arquivos...',flush=True)
     parts=[]

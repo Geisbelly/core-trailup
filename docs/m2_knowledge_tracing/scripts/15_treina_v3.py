@@ -2,9 +2,11 @@
 import os,sys,gc,json,pickle,numpy as np,pandas as pd
 from sklearn.ensemble import HistGradientBoostingClassifier
 from sklearn.metrics import roc_auc_score,log_loss,brier_score_loss,average_precision_score
-HERE=os.path.dirname(os.path.abspath(__file__)); ALVO=sys.argv[1]; CONF=sys.argv[2] if len(sys.argv)>2 else 'v3'
+HERE=os.path.dirname(os.path.abspath(__file__))
+OUT=os.environ.get('TRAILUP_OUTPUT_DIR', HERE)
+ALVO=sys.argv[1]; CONF=sys.argv[2] if len(sys.argv)>2 else 'v3'
 rng=np.random.RandomState(20260912)
-df=pd.read_parquet(f'{HERE}/features_v3.parquet')
+df=pd.read_parquet(f'{OUT}/features_v3.parquet')
 u=df.user.unique(); rng.shuffle(u); n=len(u)
 s=pd.Series('test',index=u).to_dict()
 s.update(dict.fromkeys(u[:int(.8*n)],'train')); s.update(dict.fromkeys(u[int(.8*n):int(.9*n)],'val'))
@@ -58,6 +60,6 @@ if ALVO=='gate' and CONF=='v3':
     for taxa in (0.05,0.10,0.15,0.20):
         t=np.quantile(p,1-taxa); k=p>=t
         print(f'  dispara {taxa:>4.0%} | limiar {t:.2f} | precisao {y[k].mean():>6.1%} | cobertura {y[k].sum()/y.sum():>5.0%}',flush=True)
-    pickle.dump({'model':m,'feats':F,'diff':diff,'global':G},open(f'{HERE}/m2_gate_v3.pkl','wb'))
+    pickle.dump({'model':m,'feats':F,'diff':diff,'global':G},open(f'{OUT}/m2_gate_v3.pkl','wb'))
 if ALVO=='proxima' and CONF=='v3':
-    pickle.dump({'model':m,'feats':F,'diff':diff,'global':G},open(f'{HERE}/m2_model_v3.pkl','wb'))
+    pickle.dump({'model':m,'feats':F,'diff':diff,'global':G},open(f'{OUT}/m2_model_v3.pkl','wb'))
