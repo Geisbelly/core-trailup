@@ -74,7 +74,9 @@ if __name__ == '__main__':
         'janela_dias': 30,
         'janela_recente': 10,
     }
-    caminho = SAIDA.parent / 'docs' / 'modelo.json'
+    # O prototipo mora em docs/seminario/ porque o GitHub Pages deste
+    # repositorio serve a pasta docs/ - ver README do seminario.
+    caminho = SAIDA.parents[1] / 'docs' / 'seminario' / 'modelo.json'
     json.dump(saida, open(caminho, 'w'), indent=2, ensure_ascii=False)
     print(f'-> {caminho}')
     print(json.dumps({k: v for k, v in saida.items() if k != 'coortes'}, indent=2)[:600])

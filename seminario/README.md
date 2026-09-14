@@ -6,7 +6,7 @@ realidades opostas** de ensino a distância.
 
 **Grupo:** Geisbelly · Victória · Maria Antonia
 
-**Protótipo web:** https://geisbelly.github.io/seminario-engajamento/
+**Protótipo web:** https://geisbelly.github.io/core-trailup/seminario/
 **Diário de decisões:** [`DIARIO.md`](DIARIO.md) — é onde está o caminho.
 
 ---
@@ -201,10 +201,21 @@ python3 scripts/06_exportar.py    # gera docs/modelo.json do protótipo
 Cada script imprime o que mede e o que aquilo quer dizer. Rodar do 01 ao 06
 reproduz todos os números deste README.
 
-Para ver o protótipo localmente: `python3 -m http.server -d docs` e abra
-`http://localhost:8000`.
+Os scripts rodam de dentro de `seminario/scripts/`. Para ver o protótipo
+localmente, a partir da raiz do repositório:
+
+```bash
+python3 -m http.server -d docs/seminario
+```
 
 ---
+
+## Onde isto vive
+
+Este seminário é uma pasta dentro do repositório [`core-trailup`](../), que
+reúne os modelos do projeto TrailUp. O trabalho do seminário é
+**auto-contido**: tudo o que o enunciado pede está aqui dentro, e os scripts
+não dependem de nada do resto do repositório.
 
 ## Estrutura
 
@@ -214,6 +225,7 @@ DIARIO.md            o registro do processo — é o documento principal
 requirements.txt     pandas, numpy, scikit-learn
 scripts/             as seis etapas, na ordem
 dados/README.md      como baixar as bases (elas não cabem aqui)
-docs/                o protótipo web publicado no GitHub Pages
 saida/               o que os scripts produzem (fora do versionamento)
+
+../docs/seminario/   o protótipo web, publicado no GitHub Pages
 ```

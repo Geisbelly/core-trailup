@@ -6,6 +6,7 @@ DADOS = Path(os.environ.get('DADOS', Path(__file__).resolve().parents[1] / 'dado
 EDNET = DADOS / 'EdNet-KT3' / 'KT3'
 OULAD = DADOS / 'oulad'
 SAIDA = Path(__file__).resolve().parents[1] / 'saida'
+# parents[1] = seminario/ ; parents[2] = raiz do repositorio
 SAIDA.mkdir(exist_ok=True)
 
 # A janela do experimento. Os eixos saem dos dias 0-29 de cada aluno; o desfecho
