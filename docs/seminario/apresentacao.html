@@ -862,7 +862,7 @@ teto.</li>
     var deitado = (vw / vh) >= 1.15;
     var pw = deitado ? 1280 : 440, ph = deitado ? 720 : 812;
     deck.dataset.modo = deitado ? 'deitado' : 'retrato';
-    K_MAX = deitado ? 1.16 : 1.45;
+    K_MAX = deitado ? 1.45 : 1.45;
     var margem = deitado ? 26 : 12;
     var disponivel = vh - 62;
     var s = Math.min((vw - margem * 2) / pw, (disponivel - margem * 2) / ph);
@@ -872,7 +872,7 @@ teto.</li>
 
   /* no projetor o teto e baixo, para todos os slides ficarem no mesmo corpo de texto;
      no celular ele sobe, porque ali o que importa e a legibilidade de cada slide */
-  var K_MIN = .45, K_MAX = 1.16;
+  var K_MIN = .45, K_MAX = 1.45, FOLGA_MAX = 42;
   function encaixa(s){
     if (!s) return;
     var fit = s.querySelector('.fit');
@@ -882,9 +882,11 @@ teto.</li>
     var notas = s.querySelector('.notas');
     if (notas && document.body.classList.contains('com-notas')) livre -= notas.offsetHeight;
     if (livre <= 0) return;
+    var filhos = [].slice.call(fit.children);
+    filhos.forEach(function(el){ el.style.marginBottom = ''; });
     /* a largura do involucro e 100%/k, entao mudar k reflui o texto: itera ate estabilizar */
     var k = 1;
-    for (var n = 0; n < 4; n++){
+    for (var n = 0; n < 5; n++){
       fit.style.setProperty('--k', k);
       var visual = fit.offsetHeight * k;
       var alvo = Math.max(K_MIN, Math.min(K_MAX, k * (livre / visual)));
@@ -892,9 +894,22 @@ teto.</li>
       k = alvo;
     }
     fit.style.setProperty('--k', k);
-    /* garantia final: se ainda sobrar altura, encolhe de uma vez */
-    var sobra = fit.offsetHeight * k;
-    if (sobra > livre) fit.style.setProperty('--k', Math.max(K_MIN, k * livre / sobra));
+    /* garantia: se ainda passar da altura, encolhe de uma vez */
+    var alto = fit.offsetHeight * k;
+    if (alto > livre) {
+      k = Math.max(K_MIN, k * livre / alto);
+      fit.style.setProperty('--k', k);
+      alto = fit.offsetHeight * k;
+    }
+    /* o que sobrar vira respiro entre os blocos, em vez de um vazio no pe do slide */
+    var sobra = livre - alto, vaos = filhos.length - 1;
+    if (sobra > 8 && vaos > 0 && !s.classList.contains('capa')){
+      var extra = Math.min(FOLGA_MAX, sobra / vaos) / k;
+      for (var j = 0; j < vaos; j++){
+        var base = parseFloat(getComputedStyle(filhos[j]).marginBottom) || 0;
+        filhos[j].style.marginBottom = (base + extra) + 'px';
+      }
+    }
   }
 
   function ir(i, semHash){
