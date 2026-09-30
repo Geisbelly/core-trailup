@@ -1,0 +1,916 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Dois modelos para gastar LLM só onde vale — seminário</title>
+<meta name="description" content="Apresentação do seminário: modelo de engajamento e avaliador de resposta discursiva. Geisbelly Victória e Maria Antonia.">
+<style>
+:root{
+  --tinta:#16202b; --fraco:#5b6b7c; --linha:#dde5ed; --fundo:#f6f8fa;
+  --papel:#fff; --acento:#1f6feb; --alerta:#b4331f; --ok:#1a7f4b;
+  --sombra:0 1px 2px rgba(22,32,43,.05),0 8px 28px rgba(22,32,43,.06);
+  --max:1000px;
+}
+@media (prefers-color-scheme:dark){
+  :root{--tinta:#e6edf3;--fraco:#8b98a5;--linha:#2b3440;--fundo:#0d1117;
+        --papel:#161b22;--acento:#58a6ff;--alerta:#f0714f;--ok:#4ec98a;
+        --sombra:0 1px 2px rgba(0,0,0,.4),0 8px 28px rgba(0,0,0,.35);}
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;background:var(--fundo);color:var(--tinta);
+  font:16px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+  -webkit-text-size-adjust:100%}
+
+/* ---------- barra de progresso ---------- */
+#progresso{position:fixed;top:0;left:0;height:3px;background:var(--acento);
+  width:0;z-index:40;transition:width .18s ease}
+
+/* ---------- palco ---------- */
+#palco{min-height:100%;display:flex;flex-direction:column;
+  padding:26px 18px 96px}
+.slide{display:none;flex:1;width:100%;max-width:var(--max);margin:0 auto;
+  background:var(--papel);border:1px solid var(--linha);border-radius:14px;
+  box-shadow:var(--sombra);padding:clamp(20px,3.4vw,44px);
+  overflow-y:auto;overscroll-behavior:contain;
+  animation:entra .22s ease both}
+.slide.ativo{display:flex;flex-direction:column}
+@keyframes entra{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){.slide{animation:none}#progresso{transition:none}}
+
+/* ---------- tipografia ---------- */
+.etiqueta{font-size:.72rem;letter-spacing:.09em;text-transform:uppercase;
+  color:var(--fraco);font-weight:650;display:flex;gap:10px;flex-wrap:wrap;
+  align-items:center;margin-bottom:14px}
+.etiqueta .tempo{border:1px solid var(--linha);border-radius:20px;padding:2px 9px;
+  letter-spacing:.04em}
+h1{font-size:clamp(1.8rem,5.6vw,3rem);line-height:1.12;margin:0 0 12px;
+  letter-spacing:-.03em}
+h2{font-size:clamp(1.3rem,3.6vw,2rem);line-height:1.18;margin:0 0 14px;
+  letter-spacing:-.022em}
+.sub{color:var(--fraco);font-size:clamp(1rem,2.1vw,1.16rem);margin:0 0 18px;
+  max-width:60ch}
+p{margin:0 0 14px;max-width:68ch}
+strong{font-weight:650}
+em{font-style:italic}
+.grande{font-size:clamp(1.05rem,2.3vw,1.3rem);line-height:1.5}
+.nota{font-size:.88rem;color:var(--fraco);max-width:72ch}
+.corpo{flex:1}
+
+/* ---------- listas ---------- */
+ul,ol{margin:0 0 14px;padding-left:1.15em;max-width:68ch}
+li{margin-bottom:9px}
+ul.limpa{list-style:none;padding:0}
+ul.limpa li{padding-left:1.4em;position:relative}
+ul.limpa li::before{content:"›";position:absolute;left:0;color:var(--acento);
+  font-weight:700}
+
+/* ---------- cartões ---------- */
+.cartoes{display:grid;gap:14px;margin:4px 0 16px;
+  grid-template-columns:repeat(auto-fit,minmax(215px,1fr))}
+.cartao{border:1px solid var(--linha);border-radius:11px;padding:15px 16px;
+  background:var(--fundo)}
+.cartao .rot{font-size:.74rem;text-transform:uppercase;letter-spacing:.05em;
+  color:var(--fraco);font-weight:650}
+.cartao .num{font-size:clamp(1.5rem,4.2vw,2.1rem);font-weight:680;
+  letter-spacing:-.03em;font-variant-numeric:tabular-nums;margin:3px 0 2px}
+.cartao .pe{font-size:.85rem;color:var(--fraco)}
+.cartao.destaque{border-color:var(--acento);
+  background:color-mix(in srgb,var(--acento) 7%,var(--papel))}
+.num.ok{color:var(--ok)} .num.alerta{color:var(--alerta)}
+
+/* ---------- tabelas ---------- */
+.rolavel{overflow-x:auto;margin:0 0 14px;
+  border:1px solid var(--linha);border-radius:10px}
+table{width:100%;border-collapse:collapse;font-size:clamp(.82rem,1.7vw,.93rem);
+  font-variant-numeric:tabular-nums}
+th,td{text-align:right;padding:9px 12px;border-bottom:1px solid var(--linha);
+  vertical-align:top}
+th{white-space:nowrap}
+th:first-child,td:first-child{text-align:left;min-width:9em}
+td.texto,th.texto{text-align:left;min-width:15em}
+th{font-weight:650;color:var(--fraco);font-size:.76rem;text-transform:uppercase;
+  letter-spacing:.04em;background:var(--fundo)}
+tbody tr:last-child td{border-bottom:0}
+tr.marca td{background:color-mix(in srgb,var(--acento) 8%,transparent);
+  font-weight:650}
+tr.apaga td{color:var(--fraco)}
+td.ok,th.ok{color:var(--ok)} td.alerta{color:var(--alerta)}
+
+/* ---------- blocos de citação / código ---------- */
+.frase{border-left:3px solid var(--acento);padding:2px 0 2px 16px;margin:2px 0 18px;
+  font-size:clamp(1.05rem,2.5vw,1.35rem);line-height:1.4;letter-spacing:-.015em}
+.aviso{border-left:3px solid var(--alerta);padding:2px 0 2px 16px;margin:2px 0 16px}
+pre{background:var(--fundo);border:1px solid var(--linha);border-radius:9px;
+  padding:14px 15px;overflow-x:auto;margin:0 0 14px;
+  font-size:clamp(.78rem,1.8vw,.88rem);line-height:1.65}
+code,pre{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+p code,li code,td code{background:var(--fundo);border:1px solid var(--linha);
+  padding:1px 5px;border-radius:5px;font-size:.87em}
+
+/* ---------- duas colunas ---------- */
+.duas{display:grid;gap:clamp(16px,3vw,30px);
+  grid-template-columns:repeat(auto-fit,minmax(265px,1fr))}
+.coluna h3{font-size:.95rem;text-transform:uppercase;letter-spacing:.05em;
+  color:var(--fraco);margin:0 0 10px}
+.coluna{min-width:0}
+
+/* ---------- capa ---------- */
+.capa{justify-content:center;text-align:left}
+.capa .autoras{display:flex;flex-wrap:wrap;gap:10px;margin:22px 0 8px}
+.capa .autoras span{border:1px solid var(--linha);border-radius:30px;
+  padding:7px 16px;font-weight:600;background:var(--fundo);
+  font-size:clamp(.92rem,2vw,1.05rem)}
+.capa .rodape{color:var(--fraco);font-size:.9rem;margin-top:auto;padding-top:24px}
+
+/* ---------- notas do apresentador ---------- */
+.notas{display:none;margin-top:auto;padding-top:16px;
+  border-top:1px dashed var(--linha);font-size:.87rem;color:var(--fraco)}
+body.com-notas .notas{display:block}
+.notas b{color:var(--tinta)}
+
+/* ---------- HUD ---------- */
+#hud{position:fixed;bottom:0;left:0;right:0;z-index:30;
+  display:flex;align-items:center;gap:8px;justify-content:center;
+  padding:10px 14px;background:color-mix(in srgb,var(--fundo) 86%,transparent);
+  backdrop-filter:blur(8px);border-top:1px solid var(--linha)}
+#hud button{font:inherit;font-size:.86rem;cursor:pointer;color:var(--tinta);
+  background:var(--papel);border:1px solid var(--linha);border-radius:8px;
+  padding:8px 13px;min-height:40px;line-height:1}
+#hud button:hover{border-color:var(--acento);color:var(--acento)}
+#hud button:focus-visible,#indice button:focus-visible{outline:2px solid var(--acento);
+  outline-offset:2px}
+#conta{font-variant-numeric:tabular-nums;font-size:.86rem;color:var(--fraco);
+  min-width:5.5em;text-align:center}
+#titulo-atual{font-size:.86rem;color:var(--fraco);max-width:34vw;overflow:hidden;
+  text-overflow:ellipsis;white-space:nowrap}
+.so-largo{display:inline}
+@media (max-width:720px){
+  .so-largo{display:none}
+  #titulo-atual{display:none}
+  #hud button{padding:8px 11px}
+  #palco{padding:16px 12px 88px}
+  .slide{border-radius:12px}
+}
+
+/* ---------- índice ---------- */
+#indice{position:fixed;inset:0;z-index:50;background:var(--fundo);
+  overflow-y:auto;padding:28px 18px 100px}
+#indice[hidden]{display:none}
+#indice .interno{max-width:var(--max);margin:0 auto}
+#indice h2{margin-bottom:4px}
+#indice ol{list-style:none;padding:0;margin:18px 0 0;display:grid;gap:8px;
+  grid-template-columns:repeat(auto-fill,minmax(285px,1fr));max-width:none}
+#indice button{display:flex;gap:11px;width:100%;text-align:left;font:inherit;
+  font-size:.92rem;cursor:pointer;color:var(--tinta);background:var(--papel);
+  border:1px solid var(--linha);border-radius:9px;padding:11px 13px;
+  align-items:baseline}
+#indice button:hover{border-color:var(--acento)}
+#indice button b{color:var(--fraco);font-variant-numeric:tabular-nums;
+  font-weight:650;min-width:1.6em}
+#indice button[aria-current]{border-color:var(--acento);
+  background:color-mix(in srgb,var(--acento) 8%,var(--papel))}
+
+/* ---------- impressão ---------- */
+@media print{
+  :root{--fundo:#fff;--papel:#fff;--linha:#c9d2dc;--tinta:#000;--fraco:#444;
+        --sombra:none}
+  #hud,#progresso,#indice{display:none!important}
+  #palco{padding:0;display:block}
+  .slide{display:flex!important;break-after:page;page-break-after:always;
+    box-shadow:none;border:0;border-top:1px solid var(--linha);
+    border-radius:0;padding:14mm 0;min-height:0;animation:none;overflow:visible}
+  .slide:first-child{border-top:0}
+  .notas{display:block!important}
+  a{color:inherit}
+}
+</style>
+</head>
+<body>
+<div id="progresso"></div>
+
+<main id="palco" aria-live="polite">
+
+<!-- 1 -->
+<section class="slide capa" data-titulo="Capa" data-tempo="0–1 min">
+  <div class="etiqueta">Seminário de aprendizado de máquina <span class="tempo">15 minutos</span></div>
+  <h1>Dois modelos para gastar LLM só onde vale</h1>
+  <p class="sub">Dois problemas reais de uma plataforma de estudo, cada um com
+  dado público, linha de base declarada e protótipo rodando inteiro no
+  navegador.</p>
+  <div class="autoras">
+    <span>Geisbelly Victória</span><span>Maria Antonia</span>
+  </div>
+  <p class="nota">Projeto TrailUp · repositório
+  <code>Geisbelly/core-trailup</code> · pasta <code>seminario/</code></p>
+  <div class="rodape">
+    Use <kbd>→</kbd> <kbd>←</kbd> ou deslize o dedo. <b>O</b> abre o índice,
+    <b>N</b> mostra as notas, <b>F</b> entra em tela cheia.
+  </div>
+  <aside class="notas"><b>Abertura:</b> nomes, e a frase que amarra tudo —
+  os dois modelos decidem <b>onde gastar uma chamada cara</b>. Um decide em quem
+  vale intervir; o outro, qual resposta precisa mesmo de correção por LLM.</aside>
+</section>
+
+<!-- 2 -->
+<section class="slide" data-titulo="Os dois modelos" data-tempo="1–3 min">
+  <div class="etiqueta">Visão geral <span class="tempo">1–3 min</span></div>
+  <h2>Uma pergunta só, feita duas vezes</h2>
+  <p class="frase">Onde vale a pena gastar a chamada cara?</p>
+  <div class="corpo">
+  <div class="rolavel">
+    <table>
+      <thead><tr><th>Modelo</th><th class="texto">Pergunta</th><th>Métrica</th></tr></thead>
+      <tbody>
+        <tr><td><strong>1 · engajamento</strong></td>
+            <td class="texto">este aluno vai parar de estudar?</td>
+            <td>AUC <strong>0,873 / 0,885</strong><br><span class="nota">linha de base 0,858 / 0,879</span></td></tr>
+        <tr><td><strong>2 · resposta discursiva</strong></td>
+            <td class="texto">vale abrir a LLM para esta resposta?</td>
+            <td>Spearman <strong>0,495 ± 0,021</strong><br><span class="nota">teto medido 0,883</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>Um decide <strong>em quem vale intervir</strong>; o outro, <strong>qual
+  resposta precisa mesmo de correção por LLM</strong>. Os dois são baratos de
+  propósito: o modelo 1 cabe num JSON, o modelo 2 usa só a biblioteca padrão do
+  Python — e ambos rodam no navegador, sem servidor.</p>
+  </div>
+  <aside class="notas"><b>Dizer aqui:</b> as duas métricas não são acurácia, e
+  isso é intencional — o item 5 explica por quê. Prometer que a linha de base
+  aparece em todo resultado.</aside>
+</section>
+
+<!-- 3 -->
+<section class="slide" data-titulo="Problema 1 — abandono silencioso" data-tempo="1–3 min">
+  <div class="etiqueta">Modelo 1 · problema <span class="tempo">1–3 min</span></div>
+  <h2>Ninguém cancela. A pessoa simplesmente para de aparecer</h2>
+  <div class="corpo">
+  <p class="grande">Quando o abandono é percebido, já passou o momento em que
+  dava para fazer algo.</p>
+  <p>A pergunta operacional: <strong>dá para identificar, com quatro semanas de
+  comportamento, quem não vai voltar?</strong> Se der, uma intervenção barata —
+  mensagem, revisão mais leve, mudança de ritmo — pode ser dirigida a quem
+  precisa, em vez de disparada para todo mundo.</p>
+  <div class="aviso"><strong>O que torna o problema interessante:</strong> a
+  resposta provavelmente não é a mesma em plataformas diferentes. Num curso
+  obrigatório, quase todo mundo volta. Num app de autoestudo, quase ninguém.
+  Um modelo que só viu uma realidade não tem como saber em qual dos dois casos
+  ele está.</p>
+  </div>
+  <aside class="notas">Essa última caixa é o motivo de existirem duas bases.
+  Plantar aqui para o slide dos dados fazer sentido sozinho.</aside>
+</section>
+
+<!-- 4 -->
+<section class="slide" data-titulo="Problema 2 — corrigir texto é caro" data-tempo="1–3 min">
+  <div class="etiqueta">Modelo 2 · problema <span class="tempo">1–3 min</span></div>
+  <h2>Mandar toda resposta para a LLM custa; não mandar nenhuma é não corrigir</h2>
+  <div class="corpo">
+  <p>A pergunta é se dá para <strong>decidir sozinho nas pontas óbvias</strong> —
+  a resposta claramente vazia e a claramente completa — e mandar para a LLM só o
+  <strong>meio</strong>, que é onde a decisão é difícil.</p>
+  <div class="cartoes">
+    <div class="cartao"><div class="rot">Chamada de LLM</div>
+      <div class="num">1–3 s</div><div class="pe">por resposta, mais custo</div></div>
+    <div class="cartao destaque"><div class="rot">Este modelo</div>
+      <div class="num ok">167 µs</div><div class="pe">por resposta, sem rede</div></div>
+    <div class="cartao"><div class="rot">Pré-filtro em 10% / 90%</div>
+      <div class="num">20%</div><div class="pe">das respostas deixam de ir</div></div>
+  </div>
+  <p>E há um ganho de brinde: enquanto a LLM não responde, o aluno pode receber
+  um retorno provisório dizendo <strong>quais conceitos do gabarito
+  faltaram</strong>.</p>
+  </div>
+  <aside class="notas">Se alguém perguntar de custo em reais: não medimos
+  economia numa integração real — medimos tempo por resposta e fração
+  filtrada. Não inventar número de fatura.</aside>
+</section>
+
+<!-- 5 -->
+<section class="slide" data-titulo="Dados do modelo 1" data-tempo="3–6 min">
+  <div class="etiqueta">Dados <span class="tempo">3–6 min</span></div>
+  <h2>Duas bases escolhidas para serem o mais diferentes possível</h2>
+  <div class="corpo">
+  <div class="rolavel">
+    <table>
+      <thead><tr><th>Base</th><th class="texto">O que é</th><th>Alunos</th><th>Não voltam</th></tr></thead>
+      <tbody>
+        <tr><td><strong>EdNet KT3</strong></td>
+            <td class="texto">autoestudo de inglês (TOEIC), adulto, coreano. Sem turma, sem
+            professor, sem matrícula — continuar é 100% voluntário</td>
+            <td>26.547</td><td class="alerta">86,2%</td></tr>
+        <tr><td><strong>OULAD</strong></td>
+            <td class="texto">universitário britânico, EAD, com turma, professor, matrícula e
+            abandono formalmente registrado</td>
+            <td>25.434</td><td class="ok">8,5%</td></tr>
+        <tr class="marca"><td>total no painel</td><td></td><td>51.981</td><td></td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="frase">86,2% contra 8,5% não é defeito de amostragem: são fenômenos
+  diferentes.</p>
+  <p>Um eixo que funcione nas duas está descrevendo <strong>engajamento</strong>;
+  um que funcione só numa está descrevendo <strong>aquela plataforma</strong>.</p>
+  <p class="nota">EdNet KT3 — <code>github.com/riiid/ednet</code> — CC BY-NC 4.0.
+  OULAD — <code>analyse.kmi.open.ac.uk/open_dataset</code> — CC BY 4.0. Os dados
+  não estão no repositório (o EdNet sozinho tem 4,2 GB); os scripts avisam com
+  instrução exata se não encontrarem os arquivos.</p>
+  </div>
+  <aside class="notas">Falar as licenças em voz alta — o enunciado pede origem
+  dos dados. Mostrar que o repositório não redistribui base de 4 GB.</aside>
+</section>
+
+<!-- 6 -->
+<section class="slide" data-titulo="Dados do modelo 2" data-tempo="3–6 min">
+  <div class="etiqueta">Dados <span class="tempo">3–6 min</span></div>
+  <h2>classEx: 1.167 respostas, e três notas para cada uma</h2>
+  <div class="corpo">
+  <div class="cartoes">
+    <div class="cartao"><div class="rot">Respostas</div><div class="num">1.167</div>
+      <div class="pe">de 249 alunos, em 8 tarefas</div></div>
+    <div class="cartao"><div class="rot">Idioma e domínio</div><div class="num">alemão</div>
+      <div class="pe">macroeconomia, universitários</div></div>
+    <div class="cartao"><div class="rot">Nota média</div><div class="num">3,50</div>
+      <div class="pe">desvio 0,70, escala 1–5</div></div>
+    <div class="cartao destaque"><div class="rot">Avaliações por resposta</div>
+      <div class="num">3</div><div class="pe">independentes, do GPT-4</div></div>
+  </div>
+  <p>São essas <strong>três</strong> avaliações que tornam o trabalho possível:
+  elas permitem medir <strong>o teto</strong> — o quanto o próprio LLM concorda
+  consigo mesmo. Cabe no repositório (3,3 MB), em
+  <code>dados/classex.parquet</code>, então o modelo 2 reproduz sem baixar nada.</p>
+  <div class="aviso"><strong>O rótulo é nota de LLM, não humana.</strong> É a
+  limitação mais séria deste modelo, e ela volta no fim da apresentação.</div>
+  </div>
+  <aside class="notas">Distribuição: ~87% das notas arredondadas caem em 3 ou 4 —
+  poucos exemplos nas pontas, o que dificulta avaliar resposta excelente ou
+  muito ruim.</aside>
+</section>
+
+<!-- 7 -->
+<section class="slide" data-titulo="Preparação e janela" data-tempo="3–6 min">
+  <div class="etiqueta">Pré-processamento <span class="tempo">3–6 min</span></div>
+  <h2>Janela fixa, igual para todos, e nada da segunda metade entra na conta</h2>
+  <div class="corpo">
+  <pre>dias 0–29  ─────────────►  medem os eixos
+dias 30–59 ─────────────►  verificam o desfecho ("voltou?")</pre>
+  <ul class="limpa">
+    <li>O <strong>dia 0</strong> é o primeiro evento <em>daquele</em> aluno, não
+    uma data de calendário — cada um entra quando entra, e o que se compara é o
+    mesmo trecho de vida.</li>
+    <li><strong>Nada da segunda janela entra no cálculo dos eixos.</strong> É a
+    regra que impede vazamento, e vale para as duas bases.</li>
+    <li><strong>Sessões só no EdNet:</strong> intervalos de mais de 30 minutos
+    separam sessões. O OULAD registra o <em>dia</em>, não a <em>hora</em> — lá o
+    eixo que dependia disso ficou <code>NaN</code> em vez de ser preenchido.</li>
+    <li><strong>Corte de entrada:</strong> aluno com menos de 30 eventos na
+    janela não entra — não há comportamento suficiente para medir nada.</li>
+    <li><strong>O desfecho não é rotulado por ninguém:</strong> "voltou" é ter
+    qualquer atividade nos dias 30–59. Sai direto do dado.</li>
+  </ul>
+  </div>
+  <aside class="notas">O <code>NaN</code> em vez de preenchimento é importante —
+  a primeira versão preenchia com outra coluna e o teste de replicação passava
+  comparando a coluna com ela mesma. Volta no slide de erros.</aside>
+</section>
+
+<!-- 8 -->
+<section class="slide" data-titulo="Eixos testados um a um" data-tempo="6–10 min">
+  <div class="etiqueta">Modelo 1 · seleção <span class="tempo">6–10 min</span></div>
+  <h2>Cada eixo foi medido sozinho, nas duas bases. Só entrou quem passou nas duas</h2>
+  <div class="corpo">
+  <div class="rolavel">
+    <table>
+      <thead><tr><th>Eixo</th><th>EdNet</th><th>OULAD</th><th>Entra?</th></tr></thead>
+      <tbody>
+        <tr class="marca"><td>recência — dias ativos nos últimos 10</td>
+          <td>0,794</td><td>0,879</td><td class="ok">sim</td></tr>
+        <tr class="marca"><td>frequência — dias ativos nos 30</td>
+          <td>0,858</td><td>0,837</td><td class="ok">sim</td></tr>
+        <tr class="apaga"><td>profundidade — eventos por dia ativo</td>
+          <td>0,665</td><td>0,516</td><td>não — fraco demais numa</td></tr>
+        <tr class="apaga"><td>volume — eventos por sessão</td>
+          <td>0,593</td><td><em>não medível</em></td><td>não — ver "o que não funcionou"</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>Depois, três desenhos de modelo: <strong>(1)</strong> um modelo por base —
+  funciona, mas dois modelos que discordam não dizem qual está certo;
+  <strong>(2)</strong> um modelo nas duas juntas com valores crus — descartado;
+  <strong>(3)</strong> <strong>um modelo nas duas, padronizadas dentro de cada
+  coorte</strong> — regressão logística de duas variáveis. É este.</p>
+  <p class="nota">Logística de duas variáveis não é falta de ambição: o modelo
+  inteiro precisa caber num JSON e rodar no navegador, sem servidor — e o ganho
+  de algo mais sofisticado seria medido contra uma linha de base que já é alta.</p>
+  </div>
+  <aside class="notas">Se perguntarem por que não floresta/boosting: a linha de
+  base é 0,858; o teto prático é estreito, e o requisito de rodar no navegador é
+  real. Não é desculpa, é restrição declarada.</aside>
+</section>
+
+<!-- 9 -->
+<section class="slide" data-titulo="Resultado do modelo 1" data-tempo="6–10 min">
+  <div class="etiqueta">Modelo 1 · resultado <span class="tempo">6–10 min</span></div>
+  <h2>AUC, não acurácia — e contra o melhor eixo sozinho</h2>
+  <div class="corpo">
+  <div class="aviso"><strong>Por que acurácia não serve, com número:</strong> no
+  OULAD 91,5% dos alunos voltam. Um modelo que <strong>nunca alerta
+  ninguém</strong> acerta <strong>91,5%</strong>. Quem reporta acurácia nesta
+  base está escondendo que não faz nada.</div>
+  <div class="rolavel">
+    <table>
+      <thead><tr><th>Base</th><th>Linha de base</th><th>Modelo (12 partições)</th><th>Ganho</th></tr></thead>
+      <tbody>
+        <tr><td>EdNet</td><td>0,858</td><td><strong>0,873 ± 0,004</strong></td><td>+0,015</td></tr>
+        <tr><td>OULAD</td><td>0,879</td><td><strong>0,885 ± 0,006</strong></td><td>+0,006</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p><strong>O ganho é pequeno, e está declarado como pequeno.</strong> A
+  frequência sozinha já faz quase todo o trabalho. O que o modelo acrescenta é
+  combinar os dois eixos de forma estável: o peso da recência é
+  <strong>3,2×</strong> o da frequência, e essa proporção se mantém nas 12
+  partições.</p>
+  <p class="nota">Todo número é média ± desvio de 12 partições independentes por
+  aluno. Não de uma divisão só — ver 11/09 no diário, quando a divisão sortuda
+  nos custou um número errado repetido em todo lugar.</p>
+  </div>
+  <aside class="notas">AUC = chance de ordenar certo um par tirado ao acaso, um
+  que voltou e um que não. 0,50 é cara ou coroa. Dizer isso em uma frase.</aside>
+</section>
+
+<!-- 10 -->
+<section class="slide" data-titulo="Calibração por coorte" data-tempo="6–10 min">
+  <div class="etiqueta">Modelo 1 · uso <span class="tempo">6–10 min</span></div>
+  <h2>Ponto de operação, não limiar fixo</h2>
+  <div class="corpo">
+  <p>Alertando os <strong>10% de maior risco de cada coorte</strong>, o limiar é:</p>
+  <div class="cartoes">
+    <div class="cartao"><div class="rot">EdNet</div><div class="num">0,541</div>
+      <div class="pe">mesmo alvo: 10% da coorte</div></div>
+    <div class="cartao"><div class="rot">OULAD</div><div class="num">0,708</div>
+      <div class="pe">mesmo alvo: 10% da coorte</div></div>
+  </div>
+  <p class="frase">A ordem transfere entre plataformas. O nível não transfere de
+  jeito nenhum.</p>
+  <p>Exportar um limiar de uma base para a outra <strong>troca completamente
+  quem é alertado</strong> — por isso a calibração por coorte é requisito, não
+  enfeite.</p>
+  <p class="nota">Dá para sentir isso no dedo no protótipo: mantenha os
+  controles parados e troque a coorte. O risco muda muito, com atividade
+  idêntica. É o resultado central do trabalho.</p>
+  </div>
+  <aside class="notas"><b>Demo 1</b> — abrir <code>seminario/</code>, mexer nos
+  dois sliders, trocar a coorte sem mexer em mais nada. Falar a frase: a mesma
+  atividade significa coisas diferentes em plataformas diferentes.</aside>
+</section>
+
+<!-- 11 -->
+<section class="slide" data-titulo="Como o modelo 2 funciona" data-tempo="6–10 min">
+  <div class="etiqueta">Modelo 2 · método <span class="tempo">6–10 min</span></div>
+  <h2>Ele não chama LLM nenhuma. É aritmética sobre conjuntos</h2>
+  <div class="corpo">
+  <p>Vale dizer isso primeiro, porque o nome do problema sugere o contrário. Os
+  únicos imports do módulo são <code>re</code>, <code>collections</code>,
+  <code>dataclasses</code> e <code>math</code>. Não há <code>requests</code>, não
+  há <code>openai</code>, não há socket.</p>
+  <pre>Gabarito:  juros → reduzem  → consumo
+Resposta:  juros → aumentam → consumo</pre>
+  <p>Tokeniza os dois textos, monta de cada um um <strong>grafo de
+  coocorrência</strong> (palavras a até 4 posições viram aresta) e mede a
+  sobreposição: quantos conceitos do gabarito aparecem, quantas ligações entre
+  conceitos, quanto ficou de fora. São <strong>dez contagens</strong> desse tipo,
+  combinadas por uma soma ponderada de pesos fixos, ajustados por regressão.</p>
+  <div class="aviso">E o exemplo acima mostra o limite: os dois grafos
+  compartilham "juros" e "consumo", mas as afirmações têm sentidos
+  <strong>opostos</strong>. Aresta é proximidade, não causalidade — compartilhar
+  relação no grafo não prova que a resposta está correta.</div>
+  </div>
+  <aside class="notas">Se pedirem as dez features: cobertura de nós (peso e
+  contagem), conceitos centrais, divagação, razão de tamanho, cobertura de
+  arestas (peso e contagem), log do comprimento, nº de nós, nº de arestas. Não
+  ler os dez coeficientes.</aside>
+</section>
+
+<!-- 12 -->
+<section class="slide" data-titulo="Onde a LLM entra" data-tempo="6–10 min">
+  <div class="etiqueta">Modelo 2 · método <span class="tempo">6–10 min</span></div>
+  <h2>Ele aprendeu a concordar com o GPT-4 sem precisar perguntar nada a ele</h2>
+  <div class="corpo">
+  <div class="rolavel">
+    <table>
+      <thead><tr><th>Momento</th><th class="texto">Chama LLM?</th></tr></thead>
+      <tbody>
+        <tr><td>ajuste dos pesos</td>
+            <td class="texto"><strong>indiretamente</strong> — o <em>rótulo</em> que ele
+            aprendeu a imitar é nota de GPT-4</td></tr>
+        <tr class="marca"><td>rodar o modelo numa resposta</td>
+            <td><strong>não, nunca</strong></td></tr>
+        <tr><td>depois da decisão</td>
+            <td class="texto">é a LLM que ele decide se vale a pena chamar</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>É exatamente essa a função: <strong>decidir barato quem precisa da chamada
+  cara</strong>. Por isso ele custa 167 µs e roda inteiro dentro do navegador na
+  página do protótipo — não haveria como, se dependesse de chamada externa.</p>
+  </div>
+  <aside class="notas">Essa confusão é a pergunta mais provável da banca.
+  Antecipar aqui e a resposta fica curta depois.</aside>
+</section>
+
+<!-- 13 -->
+<section class="slide" data-titulo="A ideia que morreu" data-tempo="6–10 min">
+  <div class="etiqueta">Modelo 2 · o caminho <span class="tempo">6–10 min</span></div>
+  <h2>Quanto mais ele sabia, menos ele sabia</h2>
+  <div class="corpo">
+  <p>Não começamos assim. A primeira ideia era a intuitiva: <strong>alimentar a
+  referência com mais texto do domínio</strong> para o modelo "saber mais" de
+  macroeconomia. Testamos enriquecer o gabarito com as respostas
+  <strong>bem avaliadas de outros alunos</strong> da mesma tarefa — sem raspar
+  nada da internet, e sem o aluno avaliado entrar na própria referência:</p>
+  <div class="rolavel">
+    <table>
+      <thead><tr><th>O que forma a referência</th><th>Spearman</th><th>QWK</th></tr></thead>
+      <tbody>
+        <tr class="marca"><td>só o gabarito</td><td><strong>0,486</strong></td><td><strong>0,415</strong></td></tr>
+        <tr><td>+ as 5 melhores respostas</td><td>0,497</td><td>0,390</td></tr>
+        <tr><td>+ as 15 melhores</td><td>0,490</td><td>0,407</td></tr>
+        <tr><td>+ as 40 melhores</td><td>0,428</td><td>0,333</td></tr>
+        <tr><td>+ todas as do treino</td><td class="alerta"><strong>0,396</strong></td><td>0,361</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>A degradação é <strong>ordenada</strong>, e o modo de falhar é estrutural:
+  quanto mais texto entra, mais <strong>genérica</strong> a referência fica. Com
+  corpus grande, qualquer resposta cobre alguma parte dele — inclusive a
+  resposta ruim. A cobertura para de separar quem sabe de quem não sabe.</p>
+  <p class="frase">O gabarito funciona por ser preciso, não por ser rico.</p>
+  </div>
+  <aside class="notas">Também testadas e descartadas: camada semântica por LSA
+  (0,459 sem, 0,458 com — não acrescenta nada), boosting sobre as mesmas
+  features (pior que a logística) e encoder multilíngue pré-treinado (+0,057 ao
+  custo de ~900 MB de dependência).</aside>
+</section>
+
+<!-- 14 -->
+<section class="slide" data-titulo="Resultado do modelo 2" data-tempo="10–13 min">
+  <div class="etiqueta">Modelo 2 · resultado <span class="tempo">10–13 min</span></div>
+  <h2>A linha de base é contar palavras — e o teto não é 1,00</h2>
+  <div class="corpo">
+  <div class="rolavel">
+    <table>
+      <thead><tr><th>Critério</th><th>Spearman</th><th>Do teto</th></tr></thead>
+      <tbody>
+        <tr><td>contar palavras da resposta</td><td>+0,283</td><td>32%</td></tr>
+        <tr><td>contar caracteres</td><td>+0,303</td><td>34%</td></tr>
+        <tr><td>sobreposição crua de tokens com o gabarito</td><td>+0,409</td><td>46%</td></tr>
+        <tr><td>cobertura do gabarito (1 feature)</td><td>+0,463</td><td>52%</td></tr>
+        <tr class="marca"><td>o módulo inteiro (10 features)</td><td><strong>+0,495</strong></td><td><strong>56%</strong></td></tr>
+        <tr class="apaga"><td><em>teto: duas execuções do próprio LLM</em></td><td><em>+0,883</em></td><td><em>100%</em></td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p><strong>Ganha, mas por pouco</strong> — e a distância até o teto é maior que
+  a distância até a linha de base. O ganho sobre a melhor feature sozinha é
+  <strong>+0,033</strong>, IC95 [+0,005; +0,061], positivo em 99% das reamostras
+  por aluno. Estável: <strong>0,495 ± 0,021</strong> em 12 partições.</p>
+  <p class="nota">Em avaliação automática de texto, contar palavras derruba a
+  maioria dos trabalhos: resposta longa costuma ganhar nota maior. Se contar
+  palavras chega perto, o resto não está fazendo nada.</p>
+  </div>
+  <aside class="notas">O teto vem das três avaliações do mesmo LLM: 0,883 de
+  concordância dele consigo mesmo. Nenhum modelo treinado contra esse rótulo
+  pode passar disso.</aside>
+</section>
+
+<!-- 15 -->
+<section class="slide" data-titulo="Onde o modelo 2 paga" data-tempo="10–13 min">
+  <div class="etiqueta">Modelo 2 · operação <span class="tempo">10–13 min</span></div>
+  <h2>Ordenar exige muito menos que pontuar</h2>
+  <div class="corpo">
+  <div class="cartoes">
+    <div class="cartao destaque"><div class="rot">Triagem: 5 piores previsões</div>
+      <div class="num">1,80</div><div class="pe">nota real média, contra 3,50 do geral</div></div>
+    <div class="cartao"><div class="rot">Pré-filtro 10% / 90%</div>
+      <div class="num">20%</div><div class="pe">não vão à LLM; erra 14% na ponta baixa, 10% na alta</div></div>
+    <div class="cartao"><div class="rot">Custo</div>
+      <div class="num">167 µs</div><div class="pe">contra 1–3 s de uma chamada</div></div>
+  </div>
+  <p>É por isso que um Spearman de 0,50 <strong>serve para triagem e não serve
+  para dar nota</strong>. O uso defensável é ordenar a fila de correção e
+  resolver as pontas óbvias — não escrever um número na prova do aluno.</p>
+  <p class="nota">O protótipo mostra também <code>conceitos_faltando</code>: os
+  conceitos centrais do gabarito que não apareceram. Um sinônimo válido pode
+  aparecer como ausência — é comparação literal.</p>
+  </div>
+  <aside class="notas"><b>Demo 2</b> — abrir <code>discursivo.html</code>, colar
+  a resposta completa, a parcial e a "não sei". Mostrar que ordena. Dizer que o
+  exemplo é em português de propósito, e que o valor absoluto não tem validação
+  nenhuma nesse idioma.</aside>
+</section>
+
+<!-- 16 -->
+<section class="slide" data-titulo="O que não funcionou" data-tempo="13–15 min">
+  <div class="etiqueta">Negativos <span class="tempo">13–15 min</span></div>
+  <h2>O que não funcionou</h2>
+  <div class="corpo">
+  <div class="duas">
+    <div class="coluna">
+      <h3>Achados que morreram</h3>
+      <ul class="limpa">
+        <li><strong>O volume</strong> — "eventos por sessão" tinha sinal forte no
+        EdNet. No OULAD descobrimos algo pior que resultado fraco:
+        <strong>não dá para calcular lá</strong>, porque a base registra o dia e
+        não a hora.</li>
+        <li><strong>Percentil como conserto de escala</strong> — AUC igual,
+        calibração pior. Normalizar a <em>feature</em> não corrige diferença na
+        <em>prevalência do desfecho</em>.</li>
+        <li><strong>Enriquecer a referência do modelo 2</strong> — de 0,486 a
+        0,396, de forma ordenada.</li>
+      </ul>
+    </div>
+    <div class="coluna">
+      <h3>Uma terceira base onde ele não funciona</h3>
+      <p>Numa coorte de leitura <strong>obrigatória</strong>, a AUC fica entre
+      <strong>0,49 e 0,57</strong>. Não é defeito: com 87,7% voltando por
+      obrigação, <strong>não há variação a prever</strong>.</p>
+      <p class="nota">Esse resultado delimita o escopo do modelo melhor do que
+      qualquer número bom — ele pressupõe continuação voluntária.</p>
+    </div>
+  </div>
+  </div>
+  <aside class="notas">Se sobrar tempo, o volume é a melhor história: era o
+  achado mais bonito e morreu por causa do formato da segunda base.</aside>
+</section>
+
+<!-- 17 -->
+<section class="slide" data-titulo="Erros nossos" data-tempo="13–15 min">
+  <div class="etiqueta">Negativos <span class="tempo">13–15 min</span></div>
+  <h2>Três erros nossos que quase viraram conclusão</h2>
+  <div class="corpo">
+  <ol>
+    <li><strong>O teste de replicação comparava a coluna com ela mesma.</strong>
+    A primeira versão preenchia o eixo não medível do OULAD com outra coluna — e
+    o teste passava sem testar nada.</li>
+    <li><strong>O teste de vazamento não podia detectar vazamento.</strong>
+    Comparávamos cru contra padronizado treinando numa base e testando na outra;
+    dava o mesmo número sempre, porque padronizar dentro da coorte é
+    transformação monótona e <strong>AUC só olha ordem</strong>. E a correção nos
+    contrariou: em AUC o custo de juntar as bases cruas é de uma a três
+    milésimas. O estrago real está nos <strong>pesos</strong>, que ficam ~15×
+    maiores (9,49 contra 0,61). Mantivemos a padronização por esse motivo, não
+    pelo que tínhamos escrito antes.</li>
+    <li><strong>No modelo 2, a API deixou omitir dois argumentos em
+    silêncio.</strong> A primeira medição chamou <code>preparar(gabarito)</code>
+    sem o enunciado e sem as stopwords do corpus: Spearman <strong>0,429</strong>,
+    <em>abaixo</em> da cobertura sozinha (0,463). Íamos concluir que as dez
+    features não valiam nada. Chamando do jeito documentado:
+    <strong>0,495</strong> — e a conclusão inverte. A diferença de
+    <strong>0,066</strong> é maior que o ganho de todas as nove features extras.</li>
+  </ol>
+  <p class="nota">Sem o enunciado, o que o aluno repetiu da pergunta conta como
+  conceito coberto; sem as stopwords, palavra funcional vira nó do grafo. Os dois
+  erros inflam a nota de quem escreveu muito. O defeito real é da API — está
+  documentado no módulo agora.</p>
+  </div>
+  <aside class="notas">Mais a divisão sortuda de 11/09: um número errado
+  repetido em todo lugar por causa de uma única partição. Daí as 12 partições em
+  todo resultado.</aside>
+</section>
+
+<!-- 18 -->
+<section class="slide" data-titulo="Limitação honesta" data-tempo="13–15 min">
+  <div class="etiqueta">Limites <span class="tempo">13–15 min</span></div>
+  <h2>Uma limitação honesta de cada modelo</h2>
+  <div class="corpo">
+  <div class="duas">
+    <div class="coluna">
+      <h3>Modelo 1</h3>
+      <p class="frase" style="font-size:clamp(1rem,2.1vw,1.15rem)">Isto mede
+      permanência, não aprendizado.</p>
+      <p>Nenhum dos eixos prediz ganho de acerto entre os dois meses. Um aluno
+      que aparece todo dia e não avança é classificado como engajado — porque ele
+      <em>está</em> engajado pela definição que usamos, e essa definição pode não
+      ser a que interessa a quem ensina.</p>
+      <p class="nota">Menores e também reais: a janela de 30 dias foi escolhida
+      por conveniência e não testamos alternativas; as duas bases são
+      estrangeiras, de adultos, em contextos que não são o de uma escola
+      brasileira.</p>
+    </div>
+    <div class="coluna">
+      <h3>Modelo 2</h3>
+      <p class="frase" style="font-size:clamp(1rem,2.1vw,1.15rem)">O alvo do
+      treino é nota de LLM, não humana.</p>
+      <p>Ele não chama LLM para funcionar, mas foi ajustado para
+      <strong>concordar com o GPT-4</strong> — e o GPT-4 pode estar errado de
+      forma sistemática sem que nada nesta medição perceba. Não há nota humana no
+      corpus para comparar.</p>
+      <p class="nota">E os pesos foram ajustados em <strong>alemão</strong>, numa
+      disciplina só. As features são agnósticas de idioma; os pesos não. Até
+      haver ~100 respostas em português com nota humana, o uso defensável é só
+      ordenar.</p>
+    </div>
+  </div>
+  </div>
+  <aside class="notas">Não amaciar isso. É a parte que o enunciado premia e a
+  que sustenta a credibilidade do resto dos números.</aside>
+</section>
+
+<!-- 19 -->
+<section class="slide" data-titulo="Reprodução" data-tempo="13–15 min">
+  <div class="etiqueta">Reprodução <span class="tempo">13–15 min</span></div>
+  <h2>Do clone aos números, na ordem</h2>
+  <div class="corpo">
+  <pre>git clone https://github.com/Geisbelly/core-trailup.git
+cd core-trailup/seminario &amp;&amp; pip install -r requirements.txt
+
+# MODELO 2 roda agora, sem baixar nada (o corpus está no repositório):
+cd scripts
+python3 07_discursivo.py            # contra as linhas de base
+python3 08_discursivo_operacao.py   # pré-filtro, triagem, custo
+python3 09_conferir_port.py         # o JavaScript == o Python?
+
+# MODELO 1 exige baixar as duas bases — ver dados/README.md:
+python3 01_preparar.py  02_eixos.py  03_vazamento.py
+python3 04_treinar.py   05_calibrar.py  06_exportar.py</pre>
+  <p>Cada script imprime o que mede <em>e o que aquilo quer dizer</em>. Rodar do
+  01 ao 09 reproduz todos os números do README.</p>
+  <p><strong><code>09_conferir_port.py</code> merece nota:</strong> o protótipo
+  reimplementa o modelo 2 em JavaScript para rodar sem servidor, e
+  <strong>duas implementações da mesma coisa divergem em silêncio</strong>. Ele
+  roda as duas sobre 200 respostas e falha se discordarem. Hoje batem até a 15ª
+  casa decimal.</p>
+  </div>
+  <aside class="notas">O diário de decisões (<code>DIARIO.md</code>) é onde está
+  o caminho, com as datas das sessões reais de trabalho. Apontar para ele se a
+  banca perguntar do processo.</aside>
+</section>
+
+<!-- 20 -->
+<section class="slide" data-titulo="O que fica" data-tempo="15 min">
+  <div class="etiqueta">Encerramento <span class="tempo">15 min</span></div>
+  <h2>O que fica</h2>
+  <div class="corpo">
+  <ul class="limpa grande">
+    <li>Dois modelos baratos que decidem <strong>onde gastar a chamada
+    cara</strong> — e ganham da linha de base por uma margem declarada como
+    pequena.</li>
+    <li><strong>A mesma atividade significa coisas diferentes em plataformas
+    diferentes.</strong> A ordem transfere; o nível não. Calibrar é requisito.</li>
+    <li><strong>O gabarito funciona por ser preciso, não por ser rico.</strong>
+    Mais texto na referência piorou o resultado de forma ordenada.</li>
+    <li>Todo número aqui tem <strong>linha de base ao lado, desvio de 12
+    partições e um teto medido</strong> quando existe teto.</li>
+  </ul>
+  <p class="nota" style="margin-top:22px">Protótipos:
+  <a href="./">modelo 1 · engajamento</a> ·
+  <a href="discursivo.html">modelo 2 · resposta discursiva</a>. Código, dados e
+  diário de decisões em
+  <a href="https://github.com/Geisbelly/core-trailup/tree/main/seminario">github.com/Geisbelly/core-trailup</a>.</p>
+  <p class="grande" style="margin-top:18px"><strong>Geisbelly Victória ·
+  Maria Antonia</strong> — obrigada. Perguntas?</p>
+  </div>
+  <aside class="notas">Perguntas prováveis: "isso corrige em porcentagem?" (não
+  — é score de triagem); "onde está o aprendizado de máquina?" (nos pesos
+  ajustados: logística no modelo 1, regressão sobre 10 features no modelo 2);
+  "por que não só similaridade?" (cobertura acrescentou sinal; similaridade alta
+  também ocorre em afirmação contraditória).</aside>
+</section>
+
+</main>
+
+<footer id="hud">
+  <button type="button" id="bIndice" aria-label="Abrir índice de slides">Índice <span class="so-largo">(O)</span></button>
+  <button type="button" id="bAnt" aria-label="Slide anterior">←</button>
+  <span id="conta" aria-hidden="true"></span>
+  <button type="button" id="bProx" aria-label="Próximo slide">→</button>
+  <span id="titulo-atual"></span>
+  <button type="button" id="bNotas" class="so-largo" aria-pressed="false">Notas (N)</button>
+  <button type="button" id="bTela" class="so-largo">Tela cheia (F)</button>
+</footer>
+
+<div id="indice" hidden role="dialog" aria-modal="true" aria-label="Índice de slides">
+  <div class="interno">
+    <h2>Índice</h2>
+    <p class="nota">Roteiro de 15 minutos. Clique para ir, <b>Esc</b> para fechar.</p>
+    <ol id="listaIndice"></ol>
+  </div>
+</div>
+
+<script>
+(function(){
+  var slides = Array.prototype.slice.call(document.querySelectorAll('.slide'));
+  var total = slides.length;
+  var atual = 0;
+  var conta = document.getElementById('conta');
+  var tituloAtual = document.getElementById('titulo-atual');
+  var progresso = document.getElementById('progresso');
+  var indice = document.getElementById('indice');
+  var lista = document.getElementById('listaIndice');
+  var bNotas = document.getElementById('bNotas');
+
+  /* índice */
+  slides.forEach(function(s, i){
+    var li = document.createElement('li');
+    var b = document.createElement('button');
+    b.type = 'button';
+    b.innerHTML = '<b>' + (i + 1) + '</b><span>' +
+      (s.dataset.titulo || ('Slide ' + (i + 1))) + '</span>';
+    b.addEventListener('click', function(){ ir(i); fecharIndice(); });
+    li.appendChild(b); lista.appendChild(li);
+  });
+  var botoesIndice = Array.prototype.slice.call(lista.querySelectorAll('button'));
+
+  function ir(i, semHash){
+    atual = Math.max(0, Math.min(total - 1, i));
+    slides.forEach(function(s, k){ s.classList.toggle('ativo', k === atual); });
+    var s = slides[atual];
+    s.scrollTop = 0;
+    conta.textContent = (atual + 1) + ' / ' + total;
+    tituloAtual.textContent = s.dataset.titulo || '';
+    progresso.style.width = ((atual + 1) / total * 100) + '%';
+    botoesIndice.forEach(function(b, k){
+      if (k === atual) { b.setAttribute('aria-current', 'true'); }
+      else { b.removeAttribute('aria-current'); }
+    });
+    if (!semHash) {
+      try { history.replaceState(null, '', '#' + (atual + 1)); } catch (e) {}
+    }
+  }
+  function prox(){ if (atual < total - 1) ir(atual + 1); }
+  function ant(){ if (atual > 0) ir(atual - 1); }
+
+  function abrirIndice(){ indice.hidden = false; botoesIndice[atual].focus(); }
+  function fecharIndice(){ indice.hidden = true; }
+  function alternarIndice(){ indice.hidden ? abrirIndice() : fecharIndice(); }
+
+  function alternarNotas(){
+    var lig = document.body.classList.toggle('com-notas');
+    bNotas.setAttribute('aria-pressed', lig ? 'true' : 'false');
+  }
+  function telaCheia(){
+    if (document.fullscreenElement) { document.exitFullscreen(); }
+    else if (document.documentElement.requestFullscreen) {
+      document.documentElement.requestFullscreen();
+    }
+  }
+
+  document.getElementById('bProx').addEventListener('click', prox);
+  document.getElementById('bAnt').addEventListener('click', ant);
+  document.getElementById('bIndice').addEventListener('click', alternarIndice);
+  bNotas.addEventListener('click', alternarNotas);
+  document.getElementById('bTela').addEventListener('click', telaCheia);
+  indice.addEventListener('click', function(e){ if (e.target === indice) fecharIndice(); });
+
+  document.addEventListener('keydown', function(e){
+    if (e.metaKey || e.ctrlKey || e.altKey) return;
+    var t = e.target.tagName;
+    if (t === 'INPUT' || t === 'TEXTAREA' || t === 'SELECT') return;
+    var k = e.key;
+    if (k === 'Escape') { fecharIndice(); return; }
+    if (!indice.hidden && k !== 'o' && k !== 'O') return;
+    if (k === 'ArrowRight' || k === 'PageDown' || k === ' ' || k === 'Enter' ||
+        k === 'j' || k === 'J') { e.preventDefault(); prox(); }
+    else if (k === 'ArrowLeft' || k === 'PageUp' || k === 'Backspace' ||
+             k === 'k' || k === 'K') { e.preventDefault(); ant(); }
+    else if (k === 'Home') { e.preventDefault(); ir(0); }
+    else if (k === 'End') { e.preventDefault(); ir(total - 1); }
+    else if (k === 'o' || k === 'O') { e.preventDefault(); alternarIndice(); }
+    else if (k === 'n' || k === 'N') { e.preventDefault(); alternarNotas(); }
+    else if (k === 'f' || k === 'F') { e.preventDefault(); telaCheia(); }
+    else if (/^[0-9]$/.test(k)) {
+      var n = (k === '0' ? 10 : parseInt(k, 10));
+      if (n <= total) { e.preventDefault(); ir(n - 1); }
+    }
+  });
+
+  /* deslizar o dedo */
+  var x0 = null, y0 = null;
+  document.addEventListener('touchstart', function(e){
+    if (e.touches.length !== 1) { x0 = null; return; }
+    x0 = e.touches[0].clientX; y0 = e.touches[0].clientY;
+  }, {passive: true});
+  document.addEventListener('touchend', function(e){
+    if (x0 === null || !indice.hidden) return;
+    var dx = e.changedTouches[0].clientX - x0;
+    var dy = e.changedTouches[0].clientY - y0;
+    if (Math.abs(dx) > 55 && Math.abs(dx) > Math.abs(dy) * 1.6) {
+      dx < 0 ? prox() : ant();
+    }
+    x0 = null;
+  }, {passive: true});
+
+  /* abre no slide do endereço, e responde ao botão voltar */
+  function doHash(){
+    var n = parseInt((location.hash || '').replace('#', ''), 10);
+    ir(isNaN(n) ? 0 : n - 1, true);
+  }
+  window.addEventListener('hashchange', doHash);
+  doHash();
+})();
+</script>
+</body>
+</html>

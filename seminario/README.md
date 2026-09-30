@@ -11,7 +11,7 @@ linha de base e protótipo funcionando:
 O que une os dois: **decidir onde gastar uma chamada cara**. Um decide em quem
 vale intervir; o outro, qual resposta precisa mesmo de correção por LLM.
 
-**Grupo:** Geisbelly · Victória · Maria Antonia
+**Grupo:** Geisbelly Victória · Maria Antonia
 
 **Diário de decisões:** [`DIARIO.md`](DIARIO.md) — é onde está o caminho.
 
