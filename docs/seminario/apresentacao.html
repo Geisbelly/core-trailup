@@ -872,7 +872,7 @@ teto.</li>
 
   /* no projetor o teto e baixo, para todos os slides ficarem no mesmo corpo de texto;
      no celular ele sobe, porque ali o que importa e a legibilidade de cada slide */
-  var K_MIN = .45, K_MAX = 1.45, FOLGA_MAX = 42;
+  var K_MIN = .45, K_MAX = 1.45, FOLGA_MAX = Infinity;
   function encaixa(s){
     if (!s) return;
     var fit = s.querySelector('.fit');
@@ -903,7 +903,7 @@ teto.</li>
     }
     /* o que sobrar vira respiro entre os blocos, em vez de um vazio no pe do slide */
     var sobra = livre - alto, vaos = filhos.length - 1;
-    if (sobra > 8 && vaos > 0 && !s.classList.contains('capa')){
+    if (sobra > 2 && vaos > 0 && !s.classList.contains('capa')){
       var extra = Math.min(FOLGA_MAX, sobra / vaos) / k;
       for (var j = 0; j < vaos; j++){
         var base = parseFloat(getComputedStyle(filhos[j]).marginBottom) || 0;
