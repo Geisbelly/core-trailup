@@ -124,7 +124,6 @@ svg .t{font:13px var(--sans);fill:var(--tinta)}
 svg .m{font:12px var(--mono);fill:var(--tinta)}
 
 /* ---- capa ---- */
-.capa .fit{margin:auto 0}
 .selo{display:inline-block;font-size:11.5px;letter-spacing:.16em;text-transform:uppercase;
   color:var(--acento);font-weight:700;margin-bottom:18px}
 .autoras{display:flex;flex-wrap:wrap;gap:10px;margin:24px 0 6px}
@@ -901,13 +900,19 @@ teto.</li>
       fit.style.setProperty('--k', k);
       alto = fit.offsetHeight * k;
     }
-    /* o que sobrar vira respiro entre os blocos, em vez de um vazio no pe do slide */
-    var sobra = livre - alto, vaos = filhos.length - 1;
-    if (sobra > 2 && vaos > 0 && !s.classList.contains('capa')){
-      var extra = Math.min(FOLGA_MAX, sobra / vaos) / k;
-      for (var j = 0; j < vaos; j++){
-        var base = parseFloat(getComputedStyle(filhos[j]).marginBottom) || 0;
-        filhos[j].style.marginBottom = (base + extra) + 'px';
+    /* o que sobrar vira respiro entre os blocos, em vez de um vazio no pe do slide.
+       margens vizinhas colapsam, entao parte do que se acrescenta nao vira altura:
+       repete ate a sobra fechar. */
+    var vaos = filhos.length - 1;
+    if (vaos > 0){
+      for (var passo = 0; passo < 4; passo++){
+        var sobra = livre - fit.offsetHeight * k;
+        if (sobra <= 2) break;
+        var extra = Math.min(FOLGA_MAX, sobra / vaos) / k;
+        for (var j = 0; j < vaos; j++){
+          var base = parseFloat(getComputedStyle(filhos[j]).marginBottom) || 0;
+          filhos[j].style.marginBottom = (base + extra) + 'px';
+        }
       }
     }
   }
